@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <queries>
+        <!-- 适配 Android 11+ 软件包可见性 (Package Visibility) -->
+        <!-- 必须显式声明需要跨应用查询的桌面 Provider Authority -->
+        <provider android:authorities="io.github.cctyl.nokia.keyprovider" />
+        <provider android:authorities="io.github.cctyl.nokia.debug.keyprovider" />
+    </queries>
+
+    <application>
+        <activity
+            android:name="io.github.cctyl.nokia.keycore.ui.NokiaKeyWizardActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:theme="@style/Theme.NokiaKeyCore" />
+    </application>
+</manifest>

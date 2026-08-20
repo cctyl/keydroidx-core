@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/nokia_content_bg">
+
+    <!-- 顶部状态栏/标题栏 (高度 22dp，深灰 #303030 背景，字号 12dp 白字) -->
+    <LinearLayout
+        android:id="@+id/topPanel"
+        android:layout_width="match_parent"
+        android:layout_height="22dp"
+        android:background="@color/nokia_top_bg"
+        android:gravity="center_vertical"
+        android:paddingLeft="8dp"
+        android:paddingRight="8dp"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/nokia_top_text"
+            android:textSize="11dp"
+            android:text="00:00"
+            android:visibility="visible" />
+
+        <TextView
+            android:id="@+id/tvPageTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="@color/nokia_top_text"
+            android:textSize="12dp"
+            android:textStyle="bold" />
+
+        <!-- 保持左右对称 balance 的占位时钟等宽 -->
+        <View
+            android:layout_width="32dp"
+            android:layout_height="1dp" />
+    </LinearLayout>
+
+    <!-- 中间内容区 (自适应充满，由业务布局填充) -->
+    <FrameLayout
+        android:id="@+id/midPanel"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@color/nokia_content_bg" />
+
+    <!-- 底部三栏软键 (高度 22dp，经典深蓝 #001166 背景，字号 12dp 白字) -->
+    <LinearLayout
+        android:id="@+id/bottomPanel"
+        android:layout_width="match_parent"
+        android:layout_height="22dp"
+        android:background="@color/nokia_bottom_bg"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:id="@+id/tvSoftLeft"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical|left"
+            android:paddingLeft="8dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="@color/nokia_bottom_text"
+            android:textSize="12dp" />
+
+        <TextView
+            android:id="@+id/tvSoftCenter"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="@color/nokia_bottom_text"
+            android:textSize="12dp" />
+
+        <TextView
+            android:id="@+id/tvSoftRight"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center_vertical|right"
+            android:paddingRight="8dp"
+            android:singleLine="true"
+            android:ellipsize="end"
+            android:textColor="@color/nokia_bottom_text"
+            android:textSize="12dp" />
+    </LinearLayout>
+
+</LinearLayout>
