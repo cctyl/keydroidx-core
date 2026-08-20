@@ -40,11 +40,12 @@ public class NokiaKeyBinding {
         loadLocal(context);
     }
 
-    public synchronized void resetToDefaults() {
-        initDefaults();
+    public synchronized void clear() {
+        actionToKeyCode.clear();
+        keyCodeToAction.clear();
     }
 
-    private void initDefaults() {
+    public void initDefaults() {
         actionToKeyCode.clear();
         keyCodeToAction.clear();
         bind(NokiaKeyAction.ACTION_UP, KeyEvent.KEYCODE_DPAD_UP);
@@ -119,8 +120,12 @@ public class NokiaKeyBinding {
         }
     }
 
-    public synchronized void loadFromLocal(@NonNull Context context) {
+    public synchronized boolean loadFromLocal(@NonNull Context context) {
+        if (!hasConfiguredLocally(context)) {
+            return false;
+        }
         loadLocal(context);
+        return true;
     }
 
     public synchronized NokiaKeyBinding clone() {

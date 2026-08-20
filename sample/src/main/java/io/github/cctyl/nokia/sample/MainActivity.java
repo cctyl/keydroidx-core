@@ -8,10 +8,12 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.NokiaKeyClient;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyBinding;
 import io.github.cctyl.nokia.keycore.ui.NokiaKeyWizardActivity;
+import io.github.cctyl.nokia.keycore.ui.NokiaTheme;
 
 /**
  * 示例应用主页面
@@ -59,11 +61,19 @@ public class MainActivity extends AppCompatActivity {
         });
 
         // 注册按键变化监听
-        NokiaKeyClient.get(this).registerListener(new NokiaKeyClient.OnKeyBindingChangedListener() {
+        NokiaClient.get(this).registerListener(new NokiaClient.OnConfigChangedListener() {
             @Override
-            public void onKeyBindingChanged(NokiaKeyBinding newBinding, boolean fromDesktop) {
+            public void onKeysChanged(NokiaKeyBinding newBinding, NokiaClient.ConfigSource source) {
                 keyBinding = newBinding;
                 updateDisplay();
+            }
+
+            @Override
+            public void onThemeChanged(String themeId, NokiaTheme.ThemeDef theme) {
+            }
+
+            @Override
+            public void onFontChanged(String fontId, float fontScale) {
             }
         });
     }
@@ -79,7 +89,8 @@ public class MainActivity extends AppCompatActivity {
     private void updateDisplay() {
         if (keyBinding == null) return;
 
-        boolean isDesktop = NokiaKeyClient.get(this).isFromDesktop();
+        boolean isDesktop = NokiaClient.get(this).getConfigSource() == NokiaClient.ConfigSource.DESKTOP_RELEASE 
+                || NokiaClient.get(this).getConfigSource() == NokiaClient.ConfigSource.DESKTOP_DEBUG;
         if (isDesktop) {
             tvStatus.setText("✓ 已成功从 KeydroidX 原键桌面同步按键");
             tvStatus.setTextColor(0xFF0055AA);
