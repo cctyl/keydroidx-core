@@ -77,6 +77,13 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
 
         // 注册全局配置监听
         NokiaClient.get(this).addListener(this);
+
+        // 主动触发一次主题与字体应用
+        NokiaTheme.ThemeDef currentTheme = NokiaTheme.getTheme(NokiaClient.get(this).getCurrentThemeId());
+        if (currentTheme != null) {
+            onThemeChanged(NokiaClient.get(this).getCurrentThemeId(), currentTheme);
+        }
+        onFontChanged(NokiaClient.get(this).getCurrentFontId(), NokiaClient.get(this).getCurrentFontScale());
     }
 
     @Override
@@ -142,8 +149,10 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
 
     @Override
     public void onFontChanged(@NonNull String fontId, float fontScale) {
-        // 自动将点阵字体应用到整个 View 树
-        if (rootContainer != null) {
+        // 自动将点阵字体与缩放应用到整棵 View 树（包含 DecorView，涵盖标题栏、内容区、软键条）
+        if (getWindow() != null && getWindow().getDecorView() != null) {
+            NokiaFontManager.applyToViewTree(getWindow().getDecorView());
+        } else if (rootContainer != null) {
             NokiaFontManager.applyToViewTree(rootContainer);
         }
     }

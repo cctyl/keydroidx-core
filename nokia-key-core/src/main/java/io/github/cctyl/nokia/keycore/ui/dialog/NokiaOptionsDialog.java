@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.util.TypedValue;
 import android.view.Gravity;
@@ -24,9 +25,12 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.NokiaKeyClient;
 import io.github.cctyl.nokia.keycore.R;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
+import io.github.cctyl.nokia.keycore.ui.NokiaFontManager;
+import io.github.cctyl.nokia.keycore.ui.NokiaTheme;
 import io.github.cctyl.nokia.keycore.util.NokiaDimens;
 
 /**
@@ -129,6 +133,32 @@ public class NokiaOptionsDialog extends Dialog {
             tvTitle.setText(title);
         }
 
+        // 应用当前主题到弹窗标题与底部
+        NokiaTheme.ThemeDef currentTheme = NokiaTheme.getTheme(NokiaClient.get(getContext()).getCurrentThemeId());
+        View titleBar = findViewById(R.id.dialogTitleBar);
+        if (titleBar != null && currentTheme != null) {
+            titleBar.setBackground(currentTheme.createTitleDrawable());
+        }
+        View dialogBody = findViewById(R.id.dialogBody);
+        if (dialogBody != null && currentTheme != null) {
+            dialogBody.setBackgroundColor(currentTheme.cardBgColor);
+        }
+        View bottomBar = findViewById(R.id.dialogBottomBar);
+        if (bottomBar != null && currentTheme != null) {
+            bottomBar.setBackground(currentTheme.createSoftKeyDrawable());
+        }
+        if (tvTitle != null && currentTheme != null) {
+            tvTitle.setTextColor(currentTheme.textColor);
+        }
+        TextView btnLeft = findViewById(R.id.softLeft);
+        if (btnLeft != null && currentTheme != null) {
+            btnLeft.setTextColor(currentTheme.textColor);
+        }
+        TextView btnRight = findViewById(R.id.softRight);
+        if (btnRight != null && currentTheme != null) {
+            btnRight.setTextColor(currentTheme.textColor);
+        }
+
         optionsContainer = findViewById(R.id.dialogOptionsList);
         optionsContainer.removeAllViews();
         itemViews.clear();
@@ -192,11 +222,17 @@ public class NokiaOptionsDialog extends Dialog {
     }
 
     private void updateSelection() {
+        NokiaTheme.ThemeDef currentTheme = NokiaTheme.getTheme(NokiaClient.get(getContext()).getCurrentThemeId());
+        int focusColor = (currentTheme != null) ? currentTheme.focusColor : 0xFF0055AA;
+
         for (int i = 0; i < itemViews.size(); i++) {
             View view = itemViews.get(i);
             boolean isSelected = (i == selectedIndex);
             if (isSelected) {
-                view.setBackgroundResource(R.drawable.bg_nokia_row_selected);
+                GradientDrawable gd = new GradientDrawable();
+                gd.setColor(focusColor);
+                gd.setCornerRadius(NokiaDimens.dp(getContext().getResources(), 4));
+                view.setBackground(gd);
             } else {
                 view.setBackgroundColor(Color.TRANSPARENT);
             }
@@ -244,5 +280,8 @@ public class NokiaOptionsDialog extends Dialog {
     public void show() {
         super.show();
         NokiaDialogFocus.forceNonTouchMode(this);
+        if (getWindow() != null && getWindow().getDecorView() != null) {
+            NokiaFontManager.applyToViewTree(getWindow().getDecorView());
+        }
     }
 }

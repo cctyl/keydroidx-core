@@ -86,6 +86,7 @@ public class NokiaClient {
         this.currentFontId = sp.getString(KEY_FONT_ID, NokiaFontManager.FONT_ID_ARK_12PX);
         this.currentFontScale = sp.getFloat(KEY_FONT_SCALE, 1.0f);
         NokiaFontManager.setCurrentFontId(this.currentFontId);
+        NokiaFontManager.setFontScale(this.currentFontScale);
     }
 
     private void saveLocalPrefs() {
@@ -164,6 +165,7 @@ public class NokiaClient {
                             } else if ("font_scale".equals(k) && v != null) {
                                 try {
                                     this.currentFontScale = Float.parseFloat(v);
+                                    NokiaFontManager.setFontScale(this.currentFontScale);
                                 } catch (Exception ignored) {}
                             }
                         } while (sCursor.moveToNext());
