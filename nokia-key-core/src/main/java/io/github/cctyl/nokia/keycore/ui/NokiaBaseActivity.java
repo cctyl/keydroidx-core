@@ -2,12 +2,17 @@ package io.github.cctyl.nokia.keycore.ui;
 
 import android.content.res.Configuration;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowInsets;
+import android.view.WindowInsetsController;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.TextView;
 
@@ -33,6 +38,10 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     protected View rootContainer;
     protected View titleBar;
     protected TextView tvTitle;
+    protected TextView tvTitleIcon;
+    protected View statusBar;
+    protected TextView tvSignalIcon;
+    protected TextView tvBatteryPercent;
     protected FrameLayout contentContainer;
     protected View bottomBar;
     protected TextView tvSoftLeft;
@@ -47,15 +56,41 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_nokia_base);
+        // 真机全屏：必须在 setContentView 之后调用（getInsetsController 依赖 DecorView）
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            getWindow().setDecorFitsSystemWindows(false);
+            WindowInsetsController insetsController = getWindow().getInsetsController();
+            if (insetsController != null) {
+                insetsController.hide(WindowInsets.Type.statusBars());
+                insetsController.setSystemBarsBehavior(
+                        WindowInsetsController.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE);
+            }
+        } else {
+            getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN,
+                    WindowManager.LayoutParams.FLAG_FULLSCREEN);
+        }
 
         rootContainer = findViewById(R.id.midPanel);
         titleBar = findViewById(R.id.topPanel);
         tvTitle = findViewById(R.id.tvPageTitle);
+        tvTitleIcon = findViewById(R.id.tvTitleIcon);
+        statusBar = findViewById(R.id.layoutStatusBar);
+        tvSignalIcon = findViewById(R.id.tvSignalIcon);
+        tvBatteryPercent = findViewById(R.id.tvBatteryPercent);
         contentContainer = findViewById(R.id.midPanel);
         bottomBar = findViewById(R.id.bottomPanel);
         tvSoftLeft = findViewById(R.id.tvSoftLeft);
         tvSoftCenter = findViewById(R.id.tvSoftCenter);
         tvSoftRight = findViewById(R.id.tvSoftRight);
+
+        // 兜底全屏：legacy systemUiVisibility（在部分设备/ROM 上比 InsetsController 更稳）
+        getWindow().getDecorView().setSystemUiVisibility(
+                View.SYSTEM_UI_FLAG_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+                        | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                        | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+                        | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
 
         int contentRes = getContentLayoutRes();
         if (contentRes != 0) {
@@ -107,6 +142,35 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         setTitleText(title);
     }
 
+    public void setTitleIcon(CharSequence iconCode) {
+        if (tvTitleIcon != null) {
+            if (iconCode != null && iconCode.length() > 0) {
+                NokiaIcons.setIcon(tvTitleIcon, iconCode.toString());
+                tvTitleIcon.setVisibility(View.VISIBLE);
+            } else {
+                tvTitleIcon.setVisibility(View.GONE);
+            }
+        }
+    }
+
+    public void setStatusBarVisible(boolean visible) {
+        if (statusBar != null) {
+            statusBar.setVisibility(visible ? View.VISIBLE : View.GONE);
+        }
+    }
+
+    public void setSignalIcon(CharSequence iconCode) {
+        if (tvSignalIcon != null && iconCode != null) {
+            NokiaIcons.setIcon(tvSignalIcon, iconCode.toString());
+        }
+    }
+
+    public void setBatteryPercent(CharSequence text) {
+        if (tvBatteryPercent != null) {
+            tvBatteryPercent.setText(text != null ? text : "");
+        }
+    }
+
     public void setSoftKeys(CharSequence left, CharSequence center, CharSequence right) {
         if (tvSoftLeft != null) tvSoftLeft.setText(left != null ? left : "");
         if (tvSoftCenter != null) tvSoftCenter.setText(center != null ? center : "");
@@ -139,8 +203,23 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         if (bottomBar != null) {
             bottomBar.setBackground(theme.createSoftKeyDrawable());
         }
+        // 窗口背景 + 内容区 + 业务内容根 统一跟随主题深色，确保深色 Nokia 风格贴合（主题可切换）
+        getWindow().setBackgroundDrawable(new ColorDrawable(theme.darkColor));
+        if (contentContainer != null) {
+            contentContainer.setBackgroundColor(theme.darkColor);
+            // 业务 inflate 进来的内容根也设为深色，防止业务布局透明时仍透出浅色
+            if (contentContainer.getChildCount() > 0) {
+                View contentRoot = contentContainer.getChildAt(0);
+                if (contentRoot != null) {
+                    contentRoot.setBackgroundColor(theme.darkColor);
+                }
+            }
+        }
         if (tvTitle != null) {
             tvTitle.setTextColor(theme.textColor);
+        }
+        if (tvTitleIcon != null) {
+            tvTitleIcon.setTextColor(theme.textColor);
         }
         if (tvSoftLeft != null) tvSoftLeft.setTextColor(theme.textColor);
         if (tvSoftCenter != null) tvSoftCenter.setTextColor(theme.textColor);

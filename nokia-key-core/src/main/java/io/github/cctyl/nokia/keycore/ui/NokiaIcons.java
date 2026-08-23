@@ -69,6 +69,23 @@ public class NokiaIcons {
     public static final String ICON_RADIO_BUTTON_CHECKED = "";
     public static final String ICON_STAR = "";
     public static final String ICON_FAVORITE = "";
+    public static final String ICON_FAVORITE_BORDER = "\uE87E";
+    public static final String ICON_PLAY_CIRCLE = "\uE01C";
+    public static final String ICON_PLAY_CIRCLE_FILLED = "\uE038";
+    public static final String ICON_SIGNAL_CELLULAR_4_BAR = "\uF1C8";
+
+    // 音乐/页面常用图标
+    public static final String ICON_PERSON = "\uE7FD";
+    public static final String ICON_EXPLORE = "\uE87A";
+    public static final String ICON_LEADERBOARD = "\uF20C";
+    public static final String ICON_HISTORY = "\uE889";
+    public static final String ICON_SD_CARD = "\uE623";
+    public static final String ICON_ALBUM = "\uE019";
+    public static final String ICON_QUEUE_MUSIC = "\uE03D";
+    public static final String ICON_LIBRARY_MUSIC = "\uE030";
+    public static final String ICON_RADIO = "\uE03E";
+    public static final String ICON_TODAY = "\uE8DF";
+    public static final String ICON_CHEVRON_RIGHT = "\uE5CC";
 
     public static synchronized Typeface getTypeface(Context context) {
         if (sTypeface == null && context != null) {

@@ -14,6 +14,7 @@
 
     <style name="Theme.NokiaKeyCore" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowNoTitle">true</item>
+        <item name="android:windowFullscreen">true</item>
         <item name="android:windowBackground">@color/nokia_content_bg</item>
         <item name="android:textColor">@color/nokia_content_text</item>
     </style>
