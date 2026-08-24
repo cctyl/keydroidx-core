@@ -86,6 +86,8 @@ public class NokiaIcons {
     public static final String ICON_RADIO = "\uE03E";
     public static final String ICON_TODAY = "\uE8DF";
     public static final String ICON_CHEVRON_RIGHT = "\uE5CC";
+    public static final String ICON_SUBTITLES = "\uE048";
+    public static final String ICON_LYRICS = "\uE26C";
 
     public static synchronized Typeface getTypeface(Context context) {
         if (sTypeface == null && context != null) {

@@ -12,13 +12,13 @@
     <!--
         顶部标题栏 (TitleBar)
         与 HTML 原型一致：左图标 + 标题 | 右状态(信号+电量)
-        权重 9（≈9% 屏幕高度），背景由 NokiaTheme 运行时绘制渐变
+        权重 7（≈7% 屏幕高度），背景由 NokiaTheme 运行时绘制渐变
     -->
     <LinearLayout
         android:id="@+id/topPanel"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="9"
+        android:layout_weight="7"
         android:gravity="center_vertical"
         android:paddingLeft="6dp"
         android:paddingRight="6dp"
@@ -67,11 +67,19 @@
                 android:textColor="#CBD5E1"
                 android:textSize="14dp" />
 
+            <ImageView
+                android:id="@+id/tvBatteryIcon"
+                android:layout_width="26dp"
+                android:layout_height="16dp"
+                android:layout_marginLeft="3dp"
+                android:layout_marginRight="1dp"
+                android:scaleType="fitCenter" />
+
             <TextView
                 android:id="@+id/tvBatteryPercent"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginLeft="3dp"
+                android:layout_marginLeft="1dp"
                 android:includeFontPadding="false"
                 android:textColor="#CBD5E1"
                 android:textSize="13dp" />
@@ -83,7 +91,7 @@
         android:id="@+id/midPanel"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="83" />
+        android:layout_weight="85" />
 
     <!--
         底部三栏软键 (SoftkeyBar)

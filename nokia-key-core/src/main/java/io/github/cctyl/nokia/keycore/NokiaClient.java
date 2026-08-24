@@ -87,6 +87,7 @@ public class NokiaClient {
         this.currentFontScale = sp.getFloat(KEY_FONT_SCALE, 1.0f);
         NokiaFontManager.setCurrentFontId(this.currentFontId);
         NokiaFontManager.setFontScale(this.currentFontScale);
+        Log.i(TAG, "loadLocalPrefs: theme=" + currentThemeId + " font=" + currentFontId + " scale=" + currentFontScale);
     }
 
     private void saveLocalPrefs() {
@@ -101,10 +102,12 @@ public class NokiaClient {
     public synchronized void reload() {
         // 1. 查询 Release 桌面 Provider
         if (tryQueryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE)) {
+            Log.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
             return;
         }
         // 2. 查询 Debug 桌面 Provider
         if (tryQueryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG)) {
+            Log.i(TAG, "reload: from desktop, theme=" + currentThemeId + " source=" + configSource);
             return;
         }
         // 3. 降级：本地独立配置
@@ -117,6 +120,7 @@ public class NokiaClient {
         keyBinding.initDefaults();
         configSource = ConfigSource.FALLBACK_DEFAULT;
         dispatchConfigChanged();
+        Log.i(TAG, "reload: final theme=" + currentThemeId + " source=" + configSource);
     }
 
     private boolean tryQueryProvider(String authority, ConfigSource source) {

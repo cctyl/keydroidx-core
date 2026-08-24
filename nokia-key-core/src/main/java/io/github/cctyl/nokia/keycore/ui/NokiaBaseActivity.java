@@ -1,11 +1,17 @@
 package io.github.cctyl.nokia.keycore.ui;
 
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
+import android.os.BatteryManager;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,6 +20,7 @@ import android.view.WindowInsets;
 import android.view.WindowInsetsController;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.annotation.CallSuper;
@@ -33,6 +40,7 @@ import io.github.cctyl.nokia.keycore.model.NokiaKeyBinding;
  */
 public abstract class NokiaBaseActivity extends AppCompatActivity implements NokiaClient.OnConfigChangedListener {
 
+    private static final String TAG = "NokiaBaseActivity";
     private static final long DEBOUNCE_MS = 60;
 
     protected View rootContainer;
@@ -41,6 +49,7 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     protected TextView tvTitleIcon;
     protected View statusBar;
     protected TextView tvSignalIcon;
+    protected ImageView tvBatteryIcon;
     protected TextView tvBatteryPercent;
     protected FrameLayout contentContainer;
     protected View bottomBar;
@@ -51,6 +60,8 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     private int lastDownKeyCode = KeyEvent.KEYCODE_UNKNOWN;
     private long lastDownTime = 0;
     private boolean lastDownHandled = false;
+
+    private BroadcastReceiver batteryReceiver;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -76,6 +87,7 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         tvTitleIcon = findViewById(R.id.tvTitleIcon);
         statusBar = findViewById(R.id.layoutStatusBar);
         tvSignalIcon = findViewById(R.id.tvSignalIcon);
+        tvBatteryIcon = findViewById(R.id.tvBatteryIcon);
         tvBatteryPercent = findViewById(R.id.tvBatteryPercent);
         contentContainer = findViewById(R.id.midPanel);
         bottomBar = findViewById(R.id.bottomPanel);
@@ -124,6 +136,7 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        unregisterBatteryReceiver();
         NokiaClient.get(this).removeListener(this);
     }
 
@@ -168,6 +181,58 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     public void setBatteryPercent(CharSequence text) {
         if (tvBatteryPercent != null) {
             tvBatteryPercent.setText(text != null ? text : "");
+        }
+    }
+
+    /**
+     * 注册电量广播，自动更新电池图标与百分比。
+     * 在 onCreate 末尾调用。
+     */
+    protected void registerBatteryReceiver() {
+        if (batteryReceiver != null) return;
+        batteryReceiver = new BroadcastReceiver() {
+            @Override
+            public void onReceive(Context context, Intent intent) {
+                updateBatteryInfo(intent);
+            }
+        };
+        IntentFilter filter = new IntentFilter(Intent.ACTION_BATTERY_CHANGED);
+        registerReceiver(batteryReceiver, filter);
+        // 立即用 sticky broadcast 刷新一次
+        Intent sticky = registerReceiver(batteryReceiver, filter);
+        if (sticky != null) {
+            updateBatteryInfo(sticky);
+        }
+    }
+
+    protected void unregisterBatteryReceiver() {
+        if (batteryReceiver != null) {
+            unregisterReceiver(batteryReceiver);
+            batteryReceiver = null;
+        }
+    }
+
+    private void updateBatteryInfo(Intent intent) {
+        int level = intent.getIntExtra(BatteryManager.EXTRA_LEVEL, -1);
+        int scale = intent.getIntExtra(BatteryManager.EXTRA_SCALE, -1);
+        int status = intent.getIntExtra(BatteryManager.EXTRA_STATUS, BatteryManager.BATTERY_STATUS_UNKNOWN);
+        int percent = -1;
+        if (level >= 0 && scale > 0) {
+            percent = (int) (level * 100f / scale);
+        }
+        boolean charging = (status == BatteryManager.BATTERY_STATUS_CHARGING
+                || status == BatteryManager.BATTERY_STATUS_FULL);
+        // 电池图标：使用 NokiaBatteryDrawable 纯矢量绘制
+        if (tvBatteryIcon != null && percent >= 0) {
+            NokiaBatteryDrawable drawable = (NokiaBatteryDrawable) tvBatteryIcon.getDrawable();
+            if (drawable == null) {
+                drawable = new NokiaBatteryDrawable(this);
+                tvBatteryIcon.setImageDrawable(drawable);
+            }
+            drawable.setBatteryState(percent, charging);
+        }
+        if (tvBatteryPercent != null && percent >= 0) {
+            tvBatteryPercent.setText(percent + "%");
         }
     }
 
@@ -237,6 +302,12 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     }
 
     @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        Log.d(TAG, "onWindowFocusChanged hasFocus=" + hasFocus + " activity=" + getClass().getSimpleName());
+    }
+
+    @Override
     public boolean dispatchKeyEvent(KeyEvent event) {
         int keyCode = event.getKeyCode();
         long now = SystemClock.uptimeMillis();
@@ -249,6 +320,10 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
             lastDownTime = now;
 
             int action = NokiaClient.get(this).getKeyBinding().resolveAction(keyCode);
+            Log.d(TAG, "dispatchKeyEvent keyCode=" + keyCode
+                    + " repeat=" + event.getRepeatCount()
+                    + " resolvedAction=" + action
+                    + " source=" + NokiaClient.get(this).getConfigSource());
             if (action >= 0) {
                 lastDownHandled = onAction(action);
                 if (lastDownHandled) {
