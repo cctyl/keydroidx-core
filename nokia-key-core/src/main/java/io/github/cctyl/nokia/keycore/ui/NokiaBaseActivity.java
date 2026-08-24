@@ -33,12 +33,15 @@ import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.R;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyBinding;
+import io.github.cctyl.nokia.keycore.ui.page.NokiaFocusHost;
+import io.github.cctyl.nokia.keycore.ui.page.NokiaPage;
+import io.github.cctyl.nokia.keycore.ui.page.NokiaPageHost;
 
 /**
  * 诺基亚复古风格基类 Activity。
  * 封装 240dp 基准复古骨架、标题栏、三段式软键条、主题/字体自动应用与按键分发。
  */
-public abstract class NokiaBaseActivity extends AppCompatActivity implements NokiaClient.OnConfigChangedListener {
+public abstract class NokiaBaseActivity extends AppCompatActivity implements NokiaClient.OnConfigChangedListener, NokiaPageHost {
 
     private static final String TAG = "NokiaBaseActivity";
     private static final long DEBOUNCE_MS = 60;
@@ -254,6 +257,37 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         if (tvSoftRight != null) tvSoftRight.setText(text != null ? text : "");
     }
 
+    /**
+     * 通用滚动跟随辅助方法：确保目标子视图 {@code target} 完全处于 {@code scroll} 的可视区内。
+     * <p>
+     * 支持单层列表与任意多层嵌套容器（例如网格或嵌套 LinearLayout），
+     * 自动循环累加父级视图的 top 偏移量，计算出相对于 ScrollView 的真实垂直坐标并平滑滚动。
+     *
+     * @param scroll 滚动容器
+     * @param target 需要滚入可视区的子视图
+     */
+    public void smoothScrollToVisible(@Nullable android.widget.ScrollView scroll, @Nullable View target) {
+        if (scroll == null || target == null) return;
+        scroll.post(() -> {
+            if (isDestroyed() || isFinishing()) return;
+            int scrollY = scroll.getScrollY();
+            int itemTop = 0;
+            View current = target;
+            while (current != null && current != scroll && current.getParent() instanceof View) {
+                itemTop += current.getTop();
+                current = (View) current.getParent();
+            }
+            int itemBottom = itemTop + target.getHeight();
+            int svHeight = scroll.getHeight();
+            if (svHeight <= 0) return;
+            if (itemTop < scrollY) {
+                scroll.smoothScrollTo(0, itemTop);
+            } else if (itemBottom > scrollY + svHeight) {
+                scroll.smoothScrollTo(0, itemBottom - svHeight);
+            }
+        });
+    }
+
     @Override
     public void onKeysChanged(@NonNull NokiaKeyBinding binding, @NonNull NokiaClient.ConfigSource source) {
         // 供子类按需重写
@@ -345,8 +379,80 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         return super.dispatchKeyEvent(event);
     }
 
+    /**
+     * 获取当前前台活跃的页面契约（Fragment 或 View）。
+     * 默认尝试从 SupportFragmentManager 获取当前可见的 Fragment；子类亦可重写返回自定义页面对象。
+     */
+    @Nullable
+    protected NokiaPage getCurrentPage() {
+        if (this instanceof NokiaPage) {
+            return (NokiaPage) this;
+        }
+        for (androidx.fragment.app.Fragment f : getSupportFragmentManager().getFragments()) {
+            if (f != null && f.isVisible() && f instanceof NokiaPage) {
+                return (NokiaPage) f;
+            }
+        }
+        return null;
+    }
+
+    @Override
+    public void refreshPageBar() {
+        NokiaPage page = getCurrentPage();
+        if (page != null) {
+            CharSequence title = page.getPageTitle();
+            if (title != null) {
+                setPageTitle(title);
+            }
+            setSoftKeys(page.getSoftLeftText(), page.getSoftCenterText(), page.getSoftRightText());
+        }
+    }
+
+    @Override
+    public void exitCurrent() {
+        if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
+            getSupportFragmentManager().popBackStack();
+        } else {
+            onBackPressed();
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        NokiaPage page = getCurrentPage();
+        if (page != null && page.onBack()) {
+            return;
+        }
+        super.onBackPressed();
+    }
+
     @CallSuper
     protected boolean onAction(int action) {
+        NokiaPage page = getCurrentPage();
+        if (page != null) {
+            boolean handled = false;
+            switch (action) {
+                case NokiaKeyAction.UP:
+                case NokiaKeyAction.DOWN:
+                case NokiaKeyAction.LEFT:
+                case NokiaKeyAction.RIGHT:
+                    handled = page.onDirection(action);
+                    break;
+                case NokiaKeyAction.SELECT:
+                    handled = page.onSelect();
+                    break;
+                case NokiaKeyAction.SOFT_LEFT:
+                    handled = page.onSoftLeft();
+                    break;
+                case NokiaKeyAction.SOFT_RIGHT:
+                    handled = page.onSoftRight();
+                    break;
+            }
+            if (handled) {
+                return true;
+            }
+        }
+
         if (action == NokiaKeyAction.SOFT_RIGHT) {
             finish();
             return true;

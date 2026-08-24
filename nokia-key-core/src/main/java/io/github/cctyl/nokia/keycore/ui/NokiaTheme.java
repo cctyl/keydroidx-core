@@ -7,6 +7,8 @@ import android.graphics.drawable.GradientDrawable;
 
 import androidx.annotation.ColorInt;
 
+import io.github.cctyl.nokia.keycore.NokiaClient;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -128,6 +130,12 @@ public class NokiaTheme {
             theme = THEMES.get(THEME_CLASSIC_BLUE);
         }
         return theme;
+    }
+
+    public static Drawable createSelectionDrawable(Context context, float radiusDp) {
+        float density = context != null ? context.getResources().getDisplayMetrics().density : 1f;
+        ThemeDef theme = context != null ? NokiaClient.get(context).getCurrentTheme() : getTheme(THEME_CLASSIC_BLUE);
+        return theme.createSelectedRowDrawable(radiusDp * density);
     }
 
     public static Map<String, ThemeDef> getAllThemes() {
