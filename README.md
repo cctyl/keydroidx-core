@@ -70,32 +70,21 @@ class MyActivity : NokiaBaseActivity() {
 
 > **要点**：顶栏 / 状态栏 / 软键栏是基类统一绘制并随主题热切换的，各页面**不要**自绘顶栏或硬编码电量百分比；需要实时电量就调 `registerBatteryReceiver()`（基类已实现，`onDestroy` 会自动反注册）。
 
-### 3. 方式二：使用 `NokiaKeyClient` 独立集成
+### 3. 文档目录
 
-```java
-// 1. 获取按键配置
-NokiaKeyBinding binding = NokiaClient.get(context).getKeyBinding();
+详细文档按模块拆分在 [`docs/`](./docs/README.md)，API 细化到每个公开方法，从索引进入：
 
-// 2. 解析 KeyEvent 为物理语义动作
-@Override
-public boolean dispatchKeyEvent(KeyEvent event) {
-    if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
-        int action = binding.resolveAction(event.getKeyCode());
-        switch (action) {
-            case NokiaKeyAction.SELECT:
-                // 处理确定
-                return true;
-            case NokiaKeyAction.CALL:
-                // 处理拨号
-                return true;
-        }
-    }
-    return super.dispatchKeyEvent(event);
-}
-
-// 3. 打开配键向导
-NokiaKeyWizardActivity.start(this);
-```
+| 主题 | 文档 |
+|------|------|
+| 快速接入 | [01-getting-started](./docs/01-getting-started.md) |
+| 配置同步与三级降级 | [02-client](./docs/02-client.md) |
+| 按键模型 | [03-key-model](./docs/03-key-model.md) |
+| 页面骨架 Activity | [04-base-activity](./docs/04-base-activity.md) |
+| 页面框架 Fragment | [05-page-framework](./docs/05-page-framework.md) |
+| 列表焦点控制 | [06-list-focus](./docs/06-list-focus.md) |
+| 标准弹窗 | [07-dialogs](./docs/07-dialogs.md) |
+| 主题·字体·图标 | [08-theme-font-icons](./docs/08-theme-font-icons.md) |
+| 配键向导 | [09-key-wizard](./docs/09-key-wizard.md) |
 
 ---
 
