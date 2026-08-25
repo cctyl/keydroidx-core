@@ -37,46 +37,44 @@
 
 ### 2. 方式一：继承 `NokiaBaseActivity`（最简模式）
 
-继承 `NokiaBaseActivity` 可自动拥有复古标题栏、底栏装配及按键分发：
+继承 `NokiaBaseActivity` 即可自动获得生态统一的复古骨架——**顶栏（标题图标 + 标题 + 信号 / 电量状态栏）与底部三段式软键栏均由基类布局 `activity_nokia_base` 统一提供，各页面共用，子类无需自行绘制**，只负责装配文案与处理按键：
 
-```java
-public class MyActivity extends NokiaBaseActivity {
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_my);
+```kotlin
+class MyActivity : NokiaBaseActivity() {
 
-        // 设置页面标题与底部软键文案
-        setPageTitle("我的应用");
-        setBottomBar("选项", "确定", "返回");
+    // ① 返回内容区布局；基类会把它 inflate 进统一骨架的 contentContainer
+    //    切勿在子类里再调 setContentView()，否则会顶掉顶栏/软键栏
+    override fun getContentLayoutRes(): Int = R.layout.activity_my
+
+    override fun onInitViews() {
+        // ② 装配顶栏标题 / 图标与软键文案
+        setPageTitle("我的应用")
+        setTitleIcon(NokiaIcons.ICON_HOME)
+        setStatusBarVisible(true)
+        // ③ 状态栏电量：调 registerBatteryReceiver() 自动刷新图标与百分比，勿硬编码
+        registerBatteryReceiver()
+        setSoftKeys("选项", "确定", "返回")
     }
 
-    @Override
-    protected boolean onActionSoftLeft() {
-        // 处理左软键
-        return true;
-    }
-
-    @Override
-    protected boolean onActionSelect() {
-        // 处理确定键
-        return true;
-    }
-
-    @Override
-    protected boolean onActionSoftRight() {
-        // 处理右软键
-        finish();
-        return true;
+    // ④ 所有物理键统一走 onAction(action: Int)，按 NokiaKeyAction 常量分派
+    override fun onAction(action: Int): Boolean {
+        return when (action) {
+            NokiaKeyAction.SOFT_LEFT -> { /* 左软键：选项 */ true }
+            NokiaKeyAction.SELECT   -> { /* 确定 */ true }
+            NokiaKeyAction.SOFT_RIGHT -> { finish(); true }
+            else -> super.onAction(action)   // 默认 SOFT_RIGHT=finish，方向键交基类
+        }
     }
 }
 ```
+
+> **要点**：顶栏 / 状态栏 / 软键栏是基类统一绘制并随主题热切换的，各页面**不要**自绘顶栏或硬编码电量百分比；需要实时电量就调 `registerBatteryReceiver()`（基类已实现，`onDestroy` 会自动反注册）。
 
 ### 3. 方式二：使用 `NokiaKeyClient` 独立集成
 
 ```java
 // 1. 获取按键配置
-NokiaKeyBinding binding = NokiaKeyClient.get(context).getBinding();
+NokiaKeyBinding binding = NokiaClient.get(context).getKeyBinding();
 
 // 2. 解析 KeyEvent 为物理语义动作
 @Override
@@ -84,10 +82,10 @@ public boolean dispatchKeyEvent(KeyEvent event) {
     if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
         int action = binding.resolveAction(event.getKeyCode());
         switch (action) {
-            case NokiaKeyAction.ACTION_SELECT:
+            case NokiaKeyAction.SELECT:
                 // 处理确定
                 return true;
-            case NokiaKeyAction.ACTION_CALL:
+            case NokiaKeyAction.CALL:
                 // 处理拨号
                 return true;
         }
