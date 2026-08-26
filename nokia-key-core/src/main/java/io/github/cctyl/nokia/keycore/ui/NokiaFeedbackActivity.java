@@ -98,6 +98,13 @@ public class NokiaFeedbackActivity extends NokiaBaseActivity {
         refreshValues();
         refreshLogInfo();
         setFocusRow(ROW_TYPE); // 规范 §54：每屏定义 initialFocus
+        if (rows[ROW_TYPE] != null) {
+            rows[ROW_TYPE].post(() -> {
+                if (rows[ROW_TYPE] != null) {
+                    rows[ROW_TYPE].requestFocus();
+                }
+            });
+        }
     }
 
     @Override
@@ -107,6 +114,9 @@ public class NokiaFeedbackActivity extends NokiaBaseActivity {
         applyThemeColors();
         for (int i = 0; i < ROW_COUNT; i++) {
             applyRowBackground(i, i == focusRow);
+        }
+        if (focusRow >= 0 && focusRow < ROW_COUNT && rows[focusRow] != null) {
+            rows[focusRow].requestFocus();
         }
         refreshValues();
         refreshLogInfo();
@@ -289,6 +299,7 @@ public class NokiaFeedbackActivity extends NokiaBaseActivity {
         View v = rows[focusRow];
         if (v != null) {
             applyRowBackground(focusRow, true);
+            v.requestFocus();
             smoothScrollToVisible(findViewById(R.id.feedbackScroll), v);
         }
     }

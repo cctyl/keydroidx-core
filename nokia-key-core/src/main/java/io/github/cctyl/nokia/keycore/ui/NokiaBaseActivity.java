@@ -135,24 +135,50 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         }
         onFontChanged(NokiaClient.get(this).getCurrentFontId(), NokiaClient.get(this).getCurrentFontScale());
 
-        // 确保 DecorView 具备在 touch mode 下获焦能力，杜绝首次物理按键被 Android touch mode 吞掉
-        View decor = getWindow() != null ? getWindow().getDecorView() : null;
-        if (decor != null) {
-            decor.setFocusableInTouchMode(true);
-            decor.requestFocus();
-            decor.post(decor::requestFocus);
+        // 确保内容容器具备在 touch mode 下持焦能力
+        if (contentContainer != null) {
+            contentContainer.setFocusable(true);
+            contentContainer.setFocusableInTouchMode(true);
         }
+        ensureActiveFocus();
     }
 
     @Override
     protected void onResume() {
         super.onResume();
         // 从其他窗口/桌面返回时恢复持焦，防止 touch mode 导致首键失效
-        View decor = getWindow() != null ? getWindow().getDecorView() : null;
-        if (decor != null) {
-            decor.setFocusableInTouchMode(true);
-            decor.requestFocus();
-            decor.post(decor::requestFocus);
+        ensureActiveFocus();
+    }
+
+    @Override
+    public void onWindowFocusChanged(boolean hasFocus) {
+        super.onWindowFocusChanged(hasFocus);
+        if (hasFocus) {
+            // 窗口焦点就绪时精准激活焦点，杜绝系统 leaveTouchMode 吞噬首个物理按键
+            ensureActiveFocus();
+        }
+    }
+
+    /**
+     * 保证窗口内永远有 View 持有焦点，杜绝 Android 系统在 Touch Mode 下吞噬首个物理按键
+     */
+    public void ensureActiveFocus() {
+        View target = getCurrentFocus();
+        if (target == null) {
+            target = contentContainer != null ? contentContainer : (getWindow() != null ? getWindow().getDecorView() : null);
+        }
+        if (target != null) {
+            target.setFocusable(true);
+            target.setFocusableInTouchMode(true);
+            target.requestFocus();
+            final View fTarget = target;
+            target.post(() -> {
+                if (getCurrentFocus() == null) {
+                    fTarget.setFocusable(true);
+                    fTarget.setFocusableInTouchMode(true);
+                    fTarget.requestFocus();
+                }
+            });
         }
     }
 
@@ -353,12 +379,6 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         } else if (rootContainer != null) {
             NokiaFontManager.applyToViewTree(rootContainer);
         }
-    }
-
-    @Override
-    public void onWindowFocusChanged(boolean hasFocus) {
-        super.onWindowFocusChanged(hasFocus);
-        Log.d(TAG, "onWindowFocusChanged hasFocus=" + hasFocus + " activity=" + getClass().getSimpleName());
     }
 
     @Override

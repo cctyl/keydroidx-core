@@ -100,6 +100,16 @@ public void smoothScrollToVisible(@Nullable ScrollView scroll, @Nullable View ta
 ```
 祖先节点坐标累加算法计算 target 相对 ScrollView 的真实 Y，超出可视区时平滑滚动到刚好可见。多层嵌套布局中**不要直接用 `getTop()`**，一律走此方法（Fragment 侧的同名方法最终也委托到这里 / `NokiaListFocusHelper` 的静态版本）。
 
+## 焦点生命周期与防吞键机制（自动，无需子类干预）
+
+```java
+@Override public void onWindowFocusChanged(boolean hasFocus)
+protected void ensureActiveFocus()
+```
+- **机制**：Android 在触摸模式（Touch Mode）下，若窗口处于无焦点状态（`findFocus() == null`），首个方向键（UP/DOWN/LEFT/RIGHT/SELECT）会被系统用于退出触摸模式并寻焦而吞掉。
+- **基类防护**：`NokiaBaseActivity` 在 `onWindowFocusChanged(true)` 和 `onResume()` 时自动执行 `ensureActiveFocus()`，确保 `midPanel`（内容容器）或可用视图始终在 Touch Mode 下持有焦点，彻底杜绝首键被吞。
+- 详情与规范请参阅根目录 `NOKIA_DEVELOPMENT_RULES.md`。
+
 ## 主题与字体热更新（自动，无需子类干预）
 
 ```java
