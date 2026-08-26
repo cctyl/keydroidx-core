@@ -10,6 +10,7 @@
 | `NokiaFeedbackConfig` | 全局配置（服务地址 / 端口 / 私钥 / 应用名 / 版本 / 日志目录） |
 | `NokiaFeedback` | 门面：`init()` 注册配置、`submit()` 上传 |
 | `NokiaFeedbackActivity` | SDK 内置复古反馈页，开箱即用 |
+| `NokiaTextInputActivity` | 全屏文本输入页（反馈页的联系方式/问题描述编辑器，宿主也可复用） |
 | `KdfbUploader` | 协议实现：meta 组装、日志 zip 打包、报文签名与 TCP 收发 |
 | `DeviceInfoCollector` | 设备信息采集（extras 默认值） |
 | `NokiaEd25519` | 纯 Java Ed25519 签名（零第三方依赖，已过 RFC 8032 测试向量） |
@@ -80,11 +81,15 @@ Manifest 权限（必须）：
 继承 `NokiaBaseActivity`，自动获得 240dp 视口、点阵字体、主题跟随：
 
 - **问题类型**：值选择器行，LEFT/RIGHT 快速切换或 CENTER 弹出选项菜单（写入 extras 的 `feedback_type`）；
-- **联系方式 / 问题描述**：必填。CENTER 弹出复古输入对话框编辑，为空提交时自动定位并引导填写；
+- **联系方式 / 问题描述**：必填。CENTER 进入全屏输入页 `NokiaTextInputActivity`
+  （大输入区、物理键盘直输、软键 确定/返回）；为空提交时自动定位到对应行并打开输入页引导填写；
+- **主题跟随**：页面背景、行卡片、焦点高亮、文字颜色全部取自
+  `NokiaClient.getCurrentTheme()`，与桌面当前主题实时一致（onResume 重取）；
 - **附带运行日志**：强制开启不可关闭，行内实时显示「N 个文件 / X KB」，
   超限时提示「过大仅保留最新」；
 - 提交中按钮置灰防连点；成功 Toast 后自动关闭；失败提示手动重试；
-- 物理软键适配：左软键提交、右软键返回（按当前按键绑定动态解析）。
+- 物理按键适配：方向键逐行移动焦点（不循环）、类型行 LEFT/RIGHT 切值、
+  CENTER 激活当前行；左软键提交、右软键返回（按当前按键绑定动态解析）。
 
 未调用 `init()` 或配置无效时，页面提交会给出明确错误提示。
 
