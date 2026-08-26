@@ -14,5 +14,16 @@
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
             android:theme="@style/Theme.NokiaKeyCore" />
+
+        <!-- 通用反馈页：宿主 APP 自行决定入口并跳转 -->
+        <activity
+            android:name="io.github.cctyl.nokia.keycore.ui.NokiaTextInputActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+        <activity
+            android:name="io.github.cctyl.nokia.keycore.ui.NokiaFeedbackActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:theme="@style/Theme.NokiaKeyCore" />
     </application>
 </manifest>

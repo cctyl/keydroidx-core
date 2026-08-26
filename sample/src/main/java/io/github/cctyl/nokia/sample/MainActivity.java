@@ -8,8 +8,13 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import java.io.File;
+import java.io.FileWriter;
+
 import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.NokiaKeyClient;
+import io.github.cctyl.nokia.keycore.feedback.NokiaFeedback;
+import io.github.cctyl.nokia.keycore.feedback.NokiaFeedbackConfig;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyBinding;
 import io.github.cctyl.nokia.keycore.ui.NokiaKeyWizardActivity;
@@ -24,6 +29,7 @@ public class MainActivity extends AppCompatActivity {
     private TextView tvKeyInfo;
     private TextView btnWizard;
     private TextView btnTestSelect;
+    private TextView btnFeedback;
     private TextView btnExit;
 
     private NokiaKeyBinding keyBinding;
@@ -37,7 +43,20 @@ public class MainActivity extends AppCompatActivity {
         tvKeyInfo = findViewById(R.id.tvKeyInfo);
         btnWizard = findViewById(R.id.btnWizard);
         btnTestSelect = findViewById(R.id.btnTestSelect);
+        btnFeedback = findViewById(R.id.btnFeedback);
         btnExit = findViewById(R.id.btnExit);
+
+        writeDemoLog();
+        initFeedback();
+
+        btnFeedback.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // 入口由宿主自行决定：直接跳转 SDK 内置复古反馈页
+                startActivity(new android.content.Intent(MainActivity.this,
+                        io.github.cctyl.nokia.keycore.ui.NokiaFeedbackActivity.class));
+            }
+ });
 
         btnWizard.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -58,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 finish();
             }
-        });
+               });
 
         // 注册按键变化监听
         NokiaClient.get(this).registerListener(new NokiaClient.OnConfigChangedListener() {
@@ -76,6 +95,30 @@ public class MainActivity extends AppCompatActivity {
             public void onFontChanged(String fontId, float fontScale) {
             }
         });
+    }
+
+    /** 写一条演示日志，验证日志打包功能 */
+    private void writeDemoLog() {
+        try {
+            File logDir = new File(getExternalFilesDir(null), "logs");
+            if (!logDir.exists()) logDir.mkdirs();
+            FileWriter fw = new FileWriter(new File(logDir, "app.log"), true);
+            fw.append("[").append(String.valueOf(System.currentTimeMillis()))
+              .append("] sample running, model=").append(android.os.Build.MODEL).append("\n");
+            fw.close();
+        } catch (Exception ignored) {
+        }
+    }
+
+    /** 初始化反馈功能：宿主 APP 启动时注册一次（值来自 BuildConfig，密钥不入库） */
+    private void initFeedback() {
+        NokiaFeedback.init(new NokiaFeedbackConfig(
+                BuildConfig.KDFB_SERVER_HOST,
+                BuildConfig.KDFB_SERVER_PORT,
+                BuildConfig.KDFB_PRIVATE_KEY,
+                "nokia-sample",
+                BuildConfig.VERSION_NAME,
+                null)); // null = 使用默认日志目录 Android/data/<pkg>/files/logs
     }
 
     @Override

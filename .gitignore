@@ -28,3 +28,7 @@ sample/test.jks
 # OS
 .DS_Store
 Thumbs.db
+
+# Feedback private keys (CRITICAL SECURITY)
+feedback_priv.key
+*.priv.key

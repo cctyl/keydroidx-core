@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- 反馈上报需要联网（接入 SDK 反馈能力的应用必须声明） -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:label="按键机SDK测试"
         android:theme="@style/Theme.NokiaKeyCore">

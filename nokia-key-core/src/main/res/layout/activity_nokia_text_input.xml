@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 全屏文本输入页：大输入区，适合物理键盘长文本输入 -->
+<EditText xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/editInput"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_nokia_page"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:gravity="top|start"
+    android:hint=""
+    android:imeOptions="flagNoFullscreen"
+    android:inputType="textMultiLine"
+    android:minHeight="220dp"
+    android:padding="12dp"
+    android:textSize="15sp" />
