@@ -195,6 +195,7 @@ public class NokiaListFocusHelper {
             if (ctx != null) {
                 selectedView.setBackground(NokiaTheme.createSelectionDrawable(ctx, 4));
             }
+            selectedView.setFocusableInTouchMode(true);
             selectedView.requestFocus();
             if (autoScroll && scrollView != null) {
                 smoothScrollToVisible(scrollView, selectedView);

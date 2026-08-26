@@ -134,6 +134,26 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
             onThemeChanged(NokiaClient.get(this).getCurrentThemeId(), currentTheme);
         }
         onFontChanged(NokiaClient.get(this).getCurrentFontId(), NokiaClient.get(this).getCurrentFontScale());
+
+        // 确保 DecorView 具备在 touch mode 下获焦能力，杜绝首次物理按键被 Android touch mode 吞掉
+        View decor = getWindow() != null ? getWindow().getDecorView() : null;
+        if (decor != null) {
+            decor.setFocusableInTouchMode(true);
+            decor.requestFocus();
+            decor.post(decor::requestFocus);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        // 从其他窗口/桌面返回时恢复持焦，防止 touch mode 导致首键失效
+        View decor = getWindow() != null ? getWindow().getDecorView() : null;
+        if (decor != null) {
+            decor.setFocusableInTouchMode(true);
+            decor.requestFocus();
+            decor.post(decor::requestFocus);
+        }
     }
 
     @Override
