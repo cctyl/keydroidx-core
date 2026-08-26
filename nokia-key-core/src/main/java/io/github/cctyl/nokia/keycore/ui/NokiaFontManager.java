@@ -80,6 +80,41 @@ public class NokiaFontManager {
 
     private static final int TAG_ORIGINAL_TEXT_SIZE = 0x7f099999;
 
+    /**
+     * 以「未缩放的设计字号」设置文字大小，按当前桌面缩放基准立即生效。
+     * 供动态创建的 TextView 使用，保证与 XML 静态文本同一套缩放语义：
+     * 实际字号 = 设计字号 × fontScale，且设计值只记录一次、可重复应用不漂移。
+     */
+    public static void setTextSize(TextView tv, int unit, float size) {
+        if (tv == null) return;
+        float designPx;
+        switch (unit) {
+            case android.util.TypedValue.COMPLEX_UNIT_SP:
+            case android.util.TypedValue.COMPLEX_UNIT_DIP:
+                designPx = android.util.TypedValue.applyDimension(
+                        unit, size, tv.getResources().getDisplayMetrics());
+                break;
+            default:
+                designPx = size;
+                break;
+        }
+        tv.setTag(TAG_ORIGINAL_TEXT_SIZE, designPx);
+        applyScaledTextSize(tv);
+    }
+
+    /** 按已记录的设计字号 × 当前缩放应用实际字号（无记录则以当前字号为设计值） */
+    private static void applyScaledTextSize(TextView tv) {
+        Object tag = tv.getTag(TAG_ORIGINAL_TEXT_SIZE);
+        float designPx;
+        if (tag instanceof Float) {
+            designPx = (Float) tag;
+        } else {
+            designPx = tv.getTextSize(); // 首次遇到：XML 布局在缩放前填充，当前值即设计值
+            tv.setTag(TAG_ORIGINAL_TEXT_SIZE, designPx);
+        }
+        tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, designPx * sFontScale);
+    }
+
     private static void applyTypefaceRecursively(View view, Typeface tf, float scale) {
         if (view == null) return;
         if (view instanceof TextView) {
@@ -92,18 +127,10 @@ public class NokiaFontManager {
             }
             tv.setTypeface(tf);
 
-            // 字体大小缩放
-            if (scale > 0.1f && Math.abs(scale - 1.0f) > 0.01f) {
-                Object tag = tv.getTag(TAG_ORIGINAL_TEXT_SIZE);
-                float originalPx;
-                if (tag instanceof Float) {
-                    originalPx = (Float) tag;
-                } else {
-                    originalPx = tv.getTextSize(); // 获取原始 px 大小
-                    tv.setTag(TAG_ORIGINAL_TEXT_SIZE, originalPx);
-                }
-                tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, originalPx * scale);
-            }
+            // 字体大小缩放：始终按 设计字号×scale 应用。
+            // 不能因 scale≈1 而跳过——否则从放大状态切回 100% 时旧字号无法还原；
+            // 也不能直接乘当前字号——否则动态创建的 View 会被重复放大（有的字大有的字小）。
+            applyScaledTextSize(tv);
         } else if (view instanceof ViewGroup) {
             ViewGroup vg = (ViewGroup) view;
             for (int i = 0; i < vg.getChildCount(); i++) {
