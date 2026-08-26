@@ -50,12 +50,12 @@ public class NokiaTextInputActivity extends NokiaBaseActivity {
     @Override
     protected void onInitViews() {
         Intent it = getIntent();
-        applyTheme();
         String title = it.getStringExtra(EXTRA_TITLE);
         setPageTitle(title == null ? "输入" : title);
         setSoftKeys("确定", "", "返回");
 
         editInput = findViewById(R.id.editInput);
+        applyTheme();
 
         String hint = it.getStringExtra(EXTRA_HINT);
         if (hint != null) editInput.setHint(hint);
@@ -75,6 +75,7 @@ public class NokiaTextInputActivity extends NokiaBaseActivity {
 
     /** 输入区按当前主题着色 */
     private void applyTheme() {
+        if (editInput == null) return;
         NokiaTheme.ThemeDef theme = NokiaClient.get(this).getCurrentTheme();
         GradientDrawable bg = new GradientDrawable(
                 GradientDrawable.Orientation.TOP_BOTTOM,
@@ -87,7 +88,10 @@ public class NokiaTextInputActivity extends NokiaBaseActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        editInput.requestFocus();
+        applyTheme();
+        if (editInput != null) {
+            editInput.requestFocus();
+        }
     }
 
     /**
