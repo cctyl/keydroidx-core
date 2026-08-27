@@ -17,10 +17,9 @@ android {
         versionCode 1
         versionName "1.0"
 
-        // KDFB 反馈服务配置：由接入方提供，密钥绝不入库（见 .gitignore）
-        buildConfigField "String", "KDFB_SERVER_HOST", '"' + (localProps.getProperty('KDFB_SERVER_HOST') ?: '') + '"'
-        buildConfigField "int", "KDFB_SERVER_PORT", localProps.getProperty('KDFB_SERVER_PORT') ?: '9421'
-        buildConfigField "String", "KDFB_PRIVATE_KEY", '"' + (localProps.getProperty('KDFB_PRIVATE_KEY') ?: '') + '"'
+        // 反馈服务配置：由接入方提供，密钥绝不入库（见 .gitignore）
+        buildConfigField "String", "FEEDBACK_UPLOAD_URL", '"' + (localProps.getProperty('FEEDBACK_UPLOAD_URL') ?: 'http://127.0.0.1:9421/upload') + '"'
+        buildConfigField "String", "FEEDBACK_SECRET_KEY", '"' + (localProps.getProperty('FEEDBACK_SECRET_KEY') ?: '') + '"'
     }
 
     buildFeatures {

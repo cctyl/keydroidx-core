@@ -6,166 +6,147 @@ import android.os.Looper;
 
 import java.io.File;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import io.github.cctyl.nokia.common.log.NokiaLog;
 
 /**
- * 反馈上报统一入口（门面类）。
+ * 反馈上报门面（单例/静态方法）。
  *
- * <h3>接入方式</h3>
- * <ol>
- *   <li>宿主 APP 启动时初始化一次（值来自宿主自己的 BuildConfig，密钥绝不入库）：</li>
- * </ol>
- * <pre>{@code
- * NokiaFeedback.init(new NokiaFeedbackConfig(
- *         BuildConfig.KDFB_SERVER_HOST,
- *         BuildConfig.KDFB_SERVER_PORT,
- *         BuildConfig.KDFB_PRIVATE_KEY,
- *         "myapp",                      // 与服务端登记一致
- *         BuildConfig.VERSION_NAME,
- *         null));                       // 日志目录，null = 默认 Android/data/<包名>/files/log
- * }</pre>
- * <p>自定义 UI 时直接调用 {@link #submit(Context, String, String, Map, boolean, Callback)}。</p>
- *
- * <h3>行为说明</h3>
- * <ul>
- *   <li>全部耗时操作在后台线程执行，结果回调切回主线程；</li>
- *   <li>失败不自动重试（服务端有限流，重试只会加剧失败），由调用方提示用户手动重试；</li>
- *   <li>服务端对任何校验失败均静默断连，因此无法区分失败原因，统一提示"提交失败"即可。</li>
- * </ul>
+ * <p>宿主接入示例：</p>
+ * <pre>
+ *   NokiaFeedback.init(new NokiaFeedbackConfig(
+ *       BuildConfig.FEEDBACK_UPLOAD_URL,
+ *       BuildConfig.FEEDBACK_SECRET_KEY,
+ *       "myapp",
+ *       BuildConfig.VERSION_NAME,
+ *       null)); // null = 使用默认日志目录 Android/data/&lt;包名&gt;/log
+ * </pre>
  */
 public class NokiaFeedback {
+
+    private static final String TAG = "NokiaFeedback";
+    private static volatile NokiaFeedbackConfig sCachedConfig;
+    private static final ExecutorService sExecutor = Executors.newSingleThreadExecutor();
+    private static final Handler sMainHandler = new Handler(Looper.getMainLooper());
 
     protected NokiaFeedback() {
     }
 
-    /** 反馈提交结果回调（主线程） */
-    public interface Callback {
-        /**
-         * @param success true = 服务端确认成功
-         */
-        void onResult(boolean success);
-    }
-
-    private static volatile NokiaFeedbackConfig sConfig;
-
-    /** 宿主 APP 启动时调用一次。传入 null 可清除配置（主要用于测试）。 */
+    /**
+     * 注册全局配置（APP 启动时调用一次）。
+     */
     public static void init(NokiaFeedbackConfig config) {
-        sConfig = config;
-    }
-
-    public static NokiaFeedbackConfig getConfig() {
-        return sConfig;
-    }
-
-    public static boolean isConfigured() {
-        NokiaFeedbackConfig c = sConfig;
-        return c != null && c.isValid();
+        sCachedConfig = config;
     }
 
     /**
-     * 解析日志目录：配置覆盖优先，否则使用统一约定目录
-     * {@code Android/data/<包名>/files/log}（即 {@link NokiaLog#getDefaultLogDir(Context)}）。
+     * 获取已注册的配置，未注册返回 null。
+     */
+    public static NokiaFeedbackConfig getConfig() {
+        return sCachedConfig;
+    }
+
+    /**
+     * 检查当前是否已完成有效配置。
+     */
+    public static boolean isConfigured() {
+        NokiaFeedbackConfig cfg = sCachedConfig;
+        return cfg != null && cfg.isValid();
+    }
+
+    /**
+     * 解析实际使用的日志目录。
+     * 如果配置中指定了 logDir 则优先使用；否则使用默认目录 Android/data/<包名>/log
      */
     public static File resolveLogDir(Context context) {
-        NokiaFeedbackConfig c = sConfig;
-        if (c != null && c.logDir != null) {
-            return c.logDir;
+        NokiaFeedbackConfig cfg = sCachedConfig;
+        if (cfg != null && cfg.logDir != null) {
+            return cfg.logDir;
         }
-        return NokiaLog.getDefaultLogDir(context);
+        return context != null ? NokiaLog.getDefaultLogDir(context) : null;
     }
 
     /**
-     * 使用全局配置提交反馈（异步）。
+     * 异步提交反馈。
      *
-     * @param contact   用户联系方式（必填）
-     * @param comment   问题描述（必填）
-     * @param extraInfo 附加字段（选填），将与默认设备信息合并
-     * @param attachLog 是否附带日志
-     * @return false 表示配置缺失/参数非法未发起提交（不会触发回调）
+     * @param context   上下文，用于兜底解析默认日志目录及设备信息 extras
+     * @param contact   联系方式（QQ / 微信 / 邮箱等，必填）
+     * @param comment   问题描述（可选）
+     * @param extraInfo 自定义额外信息（将与系统设备信息合并）
+     * @param attachLog 是否附带运行日志
+     * @param callback  主线程结果回调
      */
-    public static boolean submit(Context context, String contact, String comment,
-                                 Map<String, Object> extraInfo, boolean attachLog,
-                                 Callback callback) {
-        NokiaFeedbackConfig c = sConfig;
-        if (c == null || !c.isValid() || isBlank(contact)) {
-            return false;
+    public static void submit(Context context,
+                              String contact,
+                              String comment,
+                              Map<String, Object> extraInfo,
+                              boolean attachLog,
+                              Callback callback) {
+        NokiaFeedbackConfig cfg = sCachedConfig;
+        if (cfg == null || !cfg.isValid()) {
+            NokiaLog.w(TAG, "submit aborted: NokiaFeedbackConfig not initialized or invalid");
+            if (callback != null) {
+                callback.onResult(false);
+            }
+            return;
         }
-        Map<String, Object> extras = DeviceInfoCollector.collectWithApp(context);
+
+        File logDir = resolveLogDir(context);
+
+        Map<String, Object> extras = DeviceInfoCollector.collect(context);
         if (extraInfo != null) {
             extras.putAll(extraInfo);
         }
+
         FeedbackRequest req = new FeedbackRequest(
-                c.host, c.port, c.privateKeyHex,
-                c.appName, c.appVersion,
-                contact, comment,
-                resolveLogDir(context), attachLog, extras);
-        return submit(req, callback);
+                cfg.uploadUrl,
+                cfg.secretKeyHex,
+                cfg.appName,
+                cfg.appVersion,
+                contact,
+                comment,
+                logDir,
+                attachLog,
+                extras);
+
+        doSubmit(req, callback);
     }
 
     /**
-     * 完整参数提交（异步）。日志打包、签名、网络发送均在后台线程执行。
-     *
-     * @return false 表示参数不合法未发起提交（不会触发回调）
+     * 底层提交方法，在独立单线程池中执行并在主线程回调。
      */
-    public static boolean submit(final FeedbackRequest request, final Callback callback) {
-        if (request == null || !request.isConfigValid()
-                || isBlank(request.appName) || isBlank(request.contact)) {
-            return false;
-        }
-        new Thread(new Runnable() {
+    public static void doSubmit(final FeedbackRequest req, final Callback callback) {
+        sExecutor.execute(new Runnable() {
             @Override
             public void run() {
-                boolean ok = doSubmit(request);
+                final boolean success = FeedbackUploader.submit(
+                        req.uploadUrl,
+                        req.secretKeyHex,
+                        req.appName,
+                        req.appVersion,
+                        req.contact,
+                        req.comment,
+                        req.attachLog ? req.logDir : null,
+                        req.extras);
+
                 if (callback != null) {
-                    mainHandler().post(new ResultRunnable(callback, ok));
+                    sMainHandler.post(new Runnable() {
+                        @Override
+                        public void run() {
+                            callback.onResult(success);
+                        }
+                    });
                 }
             }
-        }, "nokia-feedback").start();
-        return true;
+        });
     }
 
-    private static boolean doSubmit(FeedbackRequest req) {
-        try {
-            KdfbUploader.ZipResult zipRes = req.attachLog
-                    ? KdfbUploader.zipLogs(req.logDir) : null;
-            byte[] zip = zipRes != null ? zipRes.zipBytes : new byte[0];
-            String meta = KdfbUploader.buildMetaJson(
-                    req.appName, req.appVersion, req.contact, req.comment, req.extras);
-            return KdfbUploader.submit(req.host, req.port, req.privateKeyHex, meta, zip);
-        } catch (Throwable t) {
-            android.util.Log.w("NokiaFeedback", "submit failed: " + t);
-            return false;
-        }
-    }
-
-    private static boolean isBlank(String s) {
-        return s == null || s.trim().length() == 0;
-    }
-
-    private static Handler sMainHandler;
-
-    private static Handler mainHandler() {
-        synchronized (NokiaFeedback.class) {
-            if (sMainHandler == null) {
-                sMainHandler = new Handler(Looper.getMainLooper());
-            }
-            return sMainHandler;
-        }
-    }
-
-    private static final class ResultRunnable implements Runnable {
-        private final Callback callback;
-        private final boolean ok;
-
-        ResultRunnable(Callback callback, boolean ok) {
-            this.callback = callback;
-            this.ok = ok;
-        }
-
-        @Override
-        public void run() {
-            callback.onResult(ok);
-        }
+    /**
+     * 结果回调接口（保证在 Android 主线程派发）。
+     */
+    public interface Callback {
+        void onResult(boolean success);
     }
 }

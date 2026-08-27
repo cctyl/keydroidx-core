@@ -1,22 +1,21 @@
-# 10 · 反馈上报（KDFB）
+# 10 · 反馈上报（HTTP / HMAC-SHA256）
 
-> 一站式用户反馈能力：内置诺基亚风格反馈页 + 日志打包 + Ed25519 签名上传。
+> 一站式用户反馈能力：内置诺基亚风格反馈页 + 日志打包 + HMAC-SHA256 签名 HTTP 上传。
 > 宿主 APP 五分钟接入，密钥不入库、不进 SDK。
 
 ## 核心类
 
 | 类 | 职责 |
 |---|---|
-| `NokiaFeedbackConfig` | 全局配置（服务地址 / 端口 / 私钥 / 应用名 / 版本 / 日志目录） |
+| `NokiaFeedbackConfig` | 全局配置（上传 URL / 通信密钥 / 应用名 / 版本 / 日志目录） |
 | `NokiaFeedback` | 门面：`init()` 注册配置、`submit()` 上传 |
 | `NokiaFeedbackActivity` | SDK 内置复古反馈页，开箱即用 |
 | `NokiaTextInputActivity` | 全屏文本输入页（反馈页的联系方式/问题描述编辑器，宿主也可复用） |
-| `KdfbUploader` | 协议实现：meta 组装、日志 zip 打包、报文签名与 TCP 收发 |
+| `FeedbackUploader` | 协议实现：meta 组装、日志 zip 打包、HMAC-SHA256 签名与 HTTP POST 上传 |
 | `DeviceInfoCollector` | 设备信息采集（extras 默认值） |
-| `NokiaEd25519` | 纯 Java Ed25519 签名（零第三方依赖，已过 RFC 8032 测试向量） |
 | `NokiaLog` | SDK 内置零依赖文件日志器（对齐桌面架构，支持按天轮转、级别控制与崩溃同步落盘） |
 
-包路径统一为 `io.github.cctyl.nokia.keycore.feedback`、`.log.NokiaLog` 与 `.ui.NokiaFeedbackActivity`。
+包路径统一为 `io.github.cctyl.nokia.keycore.feedback`（或 `common.feedback`）、`.log.NokiaLog` 与 `.ui.NokiaFeedbackActivity`。
 
 ---
 
@@ -25,12 +24,11 @@
 ### ① 密钥与服务地址放 `local.properties`（该文件不进 Git）
 
 ```properties
-KDFB_SERVER_HOST=your.server.com
-KDFB_SERVER_PORT=9421
-KDFB_PRIVATE_KEY=<feedback_priv.key 文件里的一行 hex>
+FEEDBACK_UPLOAD_URL=http://your.server.com:9421/upload
+FEEDBACK_SECRET_KEY=<feedback_secret.key 文件里的 hex 字符串>
 ```
 
-> ⚠️ 私钥属于生态方分发物。任何情况下不要把它提交进 Git（含历史 commit）、
+> ⚠️ 通信密钥属于生态方分发物。任何情况下不要把它提交进 Git（含历史 commit）、
 > 不要写死在源码或示例里。CI 打包时存为 secret 环境变量注入，方式相同。
 
 ### ② 宿主 `build.gradle` 注入 BuildConfig（纯 SDK 零三方依赖）
@@ -42,23 +40,21 @@ if (f.exists()) localProps.load(new FileInputStream(f))
 
 android {
     defaultConfig {
-        buildConfigField "String", "KDFB_SERVER_HOST",
-            "\"${localProps.getProperty('KDFB_SERVER_HOST', '127.0.0.1')}\""
-        buildConfigField "int", "KDFB_SERVER_PORT",
-            "${localProps.getProperty('KDFB_SERVER_PORT', '9421')}"
-        buildConfigField "String", "KDFB_PRIVATE_KEY",
-            "\"${localProps.getProperty('KDFB_PRIVATE_KEY', '')}\""
+        buildConfigField "String", "FEEDBACK_UPLOAD_URL",
+            "\"${localProps.getProperty('FEEDBACK_UPLOAD_URL', 'http://127.0.0.1:9421/upload')}\""
+        buildConfigField "String", "FEEDBACK_SECRET_KEY",
+            "\"${localProps.getProperty('FEEDBACK_SECRET_KEY', '')}\""
     }
     buildFeatures { buildConfig true }
 }
 
 dependencies {
-    // 仅需依赖 nokia-key-core，禁止引入 BouncyCastle、OkHttp、协程等外部库
+    // 仅需依赖 nokia-key-core，禁止引入 OkHttp、协程等外部重型库
     implementation 'io.github.cctyl.nokia:nokia-key-core:1.0.0'
 }
 ```
 
-> 💡 **无 Key 友好性**：若本地未配置私钥，`KDFB_PRIVATE_KEY` 默认赋空字符串 `""`，**项目编译与核心功能 100% 正常**。仅在提交反馈时提示「反馈功能未配置」，不会崩溃。
+> 💡 **无 Key 友好性**：若本地未配置密钥，`FEEDBACK_SECRET_KEY` 默认赋空字符串 `""`，**项目编译与核心功能 100% 正常**。仅在提交反馈时提示「反馈功能未配置」，不会崩溃。
 
 ### ③ 初始化 + 入口跳转
 
@@ -78,9 +74,8 @@ class MyApplication : Application() {
         // 2. 初始化反馈能力（传入 null 自动与 NokiaLog 目录对齐）
         NokiaFeedback.init(
             NokiaFeedbackConfig(
-                BuildConfig.KDFB_SERVER_HOST,
-                BuildConfig.KDFB_SERVER_PORT,
-                BuildConfig.KDFB_PRIVATE_KEY,
+                BuildConfig.FEEDBACK_UPLOAD_URL,
+                BuildConfig.FEEDBACK_SECRET_KEY,
                 "myapp", // 应用标识（需与服务端登记的名称一致）
                 BuildConfig.VERSION_NAME,
                 null
@@ -104,9 +99,8 @@ public class MyApplication extends Application {
 
         // 2. 初始化反馈能力
         NokiaFeedback.init(new NokiaFeedbackConfig(
-                BuildConfig.KDFB_SERVER_HOST,
-                BuildConfig.KDFB_SERVER_PORT,
-                BuildConfig.KDFB_PRIVATE_KEY,
+                BuildConfig.FEEDBACK_UPLOAD_URL,
+                BuildConfig.FEEDBACK_SECRET_KEY,
                 "myapp",
                 BuildConfig.VERSION_NAME,
                 null)); // null 自动对齐 Android/data/<包名>/log
@@ -298,23 +292,22 @@ String 自动截断 200 字符，序列化后 extras 总量 ≤4096 字节）。
 
 ## 五、协议要点（排查问题用）
 
-报文为大端序二进制 TCP 协议（KDFB v1），细节见生态仓库
-`log_upload/android/README.md`。客户端侧需要知道的：
+上传接口采用标准 HTTP POST 协议与 HMAC-SHA256 签名鉴权：
 
-- **签名范围**：version 起到 zip 末尾的连续字节；Ed25519，64 字节签名插在 meta 与 zip_len 之间；
-- **时间戳窗口**：±5 分钟，设备时钟不准会被拒（reason=TIMESTAMP）；
-- **失败静默**：服务端任何校验失败都不回包直接断连，客户端统一返回 false，
-  **无法也不需要区分原因**——联调时看服务端控制台 `REJECT reason=<码>`：
-  | reason | 含义 |
-  |---|---|
-  | MAGIC | 魔数错（拼包 bug） |
-  | META | meta 非法/超长/meta_len 错位 |
-  | SIGNATURE | 签名不符（检查签名范围与字节序） |
-  | TIMESTAMP | 设备时间偏差 >5 分钟 |
-  | RATE | 限流（3 次/分钟/IP、20 次/天/IP），等待后重试 |
-  | ZIPSIZE | zip 超 10MB |
-- **禁止自动重试**：限流下重试只会加剧失败，SDK 不做重试，UI 提示用户手动再试即可；
-- 客户端诊断日志 tag 为 `KdfbUploader` / `NokiaFeedback`（WARN 级，仅记录异常类别）。
+- **请求方式**：`POST /upload`
+- **请求头**：
+  - `X-Timestamp`: 当前毫秒时间戳（字符串）
+  - `X-Nonce`: 16 字节随机数的 Hex 字符串（32 个十六进制字符）
+  - `X-AccessKey`: `HMAC-SHA256("$timestamp:$nonce", secret_key)` 的 Hex 字符串（64 字符）
+  - `X-Meta`: URL 编码（UTF-8）的 JSON 字符串（包含 app, app_version, os_version, contact, comment, extras）
+  - `Content-Type`: `application/octet-stream`
+- **请求 Body**：zip 压缩后的二进制字节流（无日志附件时 Body 长度为 0）
+- **时间戳窗口**：±5 分钟，设备时钟不准会被拒绝；
+- **响应码**：
+  - `200 OK`: 接收成功
+  - `400 / 401 / 403 / 429`: 请求非法 / 鉴权失败 / 限流
+- **禁止自动重试**：限流下重试只会加剧失败，SDK 不做自动重试，UI 提示用户手动再试即可；
+- 客户端诊断日志 tag 为 `FeedbackUploader` / `NokiaFeedback`。
 
 ---
 
@@ -322,7 +315,7 @@ String 自动截断 200 字符，序列化后 extras 总量 ≤4096 字节）。
 
 项目开源、协议公开的前提下，本方案的安全边界如下：
 
-- 私钥**只存在于各宿主编译出的 APK 内**，不在任何 Git 仓库中出现；
-- APK 可被逆向提取私钥——这是接受的威胁模型：提取者最多以合法姿态刷接口，
+- 通信密钥**只存在于各宿主编译出的 APK 内**，不在任何 Git 仓库中出现；
+- APK 可被逆向提取通信密钥——这是接受的威胁模型：提取者最多以合法姿态刷接口，
   受服务端限流约束（3 次/分钟、20 次/天/IP）+ nonce 防重放兜底；
 - 时间戳 + nonce 双重防重放；传输为明文（反馈内容本身非机密）。

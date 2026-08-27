@@ -113,12 +113,11 @@ public class MainActivity extends AppCompatActivity {
     /** 初始化反馈功能：宿主 APP 启动时注册一次（值来自 BuildConfig，密钥不入库） */
     private void initFeedback() {
         NokiaFeedback.init(new NokiaFeedbackConfig(
-                BuildConfig.KDFB_SERVER_HOST,
-                BuildConfig.KDFB_SERVER_PORT,
-                BuildConfig.KDFB_PRIVATE_KEY,
+                BuildConfig.FEEDBACK_UPLOAD_URL,
+                BuildConfig.FEEDBACK_SECRET_KEY,
                 "nokia-sample",
                 BuildConfig.VERSION_NAME,
-                null)); // null = 使用默认日志目录 Android/data/<pkg>/files/logs
+                null)); // null = 使用默认日志目录 Android/data/<pkg>/log
     }
 
     @Override

@@ -23,7 +23,7 @@ public final class DeviceInfoCollector {
     /**
      * 采集设备信息（品牌、型号、系统版本、内存、CPU 架构等）。
      *
-     * @return 有序 map，直接作为 KDFB meta 的 extras 使用
+     * @return 有序 map，直接作为反馈 meta 的 extras 使用
      */
     public static Map<String, Object> collect(Context context) {
         Map<String, Object> info = new LinkedHashMap<>();

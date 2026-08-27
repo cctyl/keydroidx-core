@@ -131,11 +131,11 @@ launcher 层：
 │                                                             │
 │  ┌──────────────┐  ┌───────────┐  ┌────────────────────┐  │
 │  │ NokiaTheme   │  │ NokiaLog  │  │  feedback/*        │  │
-│  │ ThemeProvider │  │(7天轮转)  │  │  NokiaEd25519      │  │
-│  │  (抽象接口)   │  │           │  │  KdfbUploader      │  │
-│  │ NokiaIcons   │  │           │  │  DeviceInfoCollector│  │
-│  │ NokiaDimens  │  │           │  │  NokiaFeedback     │  │
-│  │ Drawables    │  │           │  │  NokiaFeedbackConfig│  │
+│  │ ThemeProvider │  │(7天轮转)  │  │  FeedbackUploader  │  │
+│  │  (抽象接口)   │  │           │  │  DeviceInfoCollector│  │
+│  │ NokiaIcons   │  │           │  │  NokiaFeedback     │  │
+│  │ NokiaDimens  │  │           │  │  NokiaFeedbackConfig│  │
+│  │ Drawables    │  │           │  │                    │  │
 │  └──────────────┘  └───────────┘  └────────────────────┘  │
 └───────────────────────────┬─────────────────────────────────┘
                             │

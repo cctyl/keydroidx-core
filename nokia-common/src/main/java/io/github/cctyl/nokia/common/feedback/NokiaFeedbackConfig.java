@@ -3,42 +3,54 @@ package io.github.cctyl.nokia.common.feedback;
 import java.io.File;
 
 /**
- * 反馈功能全局配置。由宿主 APP 在启动时通过 {@link NokiaFeedback#init(NokiaFeedbackConfig)}
- * 注册一次，值通常来自宿主自己的 BuildConfig（密钥/地址不进 SDK、不入 Git）。
+ * 反馈上报全局配置。
+ *
+ * <p>宿主 APP 在 Application.onCreate 或入口处通过 {@link NokiaFeedback#init(NokiaFeedbackConfig)}
+ * 注册一次。服务地址与通信密钥由接入方从服务端分发并注入（值来自宿主 BuildConfig，
+ * 绝不入库、不进 SDK）。</p>
  */
 public class NokiaFeedbackConfig {
 
-    /** 服务端地址 */
-    public final String host;
-    /** 服务端端口 */
-    public final int port;
-    /** Ed25519 私钥 hex */
-    public final String privateKeyHex;
-    /** 应用标识（≤32 字符，仅 [a-zA-Z0-9_-]，需与服务端登记一致） */
+    /** 上传接口完整 URL，如 "http://your.server.com:9421/upload" */
+    public final String uploadUrl;
+    /** 通信密钥十六进制字符串（由服务端分发，绝不入库） */
+    public final String secretKeyHex;
+    /** 应用标识，如 "myapp" */
     public final String appName;
-    /** 应用版本号 */
+    /** 应用版本名，如 "1.0.0" */
     public final String appVersion;
     /**
-     * 日志目录。null 时使用统一约定目录：
-     * {@code Android/data/<包名>/files/log}（即 {@code NokiaLog.getDefaultLogDir(Context)}）。
-     * 宿主若用 {@link io.github.cctyl.nokia.common.log.NokiaLog} 落盘日志，默认即对齐，无需手动指定。
-     * 宿主若有自定义日志位置可在此覆盖。
+     * 自定义日志目录；为 null 时由 SDK 默认取 Context 的标准日志目录
+     * （Android/data/<包名>/log，对齐 NokiaLog 与生态规范）
      */
     public final File logDir;
 
-    public NokiaFeedbackConfig(String host, int port, String privateKeyHex,
+    public NokiaFeedbackConfig(String uploadUrl, String secretKeyHex,
                                String appName, String appVersion, File logDir) {
-        this.host = host;
-        this.port = port;
-        this.privateKeyHex = privateKeyHex;
+        this.uploadUrl = uploadUrl;
+        this.secretKeyHex = secretKeyHex;
         this.appName = appName;
         this.appVersion = appVersion;
         this.logDir = logDir;
     }
 
+    public NokiaFeedbackConfig(String uploadUrl, String secretKeyHex,
+                               String appName, String appVersion) {
+        this(uploadUrl, secretKeyHex, appName, appVersion, null);
+    }
+
+    /** 旧版 host/port 构造向后兼容 */
+    @Deprecated
+    public NokiaFeedbackConfig(String host, int port, String secretKeyHex,
+                               String appName, String appVersion, File logDir) {
+        this((host != null && !host.trim().isEmpty()) ? "http://" + host + ":" + port + "/upload" : "",
+                secretKeyHex, appName, appVersion, logDir);
+    }
+
+    /** 校验配置是否有效（URL 与密钥均不为空） */
     public boolean isValid() {
-        return host != null && host.length() > 0
-                && privateKeyHex != null && privateKeyHex.length() > 0
-                && appName != null && appName.length() > 0;
+        return uploadUrl != null && !uploadUrl.trim().isEmpty()
+                && secretKeyHex != null && !secretKeyHex.trim().isEmpty()
+                && secretKeyHex.trim().length() % 2 == 0;
     }
 }

@@ -72,11 +72,11 @@ SDK 内部代码简洁严谨，自底向上分为三层：
 - **`NokiaBaseActivity`**：复古骨架 BaseActivity。内置 240dp 基准分辨率居中自适应容器、复古标题栏与底部三软键面板（`midPanel` / `bottomPanel`）。在 `dispatchKeyEvent` 中精确配对消费 `ACTION_DOWN` 与 `ACTION_UP`，彻底杜绝按键粘连、事件穿透与双击误触。
 - **`NokiaKeyWizardActivity`**：全屏复古按键向导。采用 250ms 防抖步进、`ACTION_DOWN && repeatCount==0` 瞬间捕获机制，支持触屏跳过/取消，完成后自动保存并驱动 `NokiaKeyClient.reload()`。
 
-### 4. 反馈上报层 (`io.github.cctyl.nokia.keycore.feedback` + `ui.NokiaFeedbackActivity`)
+### 4. 反馈上报层 (`io.github.cctyl.nokia.common.feedback` / `io.github.cctyl.nokia.keycore.feedback` + `ui.NokiaFeedbackActivity`)
 - **`NokiaFeedbackActivity`**：内置诺基亚风格通用反馈页（问题类型/联系方式必填/描述/日志开关），宿主 `startActivity` 即用，入口自定。
-- **`NokiaFeedback` / `NokiaFeedbackConfig`**：门面与配置。宿主启动时 `init()` 注册服务地址与 Ed25519 私钥（值来自宿主 BuildConfig，**密钥绝不入库、不进 SDK**）。
-- **`KdfbUploader`**：KDFB v1 二进制协议实现（日志 zip 打包 ≤9MB 超限裁剪、meta 组装、Ed25519 签名、TCP 收发）；失败静默且禁止自动重试（服务端限流 3 次/分钟/IP）。
-- **`DeviceInfoCollector` / `NokiaEd25519`**：设备信息采集（仅公开 API）；纯 Java Ed25519 签名（零第三方依赖，已过 RFC 8032 测试向量）。
+- **`NokiaFeedback` / `NokiaFeedbackConfig`**：门面与配置。宿主启动时 `init()` 注册服务 URL 与通信密钥（值来自宿主 BuildConfig，**密钥绝不入库、不进 SDK**）。
+- **`FeedbackUploader`**：HTTP POST + HMAC-SHA256 签名协议实现（日志 zip 打包 ≤9MB 超限裁剪、meta 组装、X-Timestamp / X-Nonce / X-AccessKey / X-Meta 请求头组装与 HTTP 发送）；失败静默且禁止自动重试（服务端限流 3 次/分钟/IP）。
+- **`DeviceInfoCollector`**：设备信息采集（仅公开 API）。
 - 详细接入文档见 `docs/10-feedback.md`；默认生态日志目录约定为 `Android/data/<包名>/log`，可在配置中覆盖。
 - **`NokiaLog`**：生态标准零依赖文件日志器（对齐桌面架构），支持按天轮转（保留 7 天）、详细日志开关持久化（`isDetailedLogEnabled` / `setDetailedLogEnabled`）、未捕获崩溃同步瞬时落盘。
 
