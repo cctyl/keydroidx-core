@@ -33,7 +33,7 @@ KDFB_PRIVATE_KEY=<feedback_priv.key 文件里的一行 hex>
 > ⚠️ 私钥属于生态方分发物。任何情况下不要把它提交进 Git（含历史 commit）、
 > 不要写死在源码或示例里。CI 打包时存为 secret 环境变量注入，方式相同。
 
-### ② 宿主 `build.gradle` 注入 BuildConfig
+### ② 宿主 `build.gradle` 注入 BuildConfig（纯 SDK 零三方依赖）
 
 ```groovy
 def localProps = new Properties()
@@ -43,29 +43,80 @@ if (f.exists()) localProps.load(new FileInputStream(f))
 android {
     defaultConfig {
         buildConfigField "String", "KDFB_SERVER_HOST",
-            '"${localProps.getProperty('KDFB_SERVER_HOST') ?: ''}"'
+            "\"${localProps.getProperty('KDFB_SERVER_HOST', '127.0.0.1')}\""
         buildConfigField "int", "KDFB_SERVER_PORT",
-            localProps.getProperty('KDFB_SERVER_PORT') ?: '9421'
+            "${localProps.getProperty('KDFB_SERVER_PORT', '9421')}"
         buildConfigField "String", "KDFB_PRIVATE_KEY",
-            '"${localProps.getProperty('KDFB_PRIVATE_KEY') ?: ''}"'
+            "\"${localProps.getProperty('KDFB_PRIVATE_KEY', '')}\""
     }
     buildFeatures { buildConfig true }
 }
+
+dependencies {
+    // 仅需依赖 nokia-key-core，禁止引入 BouncyCastle、OkHttp、协程等外部库
+    implementation 'io.github.cctyl.nokia:nokia-key-core:1.0.0'
+}
 ```
+
+> 💡 **无 Key 友好性**：若本地未配置私钥，`KDFB_PRIVATE_KEY` 默认赋空字符串 `""`，**项目编译与核心功能 100% 正常**。仅在提交反馈时提示「反馈功能未配置」，不会崩溃。
 
 ### ③ 初始化 + 入口跳转
 
-```java
-// Application 或首个 Activity 的 onCreate，注册一次即可
-NokiaFeedback.init(new NokiaFeedbackConfig(
-        BuildConfig.KDFB_SERVER_HOST,
-        BuildConfig.KDFB_SERVER_PORT,
-        BuildConfig.KDFB_PRIVATE_KEY,
-        "myapp",                    // 应用标识，需与服务端登记一致
-        BuildConfig.VERSION_NAME,
-        null));                     // 日志目录，null = 默认 files/logs
+在 `Application.onCreate` 或入口 Activity 中初始化（一次即可）：
 
-// 入口由宿主自行决定（如设置页某一项）
+**Kotlin 示例：**
+```kotlin
+class MyApplication : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        
+        // 1. 初始化日志器（自动读取详细日志开关，安装崩溃捕获）
+        NokiaLog.setTag("MyApp")
+        NokiaLog.init(this)
+        NokiaLog.installCrashHandler(this)
+
+        // 2. 初始化反馈能力（传入 null 自动与 NokiaLog 目录对齐）
+        NokiaFeedback.init(
+            NokiaFeedbackConfig(
+                BuildConfig.KDFB_SERVER_HOST,
+                BuildConfig.KDFB_SERVER_PORT,
+                BuildConfig.KDFB_PRIVATE_KEY,
+                "myapp", // 应用标识（需与服务端登记的名称一致）
+                BuildConfig.VERSION_NAME,
+                null
+            )
+        )
+    }
+}
+```
+
+**Java 示例：**
+```java
+public class MyApplication extends Application {
+    @Override
+    public void onCreate() {
+        super.onCreate();
+
+        // 1. 初始化日志器
+        NokiaLog.setTag("MyApp");
+        NokiaLog.init(this);
+        NokiaLog.installCrashHandler(this);
+
+        // 2. 初始化反馈能力
+        NokiaFeedback.init(new NokiaFeedbackConfig(
+                BuildConfig.KDFB_SERVER_HOST,
+                BuildConfig.KDFB_SERVER_PORT,
+                BuildConfig.KDFB_PRIVATE_KEY,
+                "myapp",
+                BuildConfig.VERSION_NAME,
+                null)); // null 自动对齐 Android/data/<包名>/log
+    }
+}
+```
+
+**拉起反馈页：**
+```java
+// 宿主在任意菜单项或设置项中直接拉起
 startActivity(new Intent(this, NokiaFeedbackActivity.class));
 ```
 
