@@ -1,4 +1,4 @@
-package io.github.cctyl.nokia.keycore.feedback;
+package io.github.cctyl.nokia.common.feedback;
 
 import android.app.ActivityManager;
 import android.content.Context;

@@ -1,4 +1,4 @@
-package io.github.cctyl.nokia.keycore.feedback;
+package io.github.cctyl.nokia.common.feedback;
 
 import org.json.JSONObject;
 
@@ -18,7 +18,7 @@ import java.util.zip.ZipOutputStream;
 /**
  * KDFB v1 反馈上报协议实现（纯 Java，无第三方依赖）。
  *
- * <p>报文格式（大端序）见 log_upload/android/README.md §1.3：</p>
+ * <p>报文格式（大端序）：</p>
  * <pre>
  * magic(8) | version(1) | reserved(1) | timestamp(8) | nonce(16)
  * | meta_len(2) | meta(N) | signature(64) | zip_len(4) | zip(M)
@@ -108,7 +108,7 @@ public final class KdfbUploader {
     // ---------- meta JSON 组装 ----------
 
     /**
-     * 组装 meta JSON。字段长度约束见协议文档 §1.5。
+     * 组装 meta JSON。
      *
      * @param extras 动态字段区（设备信息等），值支持 Number/Boolean/String
      */
@@ -166,10 +166,6 @@ public final class KdfbUploader {
 
     /**
      * 递归打包目录下所有文件为 zip。
-     *
-     * <p>大小策略：单文件超过 {@link #MAX_SINGLE_LOG} 截断；总量超过打包预算
-     * （服务端硬限 10MB，预留 meta/协议头余量）时按「越新越优先」逐个丢弃旧文件；
-     * 若所有文件都无法容纳则返回空 zip。</p>
      *
      * @param dir 日志目录，null 或不存在时返回空结果
      */

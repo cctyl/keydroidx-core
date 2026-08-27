@@ -9,6 +9,7 @@ import android.widget.Toast;
 
 import androidx.annotation.Nullable;
 
+import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.R;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
@@ -108,7 +109,7 @@ public class NokiaTextInputActivity extends NokiaBaseActivity {
                 cancel();
                 return true;
             default:
-                return false; // 其余按键透传给 EditText
+                return super.onAction(action); // 其余按键透传给父类/EditText
         }
     }
 

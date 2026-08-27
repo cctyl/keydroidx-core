@@ -1,4 +1,4 @@
-package io.github.cctyl.nokia.keycore.feedback;
+package io.github.cctyl.nokia.common.feedback;
 
 import java.math.BigInteger;
 import java.security.MessageDigest;
@@ -16,8 +16,8 @@ import java.util.Arrays;
  */
 public final class NokiaEd25519 {
 
-    private static final BigInteger P = BigInteger.TWO.pow(255).subtract(BigInteger.valueOf(19));
-    private static final BigInteger L = BigInteger.TWO.pow(252)
+    private static final BigInteger P = BigInteger.valueOf(2).pow(255).subtract(BigInteger.valueOf(19));
+    private static final BigInteger L = BigInteger.valueOf(2).pow(252)
             .add(new BigInteger("27742317777372353535851937790883648493"));
     private static final BigInteger D = BigInteger.valueOf(-121665)
             .multiply(BigInteger.valueOf(121666).modInverse(P)).mod(P);

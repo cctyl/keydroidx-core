@@ -11,14 +11,14 @@ import androidx.appcompat.app.AppCompatActivity;
 import java.io.File;
 import java.io.FileWriter;
 
+import io.github.cctyl.nokia.common.feedback.NokiaFeedback;
+import io.github.cctyl.nokia.common.feedback.NokiaFeedbackConfig;
+import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.NokiaKeyClient;
-import io.github.cctyl.nokia.keycore.feedback.NokiaFeedback;
-import io.github.cctyl.nokia.keycore.feedback.NokiaFeedbackConfig;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyBinding;
 import io.github.cctyl.nokia.keycore.ui.NokiaKeyWizardActivity;
-import io.github.cctyl.nokia.keycore.ui.NokiaTheme;
 
 /**
  * 示例应用主页面

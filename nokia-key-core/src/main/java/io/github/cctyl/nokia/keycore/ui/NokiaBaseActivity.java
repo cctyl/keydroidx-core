@@ -29,6 +29,9 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import io.github.cctyl.nokia.common.ui.NokiaBatteryDrawable;
+import io.github.cctyl.nokia.common.ui.NokiaIcons;
+import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.R;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;

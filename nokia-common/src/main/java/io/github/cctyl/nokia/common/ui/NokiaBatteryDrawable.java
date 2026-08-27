@@ -1,6 +1,7 @@
-package io.github.cctyl.nokia.keycore.ui;
+package io.github.cctyl.nokia.common.ui;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.Paint;
@@ -13,9 +14,17 @@ import android.graphics.drawable.Drawable;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import io.github.cctyl.nokia.common.util.NokiaDimens;
+
 /**
- * 诺基亚经典风格电池 Drawable（支持动态电量格 + 充电闪电动态指示）。
- * 兼容 Android 4.4+ (API 19)，无需额外图片资源，纯矢量高精度绘制。
+ * 诺基亚经典复古电池 Drawable。
+ * <p>
+ * 支持：
+ * <ul>
+ *   <li>4 格电量状态显示与动态变色（低电量红色）；</li>
+ *   <li>充电闪电图标覆盖指示；</li>
+ *   <li>纯矢量绘制，零图片资源依赖。</li>
+ * </ul>
  */
 public class NokiaBatteryDrawable extends Drawable {
 
@@ -30,11 +39,24 @@ public class NokiaBatteryDrawable extends Drawable {
 
     private int levelPct = 100;
     private boolean isCharging = false;
+    private int customWidth = -1;
+    private int customHeight = -1;
 
     public NokiaBatteryDrawable(Context context) {
-        float density = context.getResources().getDisplayMetrics().density;
+        float density = context != null ? context.getResources().getDisplayMetrics().density : 1f;
+        initPaints(density, 0xFFFFFFFF);
+    }
+
+    public NokiaBatteryDrawable(Resources res, int widthPx, int heightPx, int strokeColor) {
+        float density = res != null ? res.getDisplayMetrics().density : 1f;
+        this.customWidth = widthPx;
+        this.customHeight = heightPx;
+        initPaints(density, strokeColor);
+    }
+
+    private void initPaints(float density, int strokeColor) {
         strokePaint.setStyle(Paint.Style.STROKE);
-        strokePaint.setColor(0xFFFFFFFF);
+        strokePaint.setColor(strokeColor);
         strokePaint.setStrokeWidth(Math.max(1f, density));
 
         fillPaint.setStyle(Paint.Style.FILL);
@@ -54,14 +76,18 @@ public class NokiaBatteryDrawable extends Drawable {
         }
     }
 
+    public void updateLevel(int pct, boolean charging) {
+        setBatteryState(pct, charging);
+    }
+
     @Override
     public int getIntrinsicWidth() {
-        return 36;
+        return customWidth > 0 ? customWidth : 36;
     }
 
     @Override
     public int getIntrinsicHeight() {
-        return 20;
+        return customHeight > 0 ? customHeight : 20;
     }
 
     @Override
@@ -94,7 +120,7 @@ public class NokiaBatteryDrawable extends Drawable {
         canvas.drawRoundRect(capRect, cornerRadius * 0.8f, cornerRadius * 0.8f, strokePaint);
         strokePaint.setStyle(Paint.Style.STROKE);
 
-        // 3. 内部电量格 (经典 4 格电池)
+        // 3. 内部电量格 (4 格电池)
         int totalBars = 4;
         int activeBars;
         int barColor;

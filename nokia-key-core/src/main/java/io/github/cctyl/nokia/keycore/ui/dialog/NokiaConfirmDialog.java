@@ -15,12 +15,12 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.NokiaKeyClient;
 import io.github.cctyl.nokia.keycore.R;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.ui.NokiaFontManager;
-import io.github.cctyl.nokia.keycore.ui.NokiaTheme;
 
 /**
  * 标准复古诺基亚风格「确认 / 提示」弹窗（开箱即用 UI 组件）。

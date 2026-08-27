@@ -12,13 +12,14 @@ import androidx.annotation.Nullable;
 import java.io.File;
 import java.util.Map;
 
-import io.github.cctyl.nokia.keycore.R;
-import io.github.cctyl.nokia.keycore.feedback.NokiaFeedback;
+import io.github.cctyl.nokia.common.feedback.NokiaFeedback;
+import io.github.cctyl.nokia.common.feedback.NokiaFeedbackConfig;
+import io.github.cctyl.nokia.common.ui.NokiaIcons;
+import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.keycore.NokiaClient;
-import io.github.cctyl.nokia.keycore.feedback.NokiaFeedbackConfig;
+import io.github.cctyl.nokia.keycore.R;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.ui.dialog.NokiaOptionsDialog;
-import io.github.cctyl.nokia.keycore.ui.NokiaTheme;
 
 /**
  * 诺基亚风格通用反馈页（设置页式表单，遵循 FEATURE_PHONE_UI_SPEC）。

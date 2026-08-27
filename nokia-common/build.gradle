@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace 'io.github.cctyl.nokia.keycore'
+    namespace 'io.github.cctyl.nokia.common'
     compileSdk rootProject.ext.COMPILE_SDK
 
     defaultConfig {
@@ -38,7 +38,7 @@ afterEvaluate {
             release(MavenPublication) {
                 from components.release
                 groupId = 'io.github.cctyl.nokia'
-                artifactId = 'nokia-key-core'
+                artifactId = 'nokia-common'
                 version = '1.0.0'
             }
         }
@@ -46,6 +46,5 @@ afterEvaluate {
 }
 
 dependencies {
-    api project(':nokia-common')
-    api 'androidx.appcompat:appcompat:1.6.1'
+    implementation 'androidx.appcompat:appcompat:1.6.1'
 }

@@ -14,16 +14,17 @@ import androidx.annotation.Nullable;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import io.github.cctyl.nokia.common.ui.NokiaTheme;
+import io.github.cctyl.nokia.common.ui.ThemeProvider;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyBinding;
 import io.github.cctyl.nokia.keycore.ui.NokiaFontManager;
-import io.github.cctyl.nokia.keycore.ui.NokiaTheme;
 
 /**
  * KeydroidX 统一生态客户端。
  * 负责按键、主题、字体等全局配置的跨进程读取、三级降级与热同步监听。
  */
-public class NokiaClient {
+public class NokiaClient implements ThemeProvider {
 
     private static final String TAG = "NokiaClient";
 
@@ -65,6 +66,7 @@ public class NokiaClient {
         this.context = context.getApplicationContext();
         this.keyBinding = new NokiaKeyBinding();
         this.mainHandler = new Handler(Looper.getMainLooper());
+        NokiaTheme.setThemeProvider(this);
         loadLocalPrefs();
         reload();
     }
@@ -249,6 +251,11 @@ public class NokiaClient {
 
     public NokiaTheme.ThemeDef getCurrentTheme() {
         return NokiaTheme.getTheme(currentThemeId);
+    }
+
+    @Override
+    public NokiaTheme.ThemeDef getCurrentTheme(Context ctx) {
+        return getCurrentTheme();
     }
 
     public String getCurrentFontId() {

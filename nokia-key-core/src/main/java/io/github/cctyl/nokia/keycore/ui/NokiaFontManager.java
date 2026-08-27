@@ -6,6 +6,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import io.github.cctyl.nokia.common.ui.NokiaIcons;
+
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

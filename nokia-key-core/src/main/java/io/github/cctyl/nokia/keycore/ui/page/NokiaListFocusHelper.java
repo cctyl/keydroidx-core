@@ -12,8 +12,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
-import io.github.cctyl.nokia.keycore.ui.NokiaTheme;
 
 /**
  * 列表焦点与循环导航控制器。
