@@ -1,6 +1,8 @@
 package io.github.cctyl.nokia.keycore.log;
 
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.pm.ApplicationInfo;
 import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -23,13 +25,23 @@ import java.util.Locale;
  * {@code keydroidx-core} 的宿主 App 共用。所有调试输出都走这里，统一 TAG 与格式
  * （{@code [子类] 消息}），并可通过 {@link #setEnabled(boolean)} 全局开关控制 logcat 输出。
  * <p>
+ * <b>分级持久化与开关管理</b>（参考原键桌面设计）：
+ * <ul>
+ *   <li><b>详细日志关闭（默认/日常）</b>：{@link #getFileMinLevel()} 为 {@link Log#ERROR}。
+ *       仅记录 ERROR、CRASH 和系统生命周期等关键日志，零性能损耗、日志文件极小。</li>
+ *   <li><b>详细日志开启（排查模式）</b>：{@link #getFileMinLevel()} 为 {@link Log#DEBUG}。
+ *       记录所有 DEBUG、INFO、WARN、ERROR 业务日志。</li>
+ *   <li><b>开关持久化</b>：通过 {@link #isDetailedLogEnabled(Context)} 与
+ *       {@link #setDetailedLogEnabled(Context, boolean)} 读写，默认值跟随 Debug/Release 构建设定。</li>
+ * </ul>
+ * <p>
  * <b>文件日志</b>：{@link #init(Context)} 后，所有日志按天写入
  * {@code /sdcard/Android/data/<package>/log/yyyyMMdd.log}（异步写，不阻塞 UI 线程），
  * 与原键桌面日志路径完全一致；崩溃堆栈通过 {@link #fileCrash(String, Throwable)}
  * 同步落盘。旧日志默认保留 {@link #KEEP_DAYS} 天，初始化时自动清理。
  * <p>
  * <b>与反馈模块对齐</b>：{@link #getDefaultLogDir(Context)} 返回的目录与
- * {@code NokiaFeedback.resolveLogDir()} 默认目录一致，反馈上传时可直接打包本工具落盘的日志。
+ * {@code NokiaFeedback.resolveLogDir()} 默认目录一致，反馈上传时直接打包本工具落盘的日志。
  * <p>
  * <b>崩溃捕获</b>：{@link #installCrashHandler(Context)} 注册链式
  * {@code UncaughtExceptionHandler}，任何未捕获异常先同步写入当日日志，再交给链上原处理器
@@ -41,13 +53,20 @@ public final class NokiaLog {
     private static volatile String tag = DEFAULT_TAG;
     private static volatile boolean enabled = true;
 
+    // ---- 配置持久化常量 ----
+    private static final String PREF_NAME = "nokia_log_prefs";
+    private static final String KEY_DETAILED_LOG = "log_detailed_enabled";
+
     // ---- 文件日志 ----
     /** 日志保留天数，init 时自动清理超出该天数的历史文件。 */
     public static final int KEEP_DAYS = 7;
     private static final Object FILE_LOCK = new Object();
     private static volatile boolean fileLogEnabled = false;
-    /** 文件日志最低级别（Android Log 级别）。低于该级别的日志不落盘；默认 DEBUG 全记录。 */
-    private static volatile int fileMinLevel = Log.DEBUG;
+    /**
+     * 文件日志最低级别（Android Log 级别常量）。低于该级别的日志不落盘。
+     * 默认按 {@link #isDetailedLogEnabled(Context)} 初始化为 DEBUG 或 ERROR。
+     */
+    private static volatile int fileMinLevel = Log.ERROR;
     private static File logDir;
     private static HandlerThread fileThread;
     private static Handler fileHandler;
@@ -75,6 +94,51 @@ public final class NokiaLog {
         tag = t != null && t.length() > 0 ? t : DEFAULT_TAG;
     }
 
+    public static String getTag() {
+        return tag;
+    }
+
+    // ---- 详细日志开关与持久化（参考桌面端设计） ----
+
+    /**
+     * 是否开启详细文件日志（true=记录 DEBUG 及以上；false=仅记录 ERROR 及崩溃）。
+     * <p>
+     * 未手动设置过时按构建类型给默认值：
+     * <ul>
+     *   <li>Debug 构建：默认 {@code true}（记录详细调试日志）</li>
+     *   <li>Release 正式构建：默认 {@code false}（日常仅记录 ERROR 和崩溃，保证性能与隐私）</li>
+     * </ul>
+     *
+     * @param context 上下文
+     * @return 当前详细日志是否开启
+     */
+    public static boolean isDetailedLogEnabled(Context context) {
+        if (context == null) return false;
+        SharedPreferences sp = context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+        if (!sp.contains(KEY_DETAILED_LOG)) {
+            // 默认值：Debug 包开启，Release 包关闭
+            return (context.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+        }
+        return sp.getBoolean(KEY_DETAILED_LOG, false);
+    }
+
+    /**
+     * 设置详细日志开关并持久化，同时同步更新当前运行时的 {@link #setFileMinLevel(int)}。
+     * <p>
+     * 宿主设置页中的「详细日志」开关切换时直接调用此方法即可，无需手动调 {@code setFileMinLevel}。
+     *
+     * @param context 上下文
+     * @param enabled true=开启详细日志（记录 DEBUG+）；false=关闭详细日志（仅记录 ERROR+）
+     */
+    public static void setDetailedLogEnabled(Context context, boolean enabled) {
+        if (context != null) {
+            context.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
+                    .edit().putBoolean(KEY_DETAILED_LOG, enabled).apply();
+        }
+        setFileMinLevel(enabled ? Log.DEBUG : Log.ERROR);
+        i("LogConfig", "详细日志开关已更新: " + enabled + ", fileMinLevel=" + (enabled ? "DEBUG" : "ERROR"));
+    }
+
     // ---- 文件日志 ----
 
     /**
@@ -91,8 +155,10 @@ public final class NokiaLog {
 
     /**
      * 初始化文件日志（应在 Application 早期、主进程调用一次，幂等）。
+     * <p>
      * 日志目录：{@code /sdcard/Android/data/<package>/log}，按天 {@code yyyyMMdd.log}。
-     * 默认 TAG 为 {@value #DEFAULT_TAG}，如需自定义可在 init 前调 {@link #setTag(String)}。
+     * 初始化时自动调用 {@link #isDetailedLogEnabled(Context)} 确定最低日志级别
+     * （Debug 包默认全量 DEBUG 记录，Release 包默认仅 ERROR 记录）。
      */
     public static synchronized void init(Context context) {
         try {
@@ -112,11 +178,17 @@ public final class NokiaLog {
             fileThread.start();
             fileHandler = new Handler(fileThread.getLooper());
             fileLogEnabled = true;
-            // 默认全级别记录；宿主可通过 setFileMinLevel 收紧（如仅 ERROR 及以上）
-            fileMinLevel = Log.DEBUG;
+
+            // 自动根据配置同步文件日志级别
+            boolean detailed = isDetailedLogEnabled(context);
+            fileMinLevel = detailed ? Log.DEBUG : Log.ERROR;
+
             Log.i(tag, "文件日志已启用: " + logDir.getAbsolutePath()
-                    + " minLevel=" + fileMinLevel + " keepDays=" + KEEP_DAYS);
-            appendAsync(Log.INFO, "SYS", "===== 日志记录启动 ===== 保留最近 " + KEEP_DAYS + " 天");
+                    + " minLevel=" + (fileMinLevel == Log.DEBUG ? "DEBUG" : "ERROR")
+                    + " detailed=" + detailed + " keepDays=" + KEEP_DAYS);
+            appendAsync(Log.INFO, "SYS", "===== 日志记录启动 ===== 保留最近 " + KEEP_DAYS
+                    + " 天 (detailed=" + detailed + ", minLevel="
+                    + (fileMinLevel == Log.DEBUG ? "DEBUG" : "ERROR") + ")");
         } catch (Exception e) {
             Log.w(tag, "NokiaLog.init 失败", e);
         }
@@ -128,9 +200,8 @@ public final class NokiaLog {
     }
 
     /**
-     * 设置文件日志最低级别（Android {@link Log} 级别常量，如 {@link Log#DEBUG}/{@link Log#ERROR}）。
-     * 宿主设置页「日志记录」切换时调用，实时生效：
-     * 开启=DEBUG（全级别），关闭=ERROR（及以上）。
+     * 手动设置文件日志最低级别（Android {@link Log} 级别常量，如 {@link Log#DEBUG}/{@link Log#ERROR}）。
+     * 通常推荐使用 {@link #setDetailedLogEnabled(Context, boolean)} 进行统一管理。
      */
     public static void setFileMinLevel(int level) {
         fileMinLevel = level;
@@ -142,6 +213,11 @@ public final class NokiaLog {
     }
 
     // ---- 日志 API ----
+
+    public static void v(String sub, String msg) {
+        if (enabled) Log.v(tag, "[" + sub + "] " + msg);
+        appendAsync(Log.VERBOSE, sub, msg);
+    }
 
     public static void d(String sub, String msg) {
         if (enabled) Log.d(tag, "[" + sub + "] " + msg);
@@ -158,6 +234,21 @@ public final class NokiaLog {
         appendAsync(Log.WARN, sub, msg);
     }
 
+    public static void w(String sub, String msg, Throwable t) {
+        if (enabled) Log.w(tag, "[" + sub + "] " + msg, t);
+        if (!fileLogEnabled || fileHandler == null || Log.WARN < fileMinLevel) return;
+        final StringBuilder sb = new StringBuilder();
+        sb.append('[').append(LINE_TS.format(new Date())).append("][WARN][").append(sub).append("] ")
+                .append(msg).append('\n');
+        if (t != null) {
+            StringWriter sw = new StringWriter();
+            t.printStackTrace(new PrintWriter(sw));
+            sb.append(sw);
+        }
+        final String line = sb.toString();
+        fileHandler.post(() -> writeLine(line));
+    }
+
     public static void e(String sub, String msg) {
         if (enabled) Log.e(tag, "[" + sub + "] " + msg);
         appendAsync(Log.ERROR, sub, msg);
@@ -167,7 +258,7 @@ public final class NokiaLog {
         if (enabled) Log.e(tag, "[" + sub + "] " + msg, t);
         if (!fileLogEnabled || fileHandler == null || Log.ERROR < fileMinLevel) return;
         final StringBuilder sb = new StringBuilder();
-        sb.append('[').append(LINE_TS.format(new Date())).append("][").append(sub).append("] ")
+        sb.append('[').append(LINE_TS.format(new Date())).append("][ERROR][").append(sub).append("] ")
                 .append(msg).append('\n');
         if (t != null) {
             StringWriter sw = new StringWriter();
@@ -230,89 +321,21 @@ public final class NokiaLog {
         }
     }
 
-    // ---- logcat 持续捕获 ----
-
-    private static volatile Process logcatProcess;
-    private static volatile Thread logcatThread;
-
-    /**
-     * 启动 logcat 持续捕获：后台线程持续读取 logcat 输出，写入当日日志文件。
-     * <p>
-     * 自动捕获宿主 App 内所有 {@code android.util.Log.d/e/i/w} 调用，无需逐个替换为 NokiaLog。
-     * 捕获范围按 {@code logcatFilter} 过滤（如 {@code *:I} 记录 INFO 及以上，
-     * 或 {@code KeydroidX-Music:V AndroidRuntime:E *:S} 只抓指定 TAG）。
-     * <p>
-     * <b>权限</b>：需 READ_LOGS 权限（Android 13 可通过
-     * {@code adb shell pm grant <包名> android.permission.READ_LOGS} 授予）。
-     * 无权限时静默失败并打印警告，不影响 App 运行。
-     * <p>
-     * 需先 {@link #init(Context)} 启用文件日志。可重复调用，仅首次生效。
-     *
-     * @param context       上下文
-     * @param logcatFilter  logcat 过滤表达式（如 {@code "*:I"} 或 {@code "*:V"}），
-     *                      传 null 默认 {@code *:I}
-     */
-    public static void startLogcatCapture(Context context, String logcatFilter) {
-        init(context);
-        if (logcatProcess != null) {
-            Log.w(tag, "logcat 捕获已启动，忽略重复调用");
-            return;
-        }
-        try {
-            String filter = logcatFilter != null && logcatFilter.length() > 0 ? logcatFilter : "*:I";
-            // -v threadtime 带线程 ID 与时间戳，便于排查；清除旧缓冲避免重复 dump
-            ProcessBuilder pb = new ProcessBuilder("logcat", "-v", "threadtime", filter);
-            pb.redirectErrorStream(true);
-            logcatProcess = pb.start();
-            logcatThread = new Thread(() -> {
-                java.io.BufferedReader reader = null;
-                try {
-                    reader = new java.io.BufferedReader(
-                            new java.io.InputStreamReader(logcatProcess.getInputStream()));
-                    String line;
-                    while ((line = reader.readLine()) != null) {
-                        if (Thread.interrupted()) break;
-                        // 直接复用文件写入管道（带时间戳，但 logcat 自带时间戳，
-                        // 这里以 [cat] 前缀标识来源，原始行完整保留）
-                        final String fline = "[cat] " + line + "\n";
-                        if (fileHandler != null) {
-                            fileHandler.post(() -> writeLine(fline));
-                        }
-                    }
-                } catch (Exception ignored) {
-                } finally {
-                    if (reader != null) try { reader.close(); } catch (Exception ignored) {}
-                }
-            }, "NokiaLogcat");
-            logcatThread.setDaemon(true);
-            logcatThread.start();
-            Log.i(tag, "logcat 持续捕获已启动: filter=" + filter);
-        } catch (Exception e) {
-            Log.w(tag, "startLogcatCapture 失败（可能缺少 READ_LOGS 权限）", e);
-        }
-    }
-
-    /** 停止 logcat 持续捕获（通常不需要手动调用，进程退出时自动销毁）。 */
-    public static void stopLogcatCapture() {
-        try {
-            if (logcatThread != null) {
-                logcatThread.interrupt();
-                logcatThread = null;
-            }
-            if (logcatProcess != null) {
-                logcatProcess.destroy();
-                logcatProcess = null;
-            }
-            Log.i(tag, "logcat 捕获已停止");
-        } catch (Exception ignored) {}
-    }
-
     // ---- 文件写入 ----
 
     private static void appendAsync(int level, String sub, String msg) {
         if (!fileLogEnabled || fileHandler == null) return;
         if (level < fileMinLevel) return;
-        final String line = "[" + LINE_TS.format(new Date()) + "][" + sub + "] " + msg + "\n";
+        String levelTag;
+        switch (level) {
+            case Log.VERBOSE: levelTag = "VERBOSE"; break;
+            case Log.DEBUG:   levelTag = "DEBUG"; break;
+            case Log.INFO:    levelTag = "INFO"; break;
+            case Log.WARN:    levelTag = "WARN"; break;
+            case Log.ERROR:   levelTag = "ERROR"; break;
+            default:          levelTag = "LOG"; break;
+        }
+        final String line = "[" + LINE_TS.format(new Date()) + "][" + levelTag + "][" + sub + "] " + msg + "\n";
         fileHandler.post(() -> writeLine(line));
     }
 

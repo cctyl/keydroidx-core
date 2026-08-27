@@ -14,8 +14,9 @@
 | `KdfbUploader` | 协议实现：meta 组装、日志 zip 打包、报文签名与 TCP 收发 |
 | `DeviceInfoCollector` | 设备信息采集（extras 默认值） |
 | `NokiaEd25519` | 纯 Java Ed25519 签名（零第三方依赖，已过 RFC 8032 测试向量） |
+| `NokiaLog` | SDK 内置零依赖文件日志器（对齐桌面架构，支持按天轮转、级别控制与崩溃同步落盘） |
 
-包路径统一为 `io.github.cctyl.nokia.keycore.feedback` 与 `.ui.NokiaFeedbackActivity`。
+包路径统一为 `io.github.cctyl.nokia.keycore.feedback`、`.log.NokiaLog` 与 `.ui.NokiaFeedbackActivity`。
 
 ---
 
@@ -95,17 +96,58 @@ Manifest 权限（必须）：
 
 ---
 
-## 三、日志目录约定
+## 三、生态标准日志器（`NokiaLog`）与目录约定
+
+### 1. 统一日志目录
 
 ```
-默认：Android/data/<包名>/files/logs   （即 getExternalFilesDir("logs")）
-覆盖：NokiaFeedbackConfig 最后一个参数传入自定义 File
+默认标准：Android/data/<包名>/log/yyyyMMdd.log
+覆盖方式：NokiaFeedbackConfig 最后一个参数传入自定义 File
 ```
 
-宿主只要把日志写进上述目录，反馈页即自动发现、打包、上传。
-目录不存在或无文件时自动发空 zip，不影响提交。
+`NokiaFeedback` 与 `NokiaLog` 均以 `Android/data/<包名>/log` 为生态标准日志目录（与 `keydroidx-launcher` 桌面端完全对齐）。
 
-### 打包大小策略
+### 2. `NokiaLog` 快速集成
+
+宿主无需引入第三方日志框架，直接在 `Application.onCreate` 初始化：
+
+```java
+// 1. 设置主 TAG
+NokiaLog.setTag("MyApp");
+
+// 2. 初始化：自动读取详细日志开关，并设置文件落盘级别（开启=DEBUG，关闭=ERROR）
+NokiaLog.init(this);
+
+// 3. 安装崩溃落盘处理器：未捕获异常发生时，同步将堆栈刷入当日日志文件
+NokiaLog.installCrashHandler(this);
+```
+
+### 3. 详细日志级别与开关控制
+
+`NokiaLog` 提供了通用持久化开关，对齐桌面端设计：
+
+- **详细日志关闭（默认 / Release 正式版）**：`fileMinLevel = Log.ERROR`。平时仅在发生错误（`NokiaLog.e`）与应用崩溃（`FATAL`）时落盘，零性能开销、文件体积小。
+- **详细日志开启（排查模式 / Debug 构建）**：`fileMinLevel = Log.DEBUG`。记录所有业务 `DEBUG`、`INFO`、`WARN` 日志。
+- **通用 API**：
+  ```java
+  // 读取当前开关（未设置时，Debug 构建默认 true，Release 构建默认 false）
+  boolean enabled = NokiaLog.isDetailedLogEnabled(context);
+
+  // 设置开关（自动持久化并实时更新内存中的落盘级别）
+  NokiaLog.setDetailedLogEnabled(context, true);
+  ```
+- **UI 开关接入建议**：在宿主的「设置」或「关于」页面暴露「详细日志」开关，供用户复现问题或开发者调试时开启。
+
+### 4. 业务代码日志规范
+
+```java
+NokiaLog.d("Player", "切换歌曲: id=1001");
+NokiaLog.i("Network", "请求完成: code=200");
+NokiaLog.w("Cache", "缓存未命中");
+NokiaLog.e("Auth", "登录失败", exception);
+```
+
+### 5. 打包大小策略
 
 | 规则 | 值 |
 |---|---|
