@@ -93,6 +93,20 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         return "选项";
     }
 
+    @Nullable
+    @Override
+    public CharSequence getSoftCenterText() {
+        if (!interactiveItems.isEmpty() && focusedIndex >= 0 && focusedIndex < interactiveItems.size()) {
+            InteractiveItem item = interactiveItems.get(focusedIndex);
+            if (item.type == InteractiveItem.Type.LOG_TOGGLE) {
+                return "切换";
+            } else if (item.type == InteractiveItem.Type.URL) {
+                return "打开";
+            }
+        }
+        return "选择";
+    }
+
     @Override
     public CharSequence getSoftRightText() {
         return "返回";

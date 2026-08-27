@@ -135,7 +135,7 @@ public class NokiaConfirmDialog extends Dialog {
     public boolean dispatchKeyEvent(@NonNull KeyEvent event) {
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
             int action = NokiaUi.getKeyResolver(getContext()).resolveAction(event);
-            if (action == NokiaKeyAction.SOFT_LEFT) {
+            if (action == NokiaKeyAction.SOFT_LEFT || action == NokiaKeyAction.SELECT) {
                 handleConfirm();
                 return true;
             } else if (action == NokiaKeyAction.SOFT_RIGHT) {

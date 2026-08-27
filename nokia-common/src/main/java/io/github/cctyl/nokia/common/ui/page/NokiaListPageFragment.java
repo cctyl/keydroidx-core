@@ -115,7 +115,7 @@ public abstract class NokiaListPageFragment extends NokiaPageFragment {
     // ---- 焦点管理 ----
 
     /**
-     * 设置焦点到指定索引项：清除旧高亮 → 更新焦点索引 → 应用新高亮 → 自动滚动到可视区。
+     * 设置焦点到指定索引项：清除旧高亮 → 更新焦点索引 → 应用新高亮 → 自动滚动到可视区 → 通知宿主刷新软键栏。
      */
     protected void setFocusIndex(int index) {
         if (itemViews == null || index < 0 || index >= itemViews.length) return;
@@ -123,6 +123,14 @@ public abstract class NokiaListPageFragment extends NokiaPageFragment {
         focusIndex = index;
         applyFocusBackground();
         scrollToVisible(index);
+        onFocusIndexChanged(index);
+        notifyHostRefresh();
+    }
+
+    /**
+     * 焦点项变更回调（子类可覆写以处理联动逻辑）。
+     */
+    protected void onFocusIndexChanged(int index) {
     }
 
     /**

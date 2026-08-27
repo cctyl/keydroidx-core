@@ -31,8 +31,7 @@ public class NokiaAboutActivity extends NokiaBaseActivity {
     }
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+    protected void onInitViews() {
         if (getSupportFragmentManager().findFragmentById(io.github.cctyl.nokia.common.R.id.midPanel) == null) {
             NokiaAboutConfig config = null;
             if (getIntent() != null && getIntent().hasExtra(EXTRA_CONFIG)) {
@@ -40,7 +39,8 @@ public class NokiaAboutActivity extends NokiaBaseActivity {
             }
             getSupportFragmentManager().beginTransaction()
                     .replace(io.github.cctyl.nokia.common.R.id.midPanel, NokiaAboutFragment.newInstance(config))
-                    .commit();
+                    .commitNow();
         }
+        refreshPageBar();
     }
 }

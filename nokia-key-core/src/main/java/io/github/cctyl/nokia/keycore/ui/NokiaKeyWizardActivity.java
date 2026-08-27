@@ -106,6 +106,9 @@ public class NokiaKeyWizardActivity extends AppCompatActivity {
         }
 
         if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            if (event.getRepeatCount() > 0) {
+                return true;
+            }
             int keyCode = event.getKeyCode();
             if (keyCode == KeyEvent.KEYCODE_BACK && currentStepIndex == 0) {
                 // 允许第一步按返回键退出向导
