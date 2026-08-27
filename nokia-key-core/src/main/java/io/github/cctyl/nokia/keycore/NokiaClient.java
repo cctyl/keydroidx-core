@@ -14,6 +14,7 @@ import androidx.annotation.Nullable;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import io.github.cctyl.nokia.common.contract.NokiaProviderContract;
 import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.common.ui.ThemeProvider;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
@@ -28,13 +29,13 @@ public class NokiaClient implements ThemeProvider {
 
     private static final String TAG = "NokiaClient";
 
-    public static final String RELEASE_AUTHORITY = "io.github.cctyl.nokia.keyprovider";
-    public static final String DEBUG_AUTHORITY = "io.github.cctyl.nokia.debug.keyprovider";
+    public static final String RELEASE_AUTHORITY = NokiaProviderContract.AUTHORITY_RELEASE;
+    public static final String DEBUG_AUTHORITY = NokiaProviderContract.AUTHORITY_DEBUG;
 
     private static final String PREF_NAME = "nokia_client_prefs";
-    private static final String KEY_THEME_ID = "theme_id";
-    private static final String KEY_FONT_ID = "font_id";
-    private static final String KEY_FONT_SCALE = "font_scale";
+    private static final String KEY_THEME_ID = NokiaProviderContract.SETTING_THEME_ID;
+    private static final String KEY_FONT_ID = NokiaProviderContract.SETTING_FONT_ID;
+    private static final String KEY_FONT_SCALE = NokiaProviderContract.SETTING_FONT_SCALE;
 
     public enum ConfigSource {
         DESKTOP_RELEASE,
@@ -129,12 +130,12 @@ public class NokiaClient implements ThemeProvider {
         boolean keysLoaded = false;
         try {
             // 查询按键: content://{authority}/keys
-            Uri keysUri = Uri.parse("content://" + authority + "/keys");
+            Uri keysUri = NokiaProviderContract.getKeysUri(authority);
             Cursor cursor = context.getContentResolver().query(keysUri, null, null, null, null);
             if (cursor != null) {
                 try {
-                    int actionIdx = cursor.getColumnIndex("action");
-                    int keyCodeIdx = cursor.getColumnIndex("keyCode");
+                    int actionIdx = cursor.getColumnIndex(NokiaProviderContract.COL_ACTION);
+                    int keyCodeIdx = cursor.getColumnIndex(NokiaProviderContract.COL_KEY_CODE);
                     if (cursor.moveToFirst()) {
                         keyBinding.clear();
                         do {
@@ -153,22 +154,22 @@ public class NokiaClient implements ThemeProvider {
             }
 
             // 查询主题与设置: content://{authority}/settings
-            Uri settingsUri = Uri.parse("content://" + authority + "/settings");
+            Uri settingsUri = NokiaProviderContract.getSettingsUri(authority);
             Cursor sCursor = context.getContentResolver().query(settingsUri, null, null, null, null);
             if (sCursor != null) {
                 try {
-                    int keyIdx = sCursor.getColumnIndex("key");
-                    int valIdx = sCursor.getColumnIndex("value");
+                    int keyIdx = sCursor.getColumnIndex(NokiaProviderContract.COL_KEY);
+                    int valIdx = sCursor.getColumnIndex(NokiaProviderContract.COL_VALUE);
                     if (sCursor.moveToFirst()) {
                         do {
                             String k = (keyIdx >= 0) ? sCursor.getString(keyIdx) : null;
                             String v = (valIdx >= 0) ? sCursor.getString(valIdx) : null;
-                            if ("theme_id".equals(k) && v != null) {
+                            if (NokiaProviderContract.SETTING_THEME_ID.equals(k) && v != null) {
                                 this.currentThemeId = v;
-                            } else if ("font_id".equals(k) && v != null) {
+                            } else if (NokiaProviderContract.SETTING_FONT_ID.equals(k) && v != null) {
                                 this.currentFontId = v;
                                 NokiaFontManager.setCurrentFontId(v);
-                            } else if ("font_scale".equals(k) && v != null) {
+                            } else if (NokiaProviderContract.SETTING_FONT_SCALE.equals(k) && v != null) {
                                 try {
                                     this.currentFontScale = Float.parseFloat(v);
                                     NokiaFontManager.setFontScale(this.currentFontScale);

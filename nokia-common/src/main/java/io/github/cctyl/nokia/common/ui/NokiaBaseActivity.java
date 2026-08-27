@@ -312,9 +312,12 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     }
 
     @LayoutRes
-    protected abstract int getContentLayoutRes();
+    protected int getContentLayoutRes() {
+        return 0;
+    }
 
-    protected abstract void onInitViews();
+    protected void onInitViews() {
+    }
 
     public void setTitleText(CharSequence title) {
         if (tvTitle != null) {

@@ -25,5 +25,10 @@
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
             android:theme="@style/Theme.NokiaKeyCore" />
+        <activity
+            android:name="io.github.cctyl.nokia.keycore.ui.NokiaAboutActivity"
+            android:configChanges="orientation|screenSize|keyboardHidden"
+            android:exported="false"
+            android:theme="@style/Theme.NokiaKeyCore" />
     </application>
 </manifest>
