@@ -29,16 +29,16 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
+import io.github.cctyl.nokia.common.model.NokiaKeyAction;
 import io.github.cctyl.nokia.common.ui.NokiaBatteryDrawable;
 import io.github.cctyl.nokia.common.ui.NokiaIcons;
 import io.github.cctyl.nokia.common.ui.NokiaTheme;
+import io.github.cctyl.nokia.common.ui.focus.NokiaFocusHost;
+import io.github.cctyl.nokia.common.ui.page.NokiaPage;
+import io.github.cctyl.nokia.common.ui.page.NokiaPageHost;
 import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.R;
-import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyBinding;
-import io.github.cctyl.nokia.keycore.ui.page.NokiaFocusHost;
-import io.github.cctyl.nokia.keycore.ui.page.NokiaPage;
-import io.github.cctyl.nokia.keycore.ui.page.NokiaPageHost;
 
 /**
  * 诺基亚复古风格基类 Activity。

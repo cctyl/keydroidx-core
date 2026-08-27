@@ -7,6 +7,8 @@ import android.view.KeyEvent;
 
 import androidx.annotation.NonNull;
 
+import io.github.cctyl.nokia.common.model.NokiaKeyAction;
+
 /**
  * 诺基亚物理按键映射模型与持久化管理
  */

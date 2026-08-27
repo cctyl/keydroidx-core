@@ -25,12 +25,13 @@ import androidx.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.github.cctyl.nokia.common.model.NokiaKeyAction;
 import io.github.cctyl.nokia.common.ui.NokiaTheme;
+import io.github.cctyl.nokia.common.ui.focus.NokiaDialogFocus;
 import io.github.cctyl.nokia.common.util.NokiaDimens;
 import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.NokiaKeyClient;
 import io.github.cctyl.nokia.keycore.R;
-import io.github.cctyl.nokia.keycore.model.NokiaKeyAction;
 import io.github.cctyl.nokia.keycore.ui.NokiaFontManager;
 
 /**
