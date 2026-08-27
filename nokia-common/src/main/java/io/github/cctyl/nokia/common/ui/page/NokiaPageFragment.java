@@ -59,6 +59,13 @@ public abstract class NokiaPageFragment extends Fragment implements NokiaPage {
         onApplyFonts(view);
     }
 
+    @Override
+    public void onResume() {
+        super.onResume();
+        // 重新进入前台时刷新顶栏与软键栏
+        notifyHostRefresh();
+    }
+
     /**
      * 字体应用钩子。默认空实现，上层模块可在此递归应用自定义字体。
      */

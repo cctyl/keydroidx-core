@@ -30,7 +30,8 @@ public class NokiaFeedbackActivity extends NokiaBaseActivity {
         if (getSupportFragmentManager().findFragmentById(io.github.cctyl.nokia.common.R.id.midPanel) == null) {
             getSupportFragmentManager().beginTransaction()
                     .replace(io.github.cctyl.nokia.common.R.id.midPanel, new NokiaFeedbackFragment())
-                    .commit();
+                    .commitNow();
         }
+        refreshPageBar();
     }
 }

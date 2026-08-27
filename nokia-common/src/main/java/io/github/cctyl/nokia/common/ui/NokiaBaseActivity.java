@@ -263,6 +263,8 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         }
         // 从其他窗口/桌面返回时恢复持焦，防止 touch mode 导致首键失效
         ensureActiveFocus();
+        // 确保前台页面激活时软键栏与标题同步刷新
+        refreshPageBar();
     }
 
     @Override
@@ -577,8 +579,15 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         if (this instanceof NokiaPage) {
             return (NokiaPage) this;
         }
-        for (androidx.fragment.app.Fragment f : getSupportFragmentManager().getFragments()) {
-            if (f != null && f.isVisible() && f instanceof NokiaPage) {
+        androidx.fragment.app.FragmentManager fm = getSupportFragmentManager();
+        androidx.fragment.app.Fragment primaryNav = fm.getPrimaryNavigationFragment();
+        if (primaryNav instanceof NokiaPage && primaryNav.isAdded() && !primaryNav.isHidden()) {
+            return (NokiaPage) primaryNav;
+        }
+        java.util.List<androidx.fragment.app.Fragment> fragments = fm.getFragments();
+        for (int i = fragments.size() - 1; i >= 0; i--) {
+            androidx.fragment.app.Fragment f = fragments.get(i);
+            if (f != null && f.isAdded() && !f.isHidden() && f instanceof NokiaPage) {
                 return (NokiaPage) f;
             }
         }

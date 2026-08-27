@@ -90,6 +90,14 @@ public class NokiaFeedbackFragment extends NokiaPageFragment {
     }
 
     @Override
+    public CharSequence getSoftCenterText() {
+        if (focusRow == ROW_SUBMIT) {
+            return "提交";
+        }
+        return "选择";
+    }
+
+    @Override
     public CharSequence getSoftRightText() {
         return "返回";
     }
@@ -294,6 +302,7 @@ public class NokiaFeedbackFragment extends NokiaPageFragment {
             applyRowBackground(focusRow, false);
         }
         focusRow = row;
+        notifyHostRefresh();
         View v = rows[focusRow];
         if (v != null) {
             applyRowBackground(focusRow, true);
