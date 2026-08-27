@@ -7,6 +7,8 @@ import android.os.Looper;
 import java.io.File;
 import java.util.Map;
 
+import io.github.cctyl.nokia.keycore.log.NokiaLog;
+
 /**
  * 反馈上报统一入口（门面类）。
  *
@@ -21,7 +23,7 @@ import java.util.Map;
  *         BuildConfig.KDFB_PRIVATE_KEY,
  *         "myapp",                      // 与服务端登记一致
  *         BuildConfig.VERSION_NAME,
- *         null));                       // 日志目录，null = 默认 files/logs
+ *         null));                       // 日志目录，null = 默认 Android/data/<包名>/log
  * }</pre>
  * <ol start="2">
  *   <li>入口由宿主自行决定（设置页某项点击），跳转 SDK 内置反馈页：</li>
@@ -63,14 +65,16 @@ public final class NokiaFeedback {
     }
 
     /**
-     * 解析日志目录：配置覆盖优先，否则使用统一约定目录。
+     * 解析日志目录：配置覆盖优先，否则使用与原键桌面 NokiaLog 一致的统一约定目录
+     * {@code Android/data/<包名>/log}（即 {@link NokiaLog#getDefaultLogDir(Context)}）。
+     * 这样 NokiaLog 落盘的日志与反馈上传读取的目录完全一致，无需宿主额外配置。
      */
     public static File resolveLogDir(Context context) {
         NokiaFeedbackConfig c = sConfig;
         if (c != null && c.logDir != null) {
             return c.logDir;
         }
-        return new File(context.getExternalFilesDir(null), "logs");
+        return NokiaLog.getDefaultLogDir(context);
     }
 
     /**

@@ -19,8 +19,9 @@ public class NokiaFeedbackConfig {
     /** 应用版本号 */
     public final String appVersion;
     /**
-     * 日志目录。null 时使用统一约定目录：
-     * {@code Android/data/<包名>/files/logs}（即 getExternalFilesDir("logs")）。
+     * 日志目录。null 时使用与原键桌面 NokiaLog 一致的统一约定目录：
+     * {@code Android/data/<包名>/log}（即 {@code NokiaLog.getDefaultLogDir(Context)}）。
+     * 宿主若用 {@link io.github.cctyl.nokia.keycore.log.NokiaLog} 落盘日志，默认即对齐，无需手动指定。
      * 宿主若有自定义日志位置可在此覆盖。
      */
     public final File logDir;
