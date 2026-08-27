@@ -18,6 +18,7 @@
 | 09 | [配键向导](./09-key-wizard.md) | 独立运行的九键录入向导 Activity | `NokiaKeyWizardActivity` |
 | 10 | [反馈上报与日志](./10-feedback.md) | 内置反馈页、日志打包、Ed25519 签名上传、NokiaLog 统一日志器与分级控制 | `NokiaFeedback` `NokiaFeedbackActivity` `NokiaLog` `KdfbUploader` |
 | 11 | [宿主应用开发规范](./HOST_APP_DEVELOPMENT_SPEC.md) | 打造纯正诺基亚风格的强制类继承、UI 渲染、按键分发与交互规范 | `NokiaBaseActivity` `NokiaListPageFragment` `NokiaTheme` |
+| 12 | [生态分层架构演进](./12-architecture-layering.md) | 拆出 `keydroidx-common` 纯基础库，桌面与 SDK 共享主题/日志/反馈协议而不互相依赖 | `ThemeProvider` `NokiaTheme` `NokiaLog` `NokiaFeedback` |
 
 ## 📐 架构与设计（延伸阅读）
 
@@ -26,6 +27,7 @@
 | [HOST_APP_DEVELOPMENT_SPEC.md](./HOST_APP_DEVELOPMENT_SPEC.md) | **宿主应用必读**：全面遵守诺基亚复古风格的架构与编码硬性规范 |
 | [PAGE_ARCHITECTURE.md](./PAGE_ARCHITECTURE.md) | 页面框架的设计理念：契约接口、模板基类、焦点管理的来龙去脉 |
 | [按键机生态与独立应用扩展架构设计](./按键机生态与独立应用扩展架构设计.md) | 生态整体架构：桌面 / core / 独立应用的分工与协同 |
+| [12 · 生态分层架构演进](./12-architecture-layering.md) | **拆出 common 纯基础库**：桌面与 SDK 共享主题/日志/反馈协议，用 ThemeProvider 接口打破循环依赖 |
 
 ## 🗺️ 模块关系图
 
