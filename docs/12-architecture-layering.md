@@ -197,6 +197,107 @@ launcher 层：
 | `feedback/NokiaFeedbackConfig.java` | `feedback.NokiaFeedbackConfig` | 反馈配置 |
 | `feedback/FeedbackRequest.java` | `feedback.FeedbackRequest` | 反馈请求封装 |
 
+---
+
+### 4.1.1 实测对比：core 与 launcher 同名类分叉情况（2025-08-27 实测）
+
+对 `keydroidx-core/nokia-key-core` 与 `keydroidx-launcher/app/src/main/java/ru/playsoftware/j2meloader/nokia` 两个源码树做全量遍历，**共有 16 个同名类**。经逐个行数对比与关键类 `diff`，分为三类：
+
+#### A 类：仅 core 有，launcher 无（可直接搬运，零分叉）
+
+| 组件 | core 行数 | 说明 |
+| :--- | :--- | :--- |
+| `NokiaEd25519` | ~500 | 纯 Java Ed25519 签名（RFC 8032 测试向量通过） |
+| `KdfbUploader` | ~250 | KDFB v1 二进制协议打包/签名/发送 |
+| `DeviceInfoCollector` | ~80 | 设备信息采集（仅公开 API） |
+| `NokiaFeedback` | ~100 | 反馈门面 |
+| `NokiaFeedbackConfig` | ~50 | 反馈配置数据类 |
+| `FeedbackRequest` | ~30 | 上传请求封装 |
+
+> 这些类在 launcher 中**完全不存在**，是 core 后期新增的通用协议层。迁入 common 零冲突。
+
+#### B 类：同名同构，但已分叉（需合并设计）
+
+| 组件 | core 行数 | launcher 行数 | 分叉程度 | 关键差异 |
+| :--- | :--- | :--- | :--- | :--- |
+| `NokiaTheme` | 144 | 163 | 🔴 **严重** | `ThemeDef` 字段定义完全不同；core 依赖 `NokiaClient` 取主题，launcher 直接读 `NokiaSettingsStorage`；颜色值写法不同 |
+| `NokiaLog` | 435 | 271 | 🔴 **严重** | core 是后来重构版，新增分级控制 (`isDetailedLogEnabled`)、崩溃捕获 (`installCrashHandler`)、7天轮转清理；launcher 版为早期简易版 |
+| `NokiaIcons` | 180 | 211 | 🟡 中等 | launcher 图标常量更多（含桌面专用 widget/快捷方式图标） |
+| `NokiaDimens` | 31 | 61 | 🟡 中等 | launcher 方法更多（含桌面专用尺寸） |
+| `NokiaBatteryDrawable` | 187 | 191 | 🟢 轻微 | 仅细微实现差异 |
+| `NokiaDashedLineDrawable` | 49 | 73 | 🟡 中等 | launcher 版支持更多配置项 |
+
+#### C 类：同名但职责不同（不进 common，留在各自层）
+
+| 组件 | core 版职责 | launcher 版职责 |
+| :--- | :--- | :--- |
+| `NokiaBaseActivity` | 依赖 Client 的复古骨架 Activity | 桌面自有骨架 Activity（依赖桌面内部体系） |
+| `NokiaKeyBinding` | 客户端按键映射表（含三级降级） | Provider 端按键映射表（含持久化/向导） |
+| `NokiaListPageFragment` | 依赖 Client/Theme 的列表页基类 | 桌面原生列表页基类（依赖桌面 Theme） |
+| `NokiaPageFragment` / `NokiaScrollPageFragment` | 同上 | 同上 |
+| `NokiaPage` / `NokiaPageHost` / `NokiaFocusHost` | 页面契约接口（core 版） | 页面契约接口（launcher 版） |
+| `NokiaOptionsDialog` / `NokiaDialogFocus` | 依赖 Client 主题的弹窗 | 桌面自有弹窗（依赖桌面 Theme） |
+| `NokiaFontManager` | 依赖 Client 取字体配置 | 桌面自有字体管理 |
+
+> **结论**：只有 A 类 + B 类进 common；C 类保留在各自层，互不干扰。
+
+---
+
+### 4.1.2 关键分叉点详细记录（供合并设计参考）
+
+#### NokiaTheme `ThemeDef` 字段对比
+
+| 字段 | launcher 版 | core 版 | 合并建议 |
+| :--- | :--- | :--- | :--- |
+| `accentColor` | ✅ | ✅ | 保留 |
+| `softKeyStartColor` | ✅ | ❌ | 保留（桌面软键渐变需要） |
+| `softKeyEndColor` | ✅ | ❌ | 保留 |
+| `bgStartColor` | ✅ | ❌ | 保留（桌面壁纸渐变需要） |
+| `bgCenterColor` | ✅ | ❌ | 保留 |
+| `bgEndColor` | ✅ | ❌ | 保留 |
+| `focusColor` | ✅ | ✅ | 保留 |
+| `primaryColor` | ❌ | ✅ | 保留（core 标题栏渐变起色） |
+| `darkColor` | ❌ | ✅ | 保留（core 标题栏渐变止色/窗口背景） |
+| `textColor` | ❌ | ✅ | 保留 |
+| `subTextColor` | ❌ | ✅ | 保留 |
+| `cardBgColor` | ❌ | ✅ | 保留 |
+
+> **合并策略**：`ThemeDef` 取**并集**（13 个字段）。桌面端继续用 `softKey*`/`bg*` 渲染软键与壁纸；core 端用 `primaryColor`/`darkColor`/`textColor`/`cardBgColor` 渲染标题栏/卡片/文本。两套渲染路径互不干扰。
+
+#### 取当前主题方式对比
+
+| 维度 | launcher 版 | core 版 | common 统一后 |
+| :--- | :--- | :--- | :--- |
+| 实现方式 | `new NokiaSettingsStorage(ctx).getTheme()` 直读 SP | `NokiaClient.get(ctx).getCurrentTheme()` 跨进程查 Provider | **ThemeProvider 接口**，launcher 实现直读 SP，core 实现查 Provider |
+
+#### 颜色值写法
+
+| 维度 | launcher 版 | core 版 | 合并建议 |
+| :--- | :--- | :--- | :--- |
+| 写法 | `0xFF64B5F6` 字面量 | `Color.parseColor("#1a3a6b")` | 统一用 `Color.parseColor`（可读性好，编译期常量折叠无性能损） |
+
+#### Drawable 方法名对比
+
+| launcher 方法 | core 对应方法 | 合并策略 |
+| :--- | :--- | :--- |
+| `createBackgroundDrawable(theme)` | ❌ 无 | 保留（桌面壁纸需要） |
+| `createDialogBodyDrawable(theme)` | ❌ 无 | 保留（桌面对话框需要） |
+| `createSoftKeyDrawable(theme)` | `createSoftKeyDrawable()` / `createTitleDrawable()` | **重载共存**：无参版供 core 用（读 `primaryColor`/`darkColor`），有参版供桌面用 |
+| `createFocusDrawable(theme, radius)` | `createSelectedRowDrawable(radius)` | 统一为 `createSelectedRowDrawable(radius)`，内部读 `focusColor` |
+| `createSelectionDrawable(ctx, radiusDp)` | 同名但实现不同 | 保留 core 版（走 ThemeProvider），桌面实现可删除 |
+
+#### NokiaLog 能力对比
+
+| 能力 | launcher 版 | core 版 | 合并策略 |
+| :--- | :--- | :--- | :--- |
+| 基础落盘 (v/d/i/w/e) | ✅ | ✅ | 保留 core 版 |
+| 7 天轮转清理 | ❌ | ✅ | 保留 core 版 |
+| 分级控制 (`isDetailedLogEnabled`/`setDetailedLogEnabled`) | ❌ | ✅ | 保留 core 版 |
+| 崩溃捕获 (`installCrashHandler`) | ❌ | ✅ | 保留 core 版 |
+| 日志目录 | `files/logs` | `Android/data/<pkg>/log` | **统一为 `Android/data/<pkg>/log`**（与桌面原有 `NokiaSettingsStorage.KEY_LOG_FILE` 约定对齐） |
+
+---
+
 **common 不包含**：任何 `NokiaClient` / `NokiaKeyClient` / `NokiaKeyAction` / `NokiaKeyBinding` / `NokiaKeyWizardActivity` / 依赖 Client 的 UI 类。
 
 ### 4.2 `keydroidx-core`（保留清单）
