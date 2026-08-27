@@ -126,7 +126,7 @@ NokiaLog.installCrashHandler(this);
 
 `NokiaLog` 提供了通用持久化开关，对齐桌面端设计：
 
-- **详细日志关闭（默认 / Release 正式版）**：`fileMinLevel = Log.ERROR`。平时仅在发生错误（`NokiaLog.e`）与应用崩溃（`FATAL`）时落盘，零性能开销、文件体积小。
+- **详细日志关闭（默认 / Release 正式版）**：`fileMinLevel = Log.ERROR`。平时仅在发生错误（`NokiaLog.e`）与应用崩溃（`FATAL`）时落盘，零性能开销、文件体积极小。
 - **详细日志开启（排查模式 / Debug 构建）**：`fileMinLevel = Log.DEBUG`。记录所有业务 `DEBUG`、`INFO`、`WARN` 日志。
 - **通用 API**：
   ```java
@@ -136,9 +136,67 @@ NokiaLog.installCrashHandler(this);
   // 设置开关（自动持久化并实时更新内存中的落盘级别）
   NokiaLog.setDetailedLogEnabled(context, true);
   ```
-- **UI 开关接入建议**：在宿主的「设置」或「关于」页面暴露「详细日志」开关，供用户复现问题或开发者调试时开启。
 
-### 4. 业务代码日志规范
+---
+
+### 4. 接入实战：在主界面或设置页增加「详细日志」开关
+
+推荐直接放在主界面或设置页的左软键选项菜单中（如 `NokiaOptionsDialog`），方便用户排查问题时一键切换：
+
+```kotlin
+// 构建选项菜单列表
+val isDetailedLog = NokiaLog.isDetailedLogEnabled(this)
+val logTitle = if (isDetailedLog) "详细日志：开" else "详细日志：关"
+
+val items = listOf(
+    NokiaOptionsDialog.OptionItem(1, "意见反馈", NokiaIcons.ICON_EDIT),
+    NokiaOptionsDialog.OptionItem(2, logTitle, NokiaIcons.ICON_SETTINGS),
+    NokiaOptionsDialog.OptionItem(3, "关于", NokiaIcons.ICON_INFO)
+)
+
+NokiaOptionsDialog.show(this, "选项", items) { item ->
+    when (item.id) {
+        1 -> startActivity(Intent(this, NokiaFeedbackActivity::class.java))
+        2 -> {
+            val next = !NokiaLog.isDetailedLogEnabled(this)
+            NokiaLog.setDetailedLogEnabled(this, next)
+            val tip = if (next) "已开启详细日志（记录调试信息）" else "已关闭详细日志（仅记录错误与崩溃）"
+            Toast.makeText(this, tip, Toast.LENGTH_SHORT).show()
+        }
+        3 -> startActivity(Intent(this, AboutActivity::class.java))
+    }
+}
+```
+
+---
+
+### 5. 零成本桥接已有工程中的 `android.util.Log`
+
+如果宿主工程中已有大量历史 `android.util.Log.d/i/w/e` 调用，无需逐一重构代码。推荐在宿主中建立一个 `NLog.kt` 门面：
+
+```kotlin
+package com.example.myapp.util
+
+import io.github.cctyl.nokia.keycore.log.NokiaLog
+
+object NLog {
+    @JvmStatic fun v(tag: String, msg: String) = NokiaLog.v(tag, msg)
+    @JvmStatic fun d(tag: String, msg: String) = NokiaLog.d(tag, msg)
+    @JvmStatic fun i(tag: String, msg: String) = NokiaLog.i(tag, msg)
+    @JvmStatic fun w(tag: String, msg: String, tr: Throwable? = null) = NokiaLog.w(tag, msg, tr)
+    @JvmStatic fun e(tag: String, msg: String, tr: Throwable? = null) = NokiaLog.e(tag, msg, tr)
+}
+```
+
+然后在业务 Kotlin 文件头部将 `import android.util.Log` 替换为：
+```kotlin
+import com.example.myapp.util.NLog as Log
+```
+这样文件内部现有的 `Log.d("Tag", "msg")`、`Log.e("Tag", "msg", tr)` 会自动且无缝地重定向到 `NokiaLog`，全部享受等级过滤、按天轮转与文件落盘能力！
+
+---
+
+### 6. 业务代码规范打点示例
 
 ```java
 NokiaLog.d("Player", "切换歌曲: id=1001");

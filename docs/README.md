@@ -16,7 +16,7 @@
 | 07 | [标准弹窗](./07-dialogs.md) | 选项菜单 / 确认 / 输入三种复古弹窗与弹窗焦点修复 | `NokiaOptionsDialog` `NokiaConfirmDialog` `NokiaInputDialog` `NokiaDialogFocus` |
 | 08 | [主题 · 字体 · 图标](./08-theme-font-icons.md) | 六套主题定义、点阵字体管理、MaterialIcons 矢量图标、电池/虚线 Drawable、尺寸工具 | `NokiaTheme` `NokiaFontManager` `NokiaIcons` `NokiaBatteryDrawable` `NokiaDashedLineDrawable` `NokiaDimens` |
 | 09 | [配键向导](./09-key-wizard.md) | 独立运行的九键录入向导 Activity | `NokiaKeyWizardActivity` |
-| 10 | [反馈上报](./10-feedback.md) | 内置反馈页、日志打包、Ed25519 签名上传、密钥管理约定 | `NokiaFeedback` `NokiaFeedbackActivity` `KdfbUploader` |
+| 10 | [反馈上报与日志](./10-feedback.md) | 内置反馈页、日志打包、Ed25519 签名上传、NokiaLog 统一日志器与分级控制 | `NokiaFeedback` `NokiaFeedbackActivity` `NokiaLog` `KdfbUploader` |
 | 11 | [宿主应用开发规范](./HOST_APP_DEVELOPMENT_SPEC.md) | 打造纯正诺基亚风格的强制类继承、UI 渲染、按键分发与交互规范 | `NokiaBaseActivity` `NokiaListPageFragment` `NokiaTheme` |
 
 ## 📐 架构与设计（延伸阅读）

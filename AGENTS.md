@@ -77,7 +77,8 @@ SDK 内部代码简洁严谨，自底向上分为三层：
 - **`NokiaFeedback` / `NokiaFeedbackConfig`**：门面与配置。宿主启动时 `init()` 注册服务地址与 Ed25519 私钥（值来自宿主 BuildConfig，**密钥绝不入库、不进 SDK**）。
 - **`KdfbUploader`**：KDFB v1 二进制协议实现（日志 zip 打包 ≤9MB 超限裁剪、meta 组装、Ed25519 签名、TCP 收发）；失败静默且禁止自动重试（服务端限流 3 次/分钟/IP）。
 - **`DeviceInfoCollector` / `NokiaEd25519`**：设备信息采集（仅公开 API）；纯 Java Ed25519 签名（零第三方依赖，已过 RFC 8032 测试向量）。
-- 详细接入文档见 `docs/10-feedback.md`；默认日志目录约定为 `Android/data/<包名>/files/logs`，可在配置中覆盖。
+- 详细接入文档见 `docs/10-feedback.md`；默认生态日志目录约定为 `Android/data/<包名>/log`，可在配置中覆盖。
+- **`NokiaLog`**：生态标准零依赖文件日志器（对齐桌面架构），支持按天轮转（保留 7 天）、详细日志开关持久化（`isDetailedLogEnabled` / `setDetailedLogEnabled`）、未捕获崩溃同步瞬时落盘。
 
 ---
 
