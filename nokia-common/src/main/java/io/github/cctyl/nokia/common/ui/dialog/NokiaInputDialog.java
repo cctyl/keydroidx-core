@@ -40,12 +40,21 @@ public class NokiaInputDialog extends Dialog {
     private final String hint;
     private EditText editInput;
     private OnInputConfirmListener listener;
+    private boolean multiline;
+    private int maxChars;
 
     public NokiaInputDialog(@NonNull Context context, @NonNull String title, @Nullable String defaultText, @Nullable String hint) {
+        this(context, title, defaultText, hint, false, 0);
+    }
+
+    public NokiaInputDialog(@NonNull Context context, @NonNull String title, @Nullable String defaultText,
+                            @Nullable String hint, boolean multiline, int maxChars) {
         super(context, R.style.Theme_Nokia_Dialog);
         this.title = title;
         this.defaultText = defaultText != null ? defaultText : "";
         this.hint = hint != null ? hint : "";
+        this.multiline = multiline;
+        this.maxChars = maxChars;
     }
 
     public NokiaInputDialog setOnInputConfirmListener(OnInputConfirmListener listener) {
@@ -93,6 +102,15 @@ public class NokiaInputDialog extends Dialog {
         if (editInput != null) {
             editInput.setText(defaultText);
             editInput.setHint(hint);
+            if (multiline) {
+                editInput.setSingleLine(false);
+                editInput.setMinLines(3);
+                editInput.setMaxLines(6);
+            }
+            if (maxChars > 0) {
+                editInput.setFilters(new android.text.InputFilter[]{
+                        new android.text.InputFilter.LengthFilter(maxChars)});
+            }
             editInput.setSelection(editInput.getText().length());
         }
 
