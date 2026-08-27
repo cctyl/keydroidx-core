@@ -39,12 +39,13 @@ import io.github.cctyl.nokia.common.ui.page.NokiaPageHost;
 import io.github.cctyl.nokia.keycore.NokiaClient;
 import io.github.cctyl.nokia.keycore.R;
 import io.github.cctyl.nokia.keycore.model.NokiaKeyBinding;
+import io.github.cctyl.nokia.common.model.KeyResolver;
 
 /**
  * 诺基亚复古风格基类 Activity。
  * 封装 240dp 基准复古骨架、标题栏、三段式软键条、主题/字体自动应用与按键分发。
  */
-public abstract class NokiaBaseActivity extends AppCompatActivity implements NokiaClient.OnConfigChangedListener, NokiaPageHost {
+public abstract class NokiaBaseActivity extends AppCompatActivity implements NokiaClient.OnConfigChangedListener, NokiaPageHost, KeyResolver {
 
     private static final String TAG = "NokiaBaseActivity";
     private static final long DEBOUNCE_MS = 60;
@@ -382,6 +383,16 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         } else if (rootContainer != null) {
             NokiaFontManager.applyToViewTree(rootContainer);
         }
+    }
+
+    /**
+     * {@link KeyResolver} 实现：供通用弹窗等 UI 组件复用本 Activity 的按键映射。
+     * 委托 {@link NokiaClient} 的 KeyBinding（跨进程/本地/兜底三级降级）。
+     */
+    @Override
+    public int resolveAction(@NonNull KeyEvent event) {
+        if (event == null) return io.github.cctyl.nokia.common.model.NokiaKeyAction.UNKNOWN;
+        return NokiaClient.get(this).getKeyBinding().resolveAction(event.getKeyCode());
     }
 
     @Override

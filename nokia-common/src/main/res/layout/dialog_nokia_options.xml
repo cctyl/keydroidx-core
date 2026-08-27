@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 标准诺基亚风格底部选项菜单弹窗布局 -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical">
+
+    <!-- ========== 标题栏 ========== -->
+    <LinearLayout
+        android:id="@+id/dialogTitleBar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/nokia_dialog_title_bar_height"
+        android:background="@drawable/bg_nokia_dialog_title"
+        android:gravity="center_vertical"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp">
+
+        <TextView
+            android:id="@+id/dialogTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="选项"
+            android:textColor="#FFFFFF"
+            android:textSize="@dimen/nokia_dialog_title_text"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- ========== 选项列表容器 ========== -->
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxHeight="200dp"
+        android:scrollbars="none"
+        android:background="@drawable/bg_nokia_dialog_body">
+        <LinearLayout
+            android:id="@+id/dialogOptionsList"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical" />
+    </ScrollView>
+
+    <!-- ========== 底部软键栏 ========== -->
+    <LinearLayout
+        android:id="@+id/dialogBottomBar"
+        android:layout_width="match_parent"
+        android:layout_height="@dimen/nokia_dialog_title_bar_height"
+        android:background="@drawable/bg_nokia_dialog_bottom"
+        android:orientation="horizontal"
+        android:paddingStart="10dp"
+        android:paddingEnd="10dp">
+
+        <TextView
+            android:id="@+id/dialogSoftLeft"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical|start"
+            android:paddingHorizontal="8dp"
+            android:text="选择"
+            android:textColor="#FFFFFF"
+            android:textSize="@dimen/nokia_dialog_body_text" />
+
+        <View
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1" />
+
+        <TextView
+            android:id="@+id/dialogSoftRight"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:gravity="center_vertical|end"
+            android:paddingHorizontal="8dp"
+            android:text="返回"
+            android:textColor="#FFFFFF"
+            android:textSize="@dimen/nokia_dialog_body_text" />
+    </LinearLayout>
+</LinearLayout>
