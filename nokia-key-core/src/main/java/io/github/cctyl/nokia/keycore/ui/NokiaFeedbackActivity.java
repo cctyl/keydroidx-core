@@ -27,9 +27,9 @@ public class NokiaFeedbackActivity extends NokiaBaseActivity {
 
     @Override
     protected void onInitViews() {
-        if (getSupportFragmentManager().findFragmentById(io.github.cctyl.nokia.keycore.R.id.midPanel) == null) {
+        if (getSupportFragmentManager().findFragmentById(io.github.cctyl.nokia.common.R.id.midPanel) == null) {
             getSupportFragmentManager().beginTransaction()
-                    .replace(io.github.cctyl.nokia.keycore.R.id.midPanel, new NokiaFeedbackFragment())
+                    .replace(io.github.cctyl.nokia.common.R.id.midPanel, new NokiaFeedbackFragment())
                     .commit();
         }
     }

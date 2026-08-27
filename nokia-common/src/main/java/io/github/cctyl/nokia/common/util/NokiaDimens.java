@@ -9,6 +9,9 @@ import android.widget.TextView;
  */
 public final class NokiaDimens {
 
+    /** 全局用户字体缩放倍率（供 attachBaseContext 注入 Configuration.fontScale） */
+    public static volatile float sUserFontScale = 1.0f;
+
     private NokiaDimens() {
         // utility class
     }

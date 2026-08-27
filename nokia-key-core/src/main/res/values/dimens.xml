@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- 诺基亚弹窗尺寸规范 -->
-    <dimen name="nokia_dialog_title_bar_height">28dp</dimen>
-    <dimen name="nokia_dialog_title_text">14sp</dimen>
-    <dimen name="nokia_dialog_body_text">12sp</dimen>
-    <dimen name="nokia_dialog_content_padding">10dp</dimen>
-    <dimen name="nokia_dialog_icon_size">22dp</dimen>
-</resources>
