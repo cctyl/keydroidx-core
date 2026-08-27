@@ -27,6 +27,7 @@
 
     <!-- ========== 选项列表容器 ========== -->
     <ScrollView
+        android:id="@+id/dialogBody"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:maxHeight="200dp"
@@ -50,7 +51,7 @@
         android:paddingEnd="10dp">
 
         <TextView
-            android:id="@+id/dialogSoftLeft"
+            android:id="@+id/softLeft"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center_vertical|start"
@@ -65,7 +66,7 @@
             android:layout_weight="1" />
 
         <TextView
-            android:id="@+id/dialogSoftRight"
+            android:id="@+id/softRight"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center_vertical|end"

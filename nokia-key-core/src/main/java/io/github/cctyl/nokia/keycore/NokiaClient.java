@@ -1,6 +1,7 @@
 package io.github.cctyl.nokia.keycore;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.ContentObserver;
 import android.database.Cursor;
@@ -102,16 +103,46 @@ public class NokiaClient implements ThemeProvider {
                 .apply();
     }
 
+    private boolean isDebugLauncherPreferred() {
+        try {
+            android.content.pm.PackageManager pm = context.getPackageManager();
+            Intent homeIntent = new Intent(Intent.ACTION_MAIN);
+            homeIntent.addCategory(Intent.CATEGORY_HOME);
+            android.content.pm.ResolveInfo resolveInfo = pm.resolveActivity(homeIntent, android.content.pm.PackageManager.MATCH_DEFAULT_ONLY);
+            if (resolveInfo != null && resolveInfo.activityInfo != null) {
+                String pkg = resolveInfo.activityInfo.packageName;
+                if (pkg != null && (pkg.endsWith(".debug") || pkg.contains("debug"))) {
+                    return true;
+                }
+            }
+        } catch (Exception ignored) {}
+        return false;
+    }
+
     public synchronized void reload() {
-        // 1. 查询 Release 桌面 Provider
-        if (tryQueryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE)) {
-            Log.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
-            return;
-        }
-        // 2. 查询 Debug 桌面 Provider
-        if (tryQueryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG)) {
-            Log.i(TAG, "reload: from desktop, theme=" + currentThemeId + " source=" + configSource);
-            return;
+        boolean preferDebug = isDebugLauncherPreferred();
+        if (preferDebug) {
+            if (tryQueryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG)) {
+                Log.i(TAG, "reload: from debug desktop, theme=" + currentThemeId + " source=" + configSource);
+                saveLocalPrefs();
+                return;
+            }
+            if (tryQueryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE)) {
+                Log.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
+                saveLocalPrefs();
+                return;
+            }
+        } else {
+            if (tryQueryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE)) {
+                Log.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
+                saveLocalPrefs();
+                return;
+            }
+            if (tryQueryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG)) {
+                Log.i(TAG, "reload: from debug desktop, theme=" + currentThemeId + " source=" + configSource);
+                saveLocalPrefs();
+                return;
+            }
         }
         // 3. 降级：本地独立配置
         if (keyBinding.loadFromLocal(context)) {
@@ -185,6 +216,7 @@ public class NokiaClient implements ThemeProvider {
             if (keysLoaded) {
                 configSource = source;
                 registerObserver(keysUri);
+                registerObserver(settingsUri);
                 dispatchConfigChanged();
                 return true;
             }

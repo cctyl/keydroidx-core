@@ -76,20 +76,43 @@ public class NokiaKeyBinding {
     }
 
     public synchronized int resolveAction(int keyCode) {
-        return keyCodeToAction.get(keyCode, -1);
+        int action = keyCodeToAction.get(keyCode, -1);
+        if (action >= 0) return action;
+
+        // 标准/常用实体按键别名兜底
+        if (keyCode == KeyEvent.KEYCODE_ENTER || keyCode == KeyEvent.KEYCODE_NUMPAD_ENTER || keyCode == KeyEvent.KEYCODE_DPAD_CENTER) {
+            return NokiaKeyAction.ACTION_SELECT;
+        }
+        if (keyCode == KeyEvent.KEYCODE_MENU || keyCode == KeyEvent.KEYCODE_F1 || keyCode == KeyEvent.KEYCODE_SOFT_LEFT) {
+            return NokiaKeyAction.ACTION_SOFT_LEFT;
+        }
+        if (keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_ESCAPE || keyCode == KeyEvent.KEYCODE_SOFT_RIGHT) {
+            return NokiaKeyAction.ACTION_SOFT_RIGHT;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_UP) {
+            return NokiaKeyAction.ACTION_UP;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_DOWN) {
+            return NokiaKeyAction.ACTION_DOWN;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_LEFT) {
+            return NokiaKeyAction.ACTION_LEFT;
+        }
+        if (keyCode == KeyEvent.KEYCODE_DPAD_RIGHT) {
+            return NokiaKeyAction.ACTION_RIGHT;
+        }
+        if (keyCode == KeyEvent.KEYCODE_ENDCALL) {
+            return NokiaKeyAction.ACTION_LOCK_SCREEN;
+        }
+        if (keyCode == KeyEvent.KEYCODE_CALL) {
+            return NokiaKeyAction.ACTION_CALL;
+        }
+        return -1;
     }
 
     public synchronized int resolveAction(KeyEvent event) {
         if (event == null) return -1;
-        int kc = event.getKeyCode();
-        int action = resolveAction(kc);
-        if (action >= 0) return action;
-
-        // 默认 Enter 键兜底为确定
-        if (kc == KeyEvent.KEYCODE_ENTER && actionToKeyCode.indexOfKey(NokiaKeyAction.ACTION_SELECT) < 0) {
-            return NokiaKeyAction.ACTION_SELECT;
-        }
-        return -1;
+        return resolveAction(event.getKeyCode());
     }
 
     public static String getWizardPromptName(int step) {

@@ -100,6 +100,22 @@ public class NokiaTheme {
             return gd;
         }
 
+        public Drawable createDialogBodyDrawable() {
+            return new GradientDrawable(
+                    GradientDrawable.Orientation.TOP_BOTTOM,
+                    new int[]{bgCenterColor, bgStartColor}
+            );
+        }
+
+        public Drawable createInputFieldDrawable(float strokePx, float radiusPx) {
+            GradientDrawable gd = new GradientDrawable();
+            gd.setShape(GradientDrawable.RECTANGLE);
+            gd.setColor(bgStartColor);
+            gd.setStroke((int) strokePx, accentColor);
+            gd.setCornerRadius(radiusPx);
+            return gd;
+        }
+
         public ThemeDef(String name,
                         int primaryColor, int darkColor, int accentColor, int focusColor,
                         int textColor, int subTextColor, int cardBgColor) {

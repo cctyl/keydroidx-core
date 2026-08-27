@@ -145,7 +145,7 @@ public class NokiaOptionsDialog extends Dialog {
         }
         View dialogBody = findViewById(R.id.dialogBody);
         if (dialogBody != null) {
-            dialogBody.setBackgroundColor(currentTheme.cardBgColor);
+            dialogBody.setBackground(currentTheme.createDialogBodyDrawable());
         }
         View bottomBar = findViewById(R.id.dialogBottomBar);
         if (bottomBar != null) {
@@ -199,7 +199,7 @@ public class NokiaOptionsDialog extends Dialog {
             TextView tv = new TextView(context);
             tv.setText(item.getTitle());
             tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
-            tv.setTextColor(Color.WHITE);
+            tv.setTextColor(currentTheme.textColor);
             tv.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
             row.addView(tv);
 
@@ -214,12 +214,12 @@ public class NokiaOptionsDialog extends Dialog {
 
         updateSelection();
 
-        View btnSelect = findViewById(R.id.dialogSoftLeft);
+        View btnSelect = findViewById(R.id.softLeft);
         if (btnSelect != null) {
             btnSelect.setOnClickListener(v -> confirmSelection());
         }
 
-        View btnBack = findViewById(R.id.dialogSoftRight);
+        View btnBack = findViewById(R.id.softRight);
         if (btnBack != null) {
             btnBack.setOnClickListener(v -> dismiss());
         }

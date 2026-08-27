@@ -85,7 +85,7 @@ public class NokiaConfirmDialog extends Dialog {
         }
         View dialogBody = findViewById(R.id.dialogBody);
         if (dialogBody != null) {
-            dialogBody.setBackgroundColor(currentTheme.cardBgColor);
+            dialogBody.setBackground(currentTheme.createDialogBodyDrawable());
         }
         View bottomBar = findViewById(R.id.dialogBottomBar);
         if (bottomBar != null) {
@@ -107,12 +107,14 @@ public class NokiaConfirmDialog extends Dialog {
         TextView btnLeft = findViewById(R.id.softLeft);
         if (btnLeft != null) {
             btnLeft.setText(positiveText);
+            btnLeft.setTextColor(currentTheme.textColor);
             btnLeft.setOnClickListener(v -> handleConfirm());
         }
 
         TextView btnRight = findViewById(R.id.softRight);
         if (btnRight != null) {
             btnRight.setText(negativeText);
+            btnRight.setTextColor(currentTheme.textColor);
             btnRight.setOnClickListener(v -> handleCancel());
         }
     }

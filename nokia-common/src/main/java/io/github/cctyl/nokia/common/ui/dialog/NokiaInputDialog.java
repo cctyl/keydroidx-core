@@ -86,7 +86,9 @@ public class NokiaInputDialog extends Dialog {
             titleBar.setBackground(currentTheme.createTitleDrawable());
         }
         View dialogBody = findViewById(R.id.dialogBody);
-        // 输入弹窗的 body 由布局内 LinearLayout 自带背景，此处仅同步底栏
+        if (dialogBody != null) {
+            dialogBody.setBackground(currentTheme.createDialogBodyDrawable());
+        }
         View bottomBar = findViewById(R.id.dialogBottomBar);
         if (bottomBar != null) {
             bottomBar.setBackground(currentTheme.createSoftKeyDrawable());
@@ -100,6 +102,11 @@ public class NokiaInputDialog extends Dialog {
 
         editInput = findViewById(R.id.dialogInput);
         if (editInput != null) {
+            editInput.setBackground(currentTheme.createInputFieldDrawable(
+                    io.github.cctyl.nokia.common.util.NokiaDimens.dp(getContext().getResources(), 1),
+                    io.github.cctyl.nokia.common.util.NokiaDimens.dp(getContext().getResources(), 3)));
+            editInput.setTextColor(currentTheme.textColor);
+            editInput.setHintTextColor(currentTheme.subTextColor);
             editInput.setText(defaultText);
             editInput.setHint(hint);
             if (multiline) {
@@ -116,11 +123,13 @@ public class NokiaInputDialog extends Dialog {
 
         TextView btnLeft = findViewById(R.id.softLeft);
         if (btnLeft != null) {
+            btnLeft.setTextColor(currentTheme.textColor);
             btnLeft.setOnClickListener(v -> handleConfirm());
         }
 
         TextView btnRight = findViewById(R.id.softRight);
         if (btnRight != null) {
+            btnRight.setTextColor(currentTheme.textColor);
             btnRight.setOnClickListener(v -> dismiss());
         }
     }

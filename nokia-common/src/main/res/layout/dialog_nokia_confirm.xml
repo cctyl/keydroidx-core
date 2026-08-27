@@ -64,7 +64,7 @@
             android:focusable="true"
             android:paddingHorizontal="8dp"
             android:text="确认"
-            android:textColor="#64b5f6"
+            android:textColor="#FFFFFF"
             android:textSize="@dimen/nokia_dialog_body_text" />
 
         <View
@@ -81,7 +81,7 @@
             android:focusable="true"
             android:paddingHorizontal="8dp"
             android:text="取消"
-            android:textColor="#64b5f6"
+            android:textColor="#FFFFFF"
             android:textSize="@dimen/nokia_dialog_body_text" />
     </LinearLayout>
 </LinearLayout>
