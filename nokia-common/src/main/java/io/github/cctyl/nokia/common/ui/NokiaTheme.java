@@ -8,6 +8,9 @@ import android.graphics.drawable.StateListDrawable;
 
 import androidx.annotation.NonNull;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * 诺基亚复古主题系统核心定义与调色板。
  * <p>
@@ -30,10 +33,28 @@ public class NokiaTheme {
     public static final ThemeDef WINE_PURPLE = getTheme(THEME_WINE_PURPLE);
     public static final ThemeDef CYAN_SEA = getTheme(THEME_CYAN_SEA);
 
+    /** 生态统一主题清单（顺序即桌面主题设置页展示顺序）。 */
+    private static final List<ThemeDef> THEMES = new ArrayList<>();
+
+    static {
+        THEMES.add(getTheme(THEME_CLASSIC_BLUE));
+        THEMES.add(getTheme(THEME_OBSIDIAN_BLACK));
+        THEMES.add(getTheme(THEME_CYAN_SEA));
+        THEMES.add(getTheme(THEME_EMERALD_GREEN));
+        THEMES.add(getTheme(THEME_WINE_PURPLE));
+        THEMES.add(getTheme(THEME_AMBER_GOLD));
+    }
+
     private static ThemeProvider sThemeProvider;
 
     protected NokiaTheme() {
         // utility class
+    }
+
+    /** 获取全部预设主题定义。 */
+    @NonNull
+    public static List<ThemeDef> getThemes() {
+        return THEMES;
     }
 
     /**
