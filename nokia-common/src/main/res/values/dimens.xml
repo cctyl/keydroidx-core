@@ -1,9 +1,17 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- 诺基亚复古标准字体尺寸规范 (基准 240x320 设计) -->
+    <dimen name="nokia_font_large_title">16sp</dimen>
+    <dimen name="nokia_font_title">14sp</dimen>
+    <dimen name="nokia_font_body">12sp</dimen>
+    <dimen name="nokia_font_small">11sp</dimen>
+    <dimen name="nokia_font_caption">10sp</dimen>
+    <dimen name="nokia_font_tiny">8sp</dimen>
+
     <!-- 诺基亚弹窗尺寸规范 -->
-    <dimen name="nokia_dialog_title_bar_height">28dp</dimen>
-    <dimen name="nokia_dialog_title_text">14sp</dimen>
-    <dimen name="nokia_dialog_body_text">12sp</dimen>
+    <dimen name="nokia_dialog_title_bar_height">26dp</dimen>
+    <dimen name="nokia_dialog_title_text">11sp</dimen>
+    <dimen name="nokia_dialog_body_text">10sp</dimen>
     <dimen name="nokia_dialog_content_padding">10dp</dimen>
     <dimen name="nokia_dialog_icon_size">22dp</dimen>
 </resources>

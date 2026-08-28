@@ -244,13 +244,13 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.WHITE);
-        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 14);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 12);
         tvTitle.getPaint().setFakeBoldText(true);
 
         TextView tvUrl = new TextView(ctx);
         tvUrl.setText(url);
         tvUrl.setTextColor(Color.parseColor(linkColorHex));
-        NokiaFontManager.setTextSize(tvUrl, TypedValue.COMPLEX_UNIT_SP, 12);
+        NokiaFontManager.setTextSize(tvUrl, TypedValue.COMPLEX_UNIT_SP, 10);
         tvUrl.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
@@ -283,14 +283,14 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText("详细日志输出 (Debug Log)");
         tvTitle.setTextColor(Color.WHITE);
-        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 14);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 12);
         tvTitle.getPaint().setFakeBoldText(true);
 
         TextView tvSub = new TextView(ctx);
         boolean enabled = NokiaLog.isDetailedLogEnabled(ctx);
         tvSub.setText(enabled ? "已开启 (详细记录所有调试日志)" : "已关闭 (仅记录错误日志)");
         tvSub.setTextColor(enabled ? Color.parseColor("#81C784") : Color.parseColor("#B0BEC5"));
-        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 12);
+        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 10);
         tvSub.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);

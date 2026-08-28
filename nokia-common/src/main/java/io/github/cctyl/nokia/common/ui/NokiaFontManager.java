@@ -76,13 +76,58 @@ public class NokiaFontManager {
         }
     }
 
+    private static final int TAG_HIERARCHY_WATCHER_ATTACHED = 0x7f099998;
+
+    /**
+     * 遍历并应用字体和字号缩放。
+     * 默认开启自动监听（自动劫持子 View 动态变更），无需宿主在每次 addView / removeAllViews 后重复调用。
+     */
     public static void applyToViewTree(View root) {
+        applyToViewTree(root, true);
+    }
+
+    /**
+     * 遍历并应用字体和字号缩放。
+     * @param root 根 View
+     * @param autoAttachWatcher 是否自动为 ViewGroup 挂载动态监听器（自动劫持后续动态 addView）
+     */
+    public static void applyToViewTree(View root, boolean autoAttachWatcher) {
         if (root == null) return;
         Typeface tf = getTypeface(root.getContext());
-        applyTypefaceRecursively(root, tf, sFontScale);
+        applyTypefaceRecursively(root, tf, sFontScale, autoAttachWatcher);
+    }
+
+    /**
+     * 全局动态监听：为指定的 ViewGroup 树挂载 OnHierarchyChangeListener，
+     * 任何后续动态 addView 或 inflate 的子节点都会在挂载瞬间自动应用字体与缩放。
+     */
+    public static void attachAutoHierarchyWatcher(View root) {
+        if (root == null) return;
+        Typeface tf = getTypeface(root.getContext());
+        attachHierarchyWatcherRecursively(root, tf);
     }
 
     private static final int TAG_ORIGINAL_TEXT_SIZE = 0x7f099999;
+
+    /**
+     * 以 SP 为单位设置设计字号，按当前字体倍率缩放并应用。
+     * @param tv 目标 TextView
+     * @param spSize 设计字号（SP）
+     */
+    public static void setTextSize(TextView tv, float spSize) {
+        setTextSize(tv, android.util.TypedValue.COMPLEX_UNIT_SP, spSize);
+    }
+
+    /**
+     * 从 dimens 资源读取尺寸并作为设计字号应用。
+     * @param tv 目标 TextView
+     * @param dimenResId 尺寸资源 ID（如 R.dimen.nokia_font_body）
+     */
+    public static void setTextSizeResource(TextView tv, int dimenResId) {
+        if (tv == null || tv.getResources() == null) return;
+        float designPx = tv.getResources().getDimension(dimenResId);
+        setTextSize(tv, android.util.TypedValue.COMPLEX_UNIT_PX, designPx);
+    }
 
     /**
      * 以「未缩放的设计字号」设置文字大小，按当前桌面缩放基准立即生效。
@@ -119,7 +164,7 @@ public class NokiaFontManager {
         tv.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX, designPx * sFontScale);
     }
 
-    private static void applyTypefaceRecursively(View view, Typeface tf, float scale) {
+    private static void applyTypefaceRecursively(View view, Typeface tf, float scale, boolean autoAttachWatcher) {
         if (view == null) return;
         if (view instanceof TextView) {
             TextView tv = (TextView) view;
@@ -137,10 +182,45 @@ public class NokiaFontManager {
             applyScaledTextSize(tv);
         } else if (view instanceof ViewGroup) {
             ViewGroup vg = (ViewGroup) view;
+            if (autoAttachWatcher) {
+                attachHierarchyWatcherInternal(vg, tf);
+            }
             for (int i = 0; i < vg.getChildCount(); i++) {
-                applyTypefaceRecursively(vg.getChildAt(i), tf, scale);
+                applyTypefaceRecursively(vg.getChildAt(i), tf, scale, autoAttachWatcher);
             }
         }
+    }
+
+    private static void attachHierarchyWatcherRecursively(View view, Typeface tf) {
+        if (view instanceof ViewGroup) {
+            ViewGroup vg = (ViewGroup) view;
+            attachHierarchyWatcherInternal(vg, tf);
+            for (int i = 0; i < vg.getChildCount(); i++) {
+                attachHierarchyWatcherRecursively(vg.getChildAt(i), tf);
+            }
+        }
+    }
+
+    private static void attachHierarchyWatcherInternal(ViewGroup vg, Typeface tf) {
+        if (vg == null) return;
+        Object tag = vg.getTag(TAG_HIERARCHY_WATCHER_ATTACHED);
+        if (Boolean.TRUE.equals(tag)) {
+            return;
+        }
+        vg.setTag(TAG_HIERARCHY_WATCHER_ATTACHED, Boolean.TRUE);
+
+        vg.setOnHierarchyChangeListener(new ViewGroup.OnHierarchyChangeListener() {
+            @Override
+            public void onChildViewAdded(View parent, View child) {
+                if (child != null) {
+                    applyTypefaceRecursively(child, tf, sFontScale, true);
+                }
+            }
+
+            @Override
+            public void onChildViewRemoved(View parent, View child) {
+            }
+        });
     }
 
     public static void invalidate() {

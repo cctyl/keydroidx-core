@@ -99,10 +99,6 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
     @Override
     protected void attachBaseContext(Context newBase) {
         Configuration config = newBase.getResources().getConfiguration();
-        float userFontScale = NokiaDimens.sUserFontScale;
-        if (userFontScale <= 0f) {
-            userFontScale = 1f;
-        }
         int dpi = config.densityDpi;
         int fixed = dpi;
         int[] standards = {120, 160, 213, 240, 320, 480, 640};
@@ -128,10 +124,9 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
             fixed = nearest;
         }
 
-        if (fixed != dpi || Math.abs(config.fontScale - userFontScale) > 0.01f) {
+        if (fixed != dpi) {
             Configuration newConfig = new Configuration(config);
             newConfig.densityDpi = fixed;
-            newConfig.fontScale = userFontScale;
             super.attachBaseContext(newBase.createConfigurationContext(newConfig));
         } else {
             super.attachBaseContext(newBase);

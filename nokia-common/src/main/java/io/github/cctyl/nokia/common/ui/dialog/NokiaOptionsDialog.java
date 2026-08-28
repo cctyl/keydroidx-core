@@ -170,8 +170,8 @@ public class NokiaOptionsDialog extends Dialog {
         Context context = getContext();
         LayoutInflater inflater = LayoutInflater.from(context);
 
-        int rowHeight = NokiaDimens.dp(context.getResources(), 36);
-        int iconSize = NokiaDimens.dp(context.getResources(), 20);
+        int rowHeight = NokiaDimens.dp(context.getResources(), 32);
+        int iconSize = NokiaDimens.dp(context.getResources(), 18);
         int iconMargin = NokiaDimens.dp(context.getResources(), 8);
         int paddingH = NokiaDimens.dp(context.getResources(), 12);
 
@@ -198,7 +198,7 @@ public class NokiaOptionsDialog extends Dialog {
 
             TextView tv = new TextView(context);
             tv.setText(item.getTitle());
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_SP, 13);
+            NokiaFontManager.setTextSize(tv, TypedValue.COMPLEX_UNIT_SP, 10f);
             tv.setTextColor(currentTheme.textColor);
             tv.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
             row.addView(tv);

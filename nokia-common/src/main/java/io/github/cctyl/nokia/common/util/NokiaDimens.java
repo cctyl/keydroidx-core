@@ -9,7 +9,13 @@ import android.widget.TextView;
  */
 public final class NokiaDimens {
 
-    /** 全局用户字体缩放倍率（供 attachBaseContext 注入 Configuration.fontScale） */
+    /**
+     * 全局用户字体缩放倍率。
+     * @deprecated 请使用 {@link io.github.cctyl.nokia.common.ui.NokiaFontManager#getFontScale()} 与
+     * {@link io.github.cctyl.nokia.common.ui.NokiaFontManager#setFontScale(float)}。
+     * 生态文字缩放统一由 NokiaFontManager 单一源管理。
+     */
+    @Deprecated
     public static volatile float sUserFontScale = 1.0f;
 
     private NokiaDimens() {
