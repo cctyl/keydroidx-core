@@ -353,6 +353,23 @@ public class NokiaFeedbackFragment extends NokiaPageFragment {
             gd.setStroke((int) (1 * density), theme.accentColor);
             v.setBackground(gd);
         }
+        // 提交行文字需随焦点反色：非焦点用 focusColor 醒目提示可点击，
+        // 焦点时行背景即为 focusColor，必须改用 textColor 否则文字会融进背景。
+        if (row == ROW_SUBMIT) {
+            applySubmitTextColor(focused);
+        }
+    }
+
+    /** 提交行文字配色：与行背景保持足够反差，避免选中后文字不可见。 */
+    private void applySubmitTextColor(boolean focused) {
+        if (valSubmit == null || theme == null) return;
+        valSubmit.setTextColor(focused ? theme.textColor : resolveSubmitAccentColor());
+    }
+
+    /** 非焦点态的强调色。与 accentColor 同色时提亮，避免与卡片底色过于接近。 */
+    private int resolveSubmitAccentColor() {
+        return theme.focusColor == theme.accentColor
+                ? brighten(theme.accentColor) : theme.focusColor;
     }
 
     private void applyThemeColors() {
@@ -371,9 +388,8 @@ public class NokiaFeedbackFragment extends NokiaPageFragment {
         }
         TextView logInfo = getView().findViewById(R.id.tvLogInfo);
         if (logInfo != null) logInfo.setTextColor(theme.subTextColor & 0x00FFFFFF | 0xB0000000);
-        TextView submit = getView().findViewById(R.id.valSubmit);
-        if (submit != null) submit.setTextColor(theme.focusColor == theme.accentColor
-                ? brighten(theme.accentColor) : theme.focusColor);
+        // 提交行文字由 applyRowBackground 按焦点态统一处理，此处不重复设置
+        applySubmitTextColor(focusRow == ROW_SUBMIT);
         TextView note = getView().findViewById(R.id.tvPrivacyNote);
         if (note != null) note.setTextColor(theme.subTextColor & 0x00FFFFFF | 0x80000000);
     }
