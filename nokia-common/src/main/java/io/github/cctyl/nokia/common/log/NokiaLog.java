@@ -77,30 +77,46 @@ public class NokiaLog {
     public static synchronized void init(@NonNull Context context, @NonNull File logDir) {
         if (sInitialized) return;
 
-        Context appCtx = context.getApplicationContext();
-        sLogDir = logDir;
-        if (!sLogDir.exists()) {
-            sLogDir.mkdirs();
+        try {
+            // attachBaseContext() 阶段 getApplicationContext() 尚为 null（Application 还未挂到 LoadedApk），
+            // 此时直接用传入的 Context——它的 ContextImpl 已可用，getSharedPreferences/getExternalFilesDir 正常。
+            Context appCtx = appContext(context);
+            sLogDir = logDir;
+            if (!sLogDir.exists()) {
+                sLogDir.mkdirs();
+            }
+
+            // 恢复分级设置：如果 SP 中已配置则读取；未配置时若为 Debug 构建则默认开启详细日志
+            SharedPreferences sp = appCtx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
+            boolean isDebugBuild = (appCtx.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
+            boolean detailed = sp.getBoolean(KEY_DETAILED_LOG_ENABLED, isDebugBuild);
+            sFileMinLevel = detailed ? Log.DEBUG : Log.ERROR;
+
+            // 启动后台写入线程
+            sWriteThread = new HandlerThread("NokiaLogWriter");
+            sWriteThread.start();
+            sWriteHandler = new WriteHandler(sWriteThread.getLooper());
+
+            sInitialized = true;
+
+            // 清理超期日志（后台执行）
+            cleanOldLogsAsync();
+
+            Log.i("NokiaLog", "NokiaLog initialized: dir=" + sLogDir.getAbsolutePath()
+                    + ", detailed=" + detailed + ", fileMinLevel=" + levelToString(sFileMinLevel));
+        } catch (Throwable t) {
+            // 日志系统初始化失败绝不能拖垮宿主（桌面场景下表现为「进不了桌面」），降级为仅 logcat。
+            sInitialized = false;
+            sLogDir = null;
+            sWriteHandler = null;
+            Log.w("NokiaLog", "NokiaLog init failed, file logging disabled", t);
         }
+    }
 
-        // 恢复分级设置：如果 SP 中已配置则读取；未配置时若为 Debug 构建则默认开启详细日志
-        SharedPreferences sp = appCtx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
-        boolean isDebugBuild = (appCtx.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
-        boolean detailed = sp.getBoolean(KEY_DETAILED_LOG_ENABLED, isDebugBuild);
-        sFileMinLevel = detailed ? Log.DEBUG : Log.ERROR;
-
-        // 启动后台写入线程
-        sWriteThread = new HandlerThread("NokiaLogWriter");
-        sWriteThread.start();
-        sWriteHandler = new WriteHandler(sWriteThread.getLooper());
-
-        sInitialized = true;
-
-        // 清理超期日志（后台执行）
-        cleanOldLogsAsync();
-
-        Log.i("NokiaLog", "NokiaLog initialized: dir=" + sLogDir.getAbsolutePath()
-                + ", detailed=" + detailed + ", fileMinLevel=" + levelToString(sFileMinLevel));
+    /** 取 Application Context；attachBaseContext 阶段为 null 时回退为传入的 Context。 */
+    private static Context appContext(@NonNull Context context) {
+        Context appCtx = context.getApplicationContext();
+        return appCtx != null ? appCtx : context;
     }
 
     /**
@@ -129,7 +145,7 @@ public class NokiaLog {
      * 获取当前是否开启了详细日志模式（开启时持久化 DEBUG 及以上日志；关闭时仅持久化 ERROR 及以上）。
      */
     public static boolean isDetailedLogEnabled(@NonNull Context context) {
-        Context appCtx = context.getApplicationContext();
+        Context appCtx = appContext(context);
         SharedPreferences sp = appCtx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE);
         boolean isDebugBuild = (appCtx.getApplicationInfo().flags & ApplicationInfo.FLAG_DEBUGGABLE) != 0;
         return sp.getBoolean(KEY_DETAILED_LOG_ENABLED, isDebugBuild);
@@ -142,7 +158,7 @@ public class NokiaLog {
      * @param enabled true: 记录 DEBUG/INFO/WARN/ERROR; false: 仅记录 ERROR
      */
     public static void setDetailedLogEnabled(@NonNull Context context, boolean enabled) {
-        Context appCtx = context.getApplicationContext();
+        Context appCtx = appContext(context);
         appCtx.getSharedPreferences(PREF_NAME, Context.MODE_PRIVATE)
                 .edit()
                 .putBoolean(KEY_DETAILED_LOG_ENABLED, enabled)
