@@ -1,5 +1,8 @@
 package io.github.cctyl.nokia.common.ui;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -14,6 +17,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import io.github.cctyl.nokia.common.R;
+import io.github.cctyl.nokia.common.ui.dialog.NokiaOptionsDialog;
 import io.github.cctyl.nokia.common.ui.page.NokiaPageFragment;
 
 /**
@@ -44,10 +48,10 @@ import io.github.cctyl.nokia.common.ui.page.NokiaPageFragment;
  * <h3>按键映射</h3>
  * <ul>
  *   <li>方向键 / 输入键：全部透传给 EditText（移动光标、换行）；</li>
- *   <li>LSK：确定，校验后回传结果并出栈；</li>
- *   <li>CSK（确认键）：同 LSK，确定并退出（单行/多行一致）；</li>
+ *   <li>LSK：选项菜单（粘贴 / 复制全部 / 清空全部 / 保存并退出 / 退出不保存）；</li>
+ *   <li>CSK（确认键）：确定，校验后回传结果并出栈（单行/多行一致）；</li>
  *   <li>RSK：有内容时为「清除」（退格删一个字符，对齐 J2ME TextBox 的 C 键语义）；
- *       内容为空时为「返回」（放弃修改并出栈）。</li>
+ *       内容为空时为「返回」（放弃修改并出栈）；</li>
  *   <li>BACK：放弃修改并出栈。</li>
  * </ul>
  */
@@ -262,7 +266,7 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
 
     @Override
     public CharSequence getSoftLeftText() {
-        return "确定";
+        return "选项";
     }
 
     @Override
@@ -293,7 +297,7 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
 
     @Override
     public boolean onSoftLeft() {
-        handleConfirm();
+        showOptionsMenu();
         return true;
     }
 
@@ -311,6 +315,71 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
     public boolean onBack() {
         exit();
         return true;
+    }
+
+    // ---------- 选项菜单（LSK） ----------
+
+    private static final int OPT_PASTE = 0;
+    private static final int OPT_COPY_ALL = 1;
+    private static final int OPT_CLEAR_ALL = 2;
+    private static final int OPT_SAVE_EXIT = 3;
+    private static final int OPT_EXIT_NO_SAVE = 4;
+
+    private void showOptionsMenu() {
+        NokiaOptionsDialog dialog = new NokiaOptionsDialog(requireContext(), "选项");
+        dialog.addItem(OPT_PASTE, "粘贴");
+        dialog.addItem(OPT_COPY_ALL, "复制全部");
+        dialog.addItem(OPT_CLEAR_ALL, "清空全部");
+        dialog.addItem(OPT_SAVE_EXIT, "保存并退出");
+        dialog.addItem(OPT_EXIT_NO_SAVE, "退出（不保存内容）");
+        dialog.setOnOptionSelectedListener((index, item) -> onOptionSelected(item.getId()));
+        dialog.show();
+    }
+
+    private void onOptionSelected(int id) {
+        switch (id) {
+            case OPT_PASTE:
+                pasteFromClipboard();
+                break;
+            case OPT_COPY_ALL:
+                copyAllToClipboard();
+                break;
+            case OPT_CLEAR_ALL:
+                if (editInput != null) editInput.setText("");
+                break;
+            case OPT_SAVE_EXIT:
+                handleConfirm();
+                break;
+            case OPT_EXIT_NO_SAVE:
+                exit();
+                break;
+            default:
+                break;
+        }
+    }
+
+    private void pasteFromClipboard() {
+        if (editInput == null) return;
+        ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (cm == null || !cm.hasPrimaryClip()) return;
+        ClipData clip = cm.getPrimaryClip();
+        if (clip == null || clip.getItemCount() == 0) return;
+        CharSequence pasted = clip.getItemAt(0).coerceToText(requireContext());
+        if (pasted == null || pasted.length() == 0) return;
+        int start = Math.min(editInput.getSelectionStart(), editInput.getSelectionEnd());
+        int end = Math.max(editInput.getSelectionStart(), editInput.getSelectionEnd());
+        editInput.getText().replace(start, end, pasted);
+    }
+
+    private void copyAllToClipboard() {
+        if (editInput == null) return;
+        ClipboardManager cm = (ClipboardManager) requireContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (cm == null) return;
+        String text = editInput.getText().toString();
+        cm.setPrimaryClip(ClipData.newPlainText(title, text));
+        if (text.length() > 0) {
+            Toast.makeText(requireContext(), "已复制全部内容", Toast.LENGTH_SHORT).show();
+        }
     }
 
     // ---------- 业务逻辑 ----------
