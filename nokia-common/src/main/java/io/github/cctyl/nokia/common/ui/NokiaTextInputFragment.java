@@ -45,7 +45,10 @@ import io.github.cctyl.nokia.common.ui.page.NokiaPageFragment;
  * <ul>
  *   <li>方向键 / 输入键：全部透传给 EditText（移动光标、换行）；</li>
  *   <li>LSK：确定，校验后回传结果并出栈；</li>
- *   <li>RSK / BACK：返回，放弃修改并出栈。</li>
+ *   <li>CSK（确认键）：同 LSK，确定并退出（单行/多行一致）；</li>
+ *   <li>RSK：有内容时为「清除」（退格删一个字符，对齐 J2ME TextBox 的 C 键语义）；
+ *       内容为空时为「返回」（放弃修改并出栈）。</li>
+ *   <li>BACK：放弃修改并出栈。</li>
  * </ul>
  */
 public class NokiaTextInputFragment extends NokiaPageFragment {
@@ -70,6 +73,8 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
     private boolean multiline = false;
     private int maxChars = 0;
     private boolean required = true;
+    /** 上一次刷新软键栏时的「是否有内容」状态，用于只在状态翻转时刷新底栏 */
+    private boolean lastHasText = false;
 
     private OnConfirmListener confirmListener;
 
@@ -168,12 +173,20 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
                 updateCounter();
+                // 内容「有/无」翻转时右键文案要在「清除 / 返回」之间切换，需通知宿主刷新底栏
+                boolean hasText = hasText();
+                if (hasText != lastHasText) {
+                    lastHasText = hasText;
+                    notifyHostRefresh();
+                }
             }
 
             @Override
             public void afterTextChanged(Editable s) {
             }
         });
+
+        lastHasText = hasText();
 
         if (tvHint != null) {
             tvHint.setText(hint);
@@ -198,6 +211,29 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
         if (tvCounter == null) return;
         int len = editInput != null ? editInput.getText().length() : 0;
         tvCounter.setText(maxChars > 0 ? len + "/" + maxChars : String.valueOf(len));
+    }
+
+    /** 输入框当前是否有内容（用于决定右键是「清除」还是「返回」）。 */
+    private boolean hasText() {
+        return editInput != null && editInput.getText().length() > 0;
+    }
+
+    /**
+     * 退格删除光标前一个字符；存在选区时删除选区。
+     * 对齐 J2ME {@code TextBox.deletePreviousChar()} 的 C 键语义。
+     */
+    private void deletePreviousChar() {
+        if (editInput == null) return;
+        Editable text = editInput.getText();
+        int start = editInput.getSelectionStart();
+        int end = editInput.getSelectionEnd();
+        if (start != end) {
+            text.delete(Math.min(start, end), Math.max(start, end));
+            return;
+        }
+        if (start > 0) {
+            text.delete(start - 1, start);
+        }
     }
 
     private void applyTheme() {
@@ -231,12 +267,13 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
 
     @Override
     public CharSequence getSoftCenterText() {
-        return "";
+        return "确定";
     }
 
     @Override
     public CharSequence getSoftRightText() {
-        return "返回";
+        // 有内容时右键是「清除」，空内容时才是「返回」（对齐 J2ME TextBox / ScreenSoftBar 的语义）
+        return hasText() ? "清除" : "返回";
     }
 
     /**
@@ -249,12 +286,9 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
 
     @Override
     public boolean onSelect() {
-        // 单行模式下 CENTER 也可确认；多行模式下 CENTER 不改变行为（避免误触退出编辑）
-        if (!multiline) {
-            handleConfirm();
-            return true;
-        }
-        return false;
+        // 确认键与左软键等价：确定的唯一入口，单行/多行行为一致
+        handleConfirm();
+        return true;
     }
 
     @Override
@@ -265,6 +299,11 @@ public class NokiaTextInputFragment extends NokiaPageFragment {
 
     @Override
     public boolean onSoftRight() {
+        // 有内容：退格删一个字符（不退页面）；无内容：退出本页
+        if (hasText()) {
+            deletePreviousChar();
+            return true;
+        }
         return onBack();
     }
 
