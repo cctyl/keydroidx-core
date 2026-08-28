@@ -8,6 +8,7 @@ import android.graphics.PixelFormat;
 import android.graphics.Rect;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.text.TextPaint;
 import android.util.TypedValue;
 import android.widget.TextView;
 
@@ -174,6 +175,63 @@ public class NokiaIcons {
     public static final String ICON_HISTORY = "\uE889";
     public static final String ICON_DOWNLOAD = "\uE2C4";
     public static final String ICON_CHEVRON_RIGHT = "\uE5CC";
+
+    // ==========================================
+    // 原键桌面共享图标（自桌面 NokiaIcons 补齐，2026-08-28）
+    // ==========================================
+    public static final String ICON_ACTIVITY = "\uE879";     // extension (Activity快捷)
+    public static final String ICON_ADD = "\uE145";          // add (加号)
+    public static final String ICON_ADVANCED = "\uE869";     // build / tune (高级设置)
+    public static final String ICON_APP = "\uE5C3";          // apps (应用网格)
+    public static final String ICON_BG_MANAGER = "\uE53B";   // layers (后台管理/多任务)
+    public static final String ICON_CALENDAR = "\uE935";     // calendar_today (日历)
+    public static final String ICON_CHECK_BOX = "\uE834";    // check_box
+    public static final String ICON_CHECK_BOX_OUTLINE_BLANK = "\uE835"; // check_box_outline_blank
+    public static final String ICON_CLEAR_ALL = "\uE0B8";    // clear_all (清理后台)
+    public static final String ICON_DESKTOP = "\uE871";      // desktop_windows (桌面)
+    public static final String ICON_DISPLAY = "\uE3A5";      // display (显示设置)
+    public static final String ICON_FONT = "\uE165";         // text_fields (字体设置)
+    public static final String ICON_FREEZE = "\uEB3B";       // ac_unit (冻结)
+    public static final String ICON_HOME = "\uE88A";         // home (桌面主屏)
+    public static final String ICON_IP = "\uE894";           // language / public (IP地址)
+    public static final String ICON_KEYPAD = "\uE312";       // dialpad (电话)
+    public static final String ICON_LOCK = "\uE897";         // lock (锁屏)
+    public static final String ICON_LOCK_OPEN = "\uE898";    // lock_open
+    public static final String ICON_LOG = "\uE873";          // subject /日志
+    public static final String ICON_MEMORY = "\uE30D";       // memory (内存)
+    public static final String ICON_PALETTE = "\uE40A";      // palette (主题调色)
+    public static final String ICON_POWER = "\uE8AC";        // power_settings_new (电源)
+    public static final String ICON_POWER_OFF = "\uE8AC";    // power_settings_new
+    public static final String ICON_POWER_ON = "\uE8AC";     // power_settings_new
+    public static final String ICON_QS_TILE = "\uEA3B";      // tune (快捷开关磁贴)
+    public static final String ICON_RESTORE = "\uE8B3";      // restore (恢复)
+    public static final String ICON_SHIELD = "\uE8E8";       // security (保护/安全)
+    public static final String ICON_SHIZUKU = "\uE869";      // build / tune (Shizuku开发)
+    public static final String ICON_SHORTCUTS = "\uE8F9";    // shortcut (快捷栏)
+    public static final String ICON_SORT = "\uE8D2";         // sort (排序)
+    public static final String ICON_STORAGE = "\uE1DB";      // sd_storage (存储)
+    public static final String ICON_SYSTEM = "\uE8B8";       // settings (系统)
+    public static final String ICON_TERMINAL = "\uE869";     // build / tune (终端)
+    public static final String ICON_TOGGLES = "\uEA3B";      // tune (快捷开关)
+    public static final String ICON_URL = "\uE051";          // link (网址)
+    public static final String ICON_USAGE = "\uE8B5";        // schedule (时钟/使用时长)
+    public static final String ICON_WALLPAPER = "\uE3F4";    // image / wallpaper (壁纸设置)
+    public static final String ICON_WIDGETS = "\uE871";      // widgets (桌面组件设置)
+    public static final String TOGGLE_AIRPLANE = "\uE539";   // flight / airplanemode_active
+    public static final String TOGGLE_BLUETOOTH = "\uE1A7";  // bluetooth
+    public static final String TOGGLE_BRIGHTNESS = "\uE3A6"; // brightness_6
+    public static final String TOGGLE_CLEAN_BG = "\uE0B8";   // clear_all (清理后台)
+    public static final String TOGGLE_DATA = "\uE1E2";       // swap_vert / data_usage
+    public static final String TOGGLE_FREEZE = "\uEB3B";     // ac_unit (一键冻结)
+    public static final String TOGGLE_HOTSPOT = "\uE1DA";    // wifi_tethering
+    public static final String TOGGLE_LOCATION = "\uE0C8";   // location_on
+    public static final String TOGGLE_LOCK = "\uE897";       // lock
+    public static final String TOGGLE_ROTATE = "\uE84D";     // screen_rotation
+    public static final String TOGGLE_SAVER = "\uE1A4";      // battery_saver
+    public static final String TOGGLE_SOUND = "\uE050";      // volume_up
+    public static final String TOGGLE_TORCH = "\uEF56";      // flashlight_on
+    public static final String TOGGLE_UNFREEZE = "\uE430";   // wb_sunny (太阳/解冻/融化)
+    public static final String TOGGLE_WIFI = "\uE63E";       // wifi
     public static final String ICON_ALBUM = "\uE019";
     public static final String ICON_LIBRARY_MUSIC = "\uE030";
     public static final String ICON_RADIO = "\uE03E";
@@ -239,44 +297,60 @@ public class NokiaIcons {
     }
 
     /**
-     * 纯文本图标 Drawable 实现。
+     * 创建默认 24dp 尺寸的矢量字体 Drawable（原键桌面 API）。
+     */
+    public static Drawable get(Context context, String unicode, int color) {
+        return get(context, unicode, color, 24f);
+    }
+
+    /**
+     * 纯矢量字体图标 Drawable 实现，支持 1:1 像素光栅化、任意染色与 Bounds 计算。
+     * （实现来自原键桌面实战版本：绘制时按 bounds 自适应字号，基线垂直居中。）
      */
     public static class IconDrawable extends Drawable {
-        private final Paint mPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        private final String mText;
-        private final int mSize;
-        private final Rect mTextBounds = new Rect();
+        private final Typeface typeface;
+        private final String text;
+        private final TextPaint paint;
+        private final int sizePx;
+        private final Rect textBounds = new Rect();
 
         public IconDrawable(Typeface typeface, String text, int color, int sizePx) {
-            mText = text;
-            mSize = sizePx;
+            this.typeface = typeface;
+            this.text = text;
+            this.sizePx = sizePx;
 
-            mPaint.setTypeface(typeface);
-            mPaint.setColor(color);
-            mPaint.setTextSize(sizePx);
-            mPaint.setTextAlign(Paint.Align.CENTER);
+            this.paint = new TextPaint(Paint.ANTI_ALIAS_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
+            this.paint.setTypeface(typeface);
+            this.paint.setTextAlign(Paint.Align.CENTER);
+            this.paint.setColor(color);
+            this.paint.setTextSize(sizePx);
+            setBounds(0, 0, sizePx, sizePx);
         }
 
         @Override
         public void draw(@NonNull Canvas canvas) {
             Rect bounds = getBounds();
-            float cx = bounds.exactCenterX();
-            float cy = bounds.exactCenterY();
+            if (bounds.isEmpty()) return;
 
-            mPaint.getTextBounds(mText, 0, mText.length(), mTextBounds);
-            float y = cy - mTextBounds.exactCenterY();
+            paint.setTextSize(Math.min(bounds.width(), bounds.height()));
+            paint.getTextBounds(text, 0, text.length(), textBounds);
 
-            canvas.drawText(mText, cx, y, mPaint);
+            float x = bounds.exactCenterX();
+            // 垂直居中基线计算
+            float y = bounds.exactCenterY() - (paint.descent() + paint.ascent()) / 2f;
+            canvas.drawText(text, x, y, paint);
         }
 
         @Override
         public void setAlpha(int alpha) {
-            mPaint.setAlpha(alpha);
+            paint.setAlpha(alpha);
+            invalidateSelf();
         }
 
         @Override
         public void setColorFilter(@Nullable ColorFilter colorFilter) {
-            mPaint.setColorFilter(colorFilter);
+            paint.setColorFilter(colorFilter);
+            invalidateSelf();
         }
 
         @Override
@@ -286,12 +360,17 @@ public class NokiaIcons {
 
         @Override
         public int getIntrinsicWidth() {
-            return mSize;
+            return sizePx;
         }
 
         @Override
         public int getIntrinsicHeight() {
-            return mSize;
+            return sizePx;
+        }
+
+        public void setColor(int color) {
+            paint.setColor(color);
+            invalidateSelf();
         }
     }
 }
