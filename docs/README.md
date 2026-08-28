@@ -13,7 +13,7 @@
 | 04 | [页面骨架 Activity](./04-base-activity.md) | 统一顶栏/软键栏骨架、按键分发、主题字体自动应用、电量广播 | `NokiaBaseActivity` |
 | 05 | [页面框架（Fragment）](./05-page-framework.md) | 页面契约接口与三种页面基类（普通页 / 列表页 / 滚动页） | `NokiaPage` `NokiaPageHost` `NokiaFocusHost` `NokiaPageFragment` `NokiaListPageFragment` `NokiaScrollPageFragment` |
 | 06 | [列表焦点控制](./06-list-focus.md) | 循环导航、高亮、防出界滚动，独立于继承体系的组合式控制器 | `NokiaListFocusHelper` |
-| 07 | [标准弹窗](./07-dialogs.md) | 选项菜单 / 确认 / 输入三种复古弹窗与弹窗焦点修复 | `NokiaOptionsDialog` `NokiaConfirmDialog` `NokiaInputDialog` `NokiaDialogFocus` |
+| 07 | [标准弹窗](./07-dialogs.md) | 选项菜单 / 确认两种复古弹窗、弹窗焦点修复，以及全屏文本编辑页 | `NokiaOptionsDialog` `NokiaConfirmDialog` `NokiaTextInputFragment` `NokiaDialogFocus` |
 | 08 | [主题 · 字体 · 图标](./08-theme-font-icons.md) | 六套主题定义、点阵字体管理、MaterialIcons 矢量图标、电池/虚线 Drawable、尺寸工具 | `NokiaTheme` `NokiaFontManager` `NokiaIcons` `NokiaBatteryDrawable` `NokiaDashedLineDrawable` `NokiaDimens` |
 | 09 | [配键向导](./09-key-wizard.md) | 独立运行的九键录入向导 Activity | `NokiaKeyWizardActivity` |
 | 10 | [反馈上报与日志](./10-feedback.md) | 内置反馈页、日志打包、Ed25519 签名上传、NokiaLog 统一日志器与分级控制 | `NokiaFeedback` `NokiaFeedbackActivity` `NokiaLog` `KdfbUploader` |
@@ -46,7 +46,8 @@ NokiaPage 契约 ── NokiaPageFragment (模板基类)
 
 独立组件（不依赖继承体系）：
 NokiaListFocusHelper ─── 列表焦点控制器（Activity 内直接用）
-NokiaOptionsDialog / NokiaConfirmDialog / NokiaInputDialog ─── 标准弹窗
+NokiaOptionsDialog / NokiaConfirmDialog ─── 标准弹窗
+NokiaTextInputFragment ─── 全屏文本编辑页（替代原输入弹窗）
 NokiaTheme / NokiaFontManager / NokiaIcons ─── 视觉三件套
 ```
 

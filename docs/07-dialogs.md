@@ -2,7 +2,7 @@
 
 包：`io.github.cctyl.nokia.keycore.ui.dialog`
 
-三个开箱即用的复古弹窗 + 一个焦点修复工具。共同特性：
+两个开箱即用的复古弹窗 + 一个全屏文本编辑页 + 一个焦点修复工具。共同特性：
 
 - 底部弹出（`Gravity.BOTTOM`）、透明窗底、自带迷你顶栏与软键栏；
 - `onCreate` 时自动应用当前生态主题（标题栏渐变、卡片底色、文字颜色）——**禁止在业务里再自绘弹窗配色**；
@@ -93,25 +93,40 @@ NokiaConfirmDialog(this, "删除歌单", "确定删除「${name}」吗？")
     .show()
 ```
 
-## NokiaInputDialog — 文本输入
+## 文本输入：改用全屏编辑页 `NokiaTextInputFragment`
+
+> **已移除 `NokiaInputDialog`。**
+> 底部小弹窗不符合功能机输入范式（FEATURE_PHONE_UI_SPEC §19/§20）：
+> 在 240×320 屏幕上弹窗高度仅约 70px，输入区被压缩到 30px 左右，
+> 且**软键条被挤压为 0×0 完全不可见**，用户看不到「确定/取消」，
+> 直接违反规范「Never require a user to guess a hidden softkey action」。
+>
+> 功能机（S40 / KaiOS）输入长文本的经典做法是**全屏编辑页**。
 
 ```java
-public NokiaInputDialog(@NonNull Context context, @NonNull String title,
-                        @Nullable String defaultText, @Nullable String hint)
+public static NokiaTextInputFragment newInstance(@NonNull String title, @Nullable String text,
+                                                 @Nullable String hint,
+                                                 boolean multiline, int maxChars)
 
-public NokiaInputDialog setOnInputConfirmListener(OnInputConfirmListener listener)
-public interface OnInputConfirmListener { void onConfirm(String text); }  // dismiss 后回调
+public NokiaTextInputFragment setOnConfirmListener(OnConfirmListener listener)
+public NokiaTextInputFragment setRequired(boolean required)   // 默认 true，空内容时提示
+public interface OnConfirmListener { void onConfirm(String text); }
 ```
 
-- 弹出即回填 `defaultText` 并把光标置尾；
-- 左软键确认提交文本；右软键取消关闭；
-- 实体键盘字符直接进入 EditText；触屏点击输入框拉起 IME。
-- 注意：SELECT 未被拦截，会正常落入输入框换行/确认逻辑。
+- 输入区占满内容区，标题栏与软键条由宿主骨架固定在上下两端，**软键条恒定可见**；
+- 进页面即回填 `text` 并把光标置尾，物理键盘直接输入；
+- 左软键确认并回调后出栈；右软键 / BACK 放弃修改出栈；
+- 单行模式下 CENTER 与回车键也可确认；多行模式回车换行（避免误触退出）；
+- 底部显示 hint 与字数统计（设置了 `maxChars` 时显示 `n/max`）。
 
-```kotlin
-NokiaInputDialog(this, "重命名歌单", oldName, "输入新名称")
-    .setOnInputConfirmListener { name -> rename(name) }
-    .show()
+```java
+NokiaTextInputFragment page = NokiaTextInputFragment.newInstance(
+        "问题描述", comment, "描述问题与复现步骤", true, 500);
+page.setOnConfirmListener(text -> { comment = text; });
+getSupportFragmentManager().beginTransaction()
+        .replace(R.id.midPanel, page)
+        .addToBackStack(null)
+        .commit();
 ```
 
 ## NokiaDialogFocus — 弹窗焦点修复工具

@@ -10,7 +10,7 @@
 | `NokiaFeedbackConfig` | 全局配置（上传 URL / 通信密钥 / 应用名 / 版本 / 日志目录） |
 | `NokiaFeedback` | 门面：`init()` 注册配置、`submit()` 上传 |
 | `NokiaFeedbackActivity` | SDK 内置复古反馈页，开箱即用 |
-| `NokiaTextInputActivity` | 全屏文本输入页（反馈页的联系方式/问题描述编辑器，宿主也可复用） |
+| `NokiaTextInputFragment` | 全屏文本编辑页（反馈页的联系方式/问题描述编辑器，宿主也可复用） |
 | `FeedbackUploader` | 协议实现：meta 组装、日志 zip 打包、HMAC-SHA256 签名与 HTTP POST 上传 |
 | `DeviceInfoCollector` | 设备信息采集（extras 默认值） |
 | `NokiaLog` | SDK 内置零依赖文件日志器（对齐桌面架构，支持按天轮转、级别控制与崩溃同步落盘） |
@@ -127,8 +127,9 @@ Manifest 权限（必须）：
 继承 `NokiaBaseActivity`，自动获得 240dp 视口、点阵字体、主题跟随：
 
 - **问题类型**：值选择器行，LEFT/RIGHT 快速切换或 CENTER 弹出选项菜单（写入 extras 的 `feedback_type`）；
-- **联系方式 / 问题描述**：必填。CENTER 进入全屏输入页 `NokiaTextInputActivity`
-  （大输入区、物理键盘直输、软键 确定/返回）；为空提交时自动定位到对应行并打开输入页引导填写；
+- **联系方式 / 问题描述**：必填。CENTER 进入全屏编辑页 `NokiaTextInputFragment`
+  （输入区占满内容区、物理键盘直输、软键 确定/返回）；为空提交时自动定位到对应行并打开编辑页引导填写；
+  编辑页压入返回栈，确定后回调写回并出栈恢复焦点；
 - **主题跟随**：页面背景、行卡片、焦点高亮、文字颜色全部取自
   `NokiaClient.getCurrentTheme()`，与桌面当前主题实时一致（onResume 重取）；
 - **附带运行日志**：强制开启不可关闭，行内实时显示「N 个文件 / X KB」，

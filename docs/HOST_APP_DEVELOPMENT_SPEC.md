@@ -340,13 +340,24 @@ new NokiaConfirmDialog(context, "删除确认", "确定要删除该条记录吗�
 ```
 > **注意**：`NokiaConfirmDialog` 采用“先 dismiss 再回调”机制，杜绝弹窗叠加造成的窗口 Token 泄漏。
 
-### 3. 文本输入框：`NokiaInputDialog`
-用于快速单行文本输入（如重命名、新建文件夹）：
+### 3. 文本输入：全屏编辑页 `NokiaTextInputFragment`
+
+> **`NokiaInputDialog` 已移除。** 底部小弹窗在 240×320 屏上输入区仅约 30px、软键条被压成 0×0 不可见，
+> 不符合 FEATURE_PHONE_UI_SPEC §19/§20 的功能机输入范式。统一改用全屏编辑页。
+
 ```java
-new NokiaInputDialog(context, "新建歌单", "", "请输入歌单名称")
-    .setOnInputConfirmListener(text -> createPlaylist(text))
-    .show();
+NokiaTextInputFragment page = NokiaTextInputFragment.newInstance(
+        "新建歌单", "", "请输入歌单名称", false, 30);
+page.setOnConfirmListener(text -> createPlaylist(text));
+getSupportFragmentManager().beginTransaction()
+        .replace(R.id.midPanel, page)
+        .addToBackStack(null)
+        .commit();
 ```
+
+- `multiline=false` 时单行输入，CENTER / 回车键即可确认；`multiline=true` 时多行，回车换行；
+- `maxChars` 大于 0 时底部显示 `n/max` 字数统计；
+- 左软键确定并回调后出栈，右软键 / BACK 放弃修改出栈。
 
 ---
 
@@ -388,7 +399,7 @@ new NokiaInputDialog(context, "新建歌单", "", "请输入歌单名称")
 - [ ] **按键语义**：物理按键全走 `NokiaKeyBinding.resolveAction(event)`，无硬编码 KeyCode。
 - [ ] **按键配对**：所有自定义消费 DOWN 事件之处均已拦截 UP 事件。
 - [ ] **首键防吞**：条目声明了 `focusableInTouchMode="true"`，外层 ScrollView 声明了 `focusable="false"`，页面进入后第 1 次按方向键立即响应。
-- [ ] **弹窗合规**：无原生 `AlertDialog` / `Toast`，全部使用 `NokiaOptionsDialog` / `NokiaConfirmDialog` / `NokiaInputDialog`。
+- [ ] **弹窗合规**：无原生 `AlertDialog` / `Toast`，选项与确认使用 `NokiaOptionsDialog` / `NokiaConfirmDialog`，文本输入使用全屏编辑页 `NokiaTextInputFragment`。
 - [ ] **包可见性**：`AndroidManifest.xml` 中已包含 `<queries>` 桌面 Provider 声明。
 
 ---

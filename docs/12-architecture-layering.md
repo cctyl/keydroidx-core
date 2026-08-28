@@ -77,7 +77,7 @@ keydroidx-core（SDK / Client）── 独立 App（Music、Browser…）
 | `ui/NokiaTextInputActivity.java` | ✅ 依赖 | 留在 `core` |
 | `ui/dialog/NokiaOptionsDialog.java` | ✅ 依赖 | 留在 `core` |
 | `ui/dialog/NokiaConfirmDialog.java` | ✅ 依赖 | 留在 `core` |
-| `ui/dialog/NokiaInputDialog.java` | ✅ 依赖 | 留在 `core` |
+| `ui/NokiaTextInputFragment.java` | ❌ 不依赖 | ✅ 已下沉 `common`（反馈页需跨端复用） |
 | `ui/page/*`（Fragment 体系） | ✅ 依赖 | 留在 `core` |
 | `ui/NokiaKeyWizardActivity.java` | ✅ 依赖 | 留在 `core` |
 | `NokiaClient.java` | — | 留在 `core` |

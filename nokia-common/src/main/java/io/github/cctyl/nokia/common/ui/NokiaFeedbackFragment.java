@@ -17,7 +17,6 @@ import java.util.Map;
 import io.github.cctyl.nokia.common.feedback.NokiaFeedback;
 import io.github.cctyl.nokia.common.feedback.NokiaFeedbackConfig;
 import io.github.cctyl.nokia.common.model.NokiaKeyAction;
-import io.github.cctyl.nokia.common.ui.dialog.NokiaInputDialog;
 import io.github.cctyl.nokia.common.ui.dialog.NokiaOptionsDialog;
 import io.github.cctyl.nokia.common.ui.page.NokiaPageFragment;
 import io.github.cctyl.nokia.common.R;
@@ -27,7 +26,7 @@ import io.github.cctyl.nokia.common.R;
  *
  * <p>属于 {@code nokia-common}，零业务依赖：主题取自全局 {@link ThemeProvider}，
  * 按键由宿主 Activity（实现 {@link io.github.cctyl.nokia.common.model.KeyResolver}）解析，
- * 文本输入复用 {@link NokiaInputDialog}，日志上传复用 {@link NokiaFeedback}。</p>
+ * 文本输入复用 {@link NokiaTextInputFragment}（全屏编辑页），日志上传复用 {@link NokiaFeedback}。</p>
  *
  * <h3>两端的接入方式</h3>
  * <ul>
@@ -39,7 +38,7 @@ import io.github.cctyl.nokia.common.R;
  * <ul>
  *   <li>UP/DOWN：焦点逐行移动（不循环）；</li>
  *   <li>问题类型行：LEFT/RIGHT 快速切换值；CENTER 弹出选项菜单；</li>
- *   <li>联系方式 / 问题描述行：CENTER 进入输入弹窗；</li>
+ *   <li>联系方式 / 问题描述行：CENTER 进入全屏编辑页；</li>
  *   <li>日志行：始终附带，仅展示状态；</li>
  *   <li>提交行：CENTER 提交；</li>
  *   <li>软键：LSK=提交，RSK=返回。</li>
@@ -232,9 +231,15 @@ public class NokiaFeedbackFragment extends NokiaPageFragment {
         dialog.show();
     }
 
+    /**
+     * 进入全屏编辑页（功能机 S40 范式：全屏输入，软键条恒定可见）。
+     *
+     * <p>编辑页压入返回栈，确定后回调写回字段并出栈恢复本页焦点。</p>
+     */
     private void startTextInput(String title, String current, String hint, boolean multiline, int maxChars) {
-        NokiaInputDialog dialog = new NokiaInputDialog(requireContext(), title, current, hint, multiline, maxChars);
-        dialog.setOnInputConfirmListener(text -> {
+        NokiaTextInputFragment page = NokiaTextInputFragment.newInstance(
+                title, current, hint, multiline, maxChars);
+        page.setOnConfirmListener(text -> {
             if (title.equals("联系方式")) {
                 contact = text;
             } else {
@@ -242,7 +247,31 @@ public class NokiaFeedbackFragment extends NokiaPageFragment {
             }
             refreshValues();
         });
-        dialog.show();
+
+        // 压入宿主 Fragment 返回栈（容器为骨架的 midPanel）
+        int containerId = getHostContainerId();
+        getParentFragmentManager().beginTransaction()
+                .replace(containerId, page)
+                .addToBackStack(null)
+                .commit();
+    }
+
+    /**
+     * 获取宿主内容容器 ID。优先使用骨架 midPanel，宿主未提供时退回本 Fragment 所在容器。
+     */
+    private int getHostContainerId() {
+        if (getActivity() instanceof io.github.cctyl.nokia.common.ui.NokiaBaseActivity) {
+            return io.github.cctyl.nokia.common.R.id.midPanel;
+        }
+        View own = getView();
+        if (own != null && own.getParent() instanceof android.view.ViewGroup) {
+            android.view.ViewGroup parent = (android.view.ViewGroup) own.getParent();
+            int id = parent.getId();
+            if (id != View.NO_ID) {
+                return id;
+            }
+        }
+        return io.github.cctyl.nokia.common.R.id.midPanel;
     }
 
     // ---------- 提交 ----------

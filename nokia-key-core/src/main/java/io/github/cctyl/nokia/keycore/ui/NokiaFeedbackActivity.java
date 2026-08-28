@@ -14,7 +14,8 @@ import io.github.cctyl.nokia.common.ui.NokiaFeedbackFragment;
  * <ul>
  *   <li>按键解析与主题复用本 Activity（实现 {@code KeyResolver} / {@code ThemeProvider}），
  *       自动分发给托管的 Fragment；</li>
- *   <li>文本输入复用 {@code nokia-common} 的 {@link io.github.cctyl.nokia.common.ui.dialog.NokiaInputDialog}。</li>
+ *   <li>文本输入复用 {@code nokia-common} 的 {@link io.github.cctyl.nokia.common.ui.NokiaTextInputFragment}
+ *       （全屏编辑页，压入返回栈）。</li>
  * </ul>
  */
 public class NokiaFeedbackActivity extends NokiaBaseActivity {
