@@ -611,7 +611,7 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         if (getSupportFragmentManager().getBackStackEntryCount() > 0) {
             getSupportFragmentManager().popBackStack();
         } else {
-            onBackPressed();
+            finish();
         }
     }
 
@@ -621,7 +621,7 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         if (page != null && page.onBack()) {
             return;
         }
-        super.onBackPressed();
+        exitCurrent();
     }
 
     @CallSuper

@@ -143,14 +143,6 @@ public abstract class NokiaPageFragment extends Fragment implements NokiaPage {
 
     @Override
     public boolean onBack() {
-        Activity activity = getActivity();
-        if (activity instanceof NokiaPageHost) {
-            ((NokiaPageHost) activity).exitCurrent();
-            return true;
-        } else if (activity != null) {
-            activity.onBackPressed();
-            return true;
-        }
         return false;
     }
 }
