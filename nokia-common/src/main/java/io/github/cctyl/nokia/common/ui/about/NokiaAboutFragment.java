@@ -16,6 +16,7 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.util.TypedValue;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -26,6 +27,7 @@ import java.util.List;
 import io.github.cctyl.nokia.common.R;
 import io.github.cctyl.nokia.common.log.NokiaLog;
 import io.github.cctyl.nokia.common.model.NokiaKeyAction;
+import io.github.cctyl.nokia.common.ui.NokiaFontManager;
 import io.github.cctyl.nokia.common.ui.NokiaIcons;
 import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.common.ui.dialog.NokiaOptionsDialog;
@@ -220,6 +222,9 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
             tvStatement.setVisibility(View.GONE);
         }
 
+        // 应用点阵字体与缩放
+        NokiaFontManager.applyToViewTree(root);
+
         updateFocusHighlight();
     }
 
@@ -239,13 +244,13 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.WHITE);
-        tvTitle.setTextSize(12);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 14);
         tvTitle.getPaint().setFakeBoldText(true);
 
         TextView tvUrl = new TextView(ctx);
         tvUrl.setText(url);
         tvUrl.setTextColor(Color.parseColor(linkColorHex));
-        tvUrl.setTextSize(10);
+        NokiaFontManager.setTextSize(tvUrl, TypedValue.COMPLEX_UNIT_SP, 12);
         tvUrl.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
@@ -278,14 +283,14 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText("详细日志输出 (Debug Log)");
         tvTitle.setTextColor(Color.WHITE);
-        tvTitle.setTextSize(12);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 14);
         tvTitle.getPaint().setFakeBoldText(true);
 
         TextView tvSub = new TextView(ctx);
         boolean enabled = NokiaLog.isDetailedLogEnabled(ctx);
         tvSub.setText(enabled ? "已开启 (详细记录所有调试日志)" : "已关闭 (仅记录错误日志)");
         tvSub.setTextColor(enabled ? Color.parseColor("#81C784") : Color.parseColor("#B0BEC5"));
-        tvSub.setTextSize(10);
+        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 12);
         tvSub.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);

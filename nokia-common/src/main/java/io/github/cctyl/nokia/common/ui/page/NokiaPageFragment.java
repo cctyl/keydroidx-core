@@ -12,6 +12,8 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import io.github.cctyl.nokia.common.ui.NokiaFontManager;
+
 /**
  * 诺基亚页面 Fragment 抽象基类（模板方法模式）。
  * <p>
@@ -67,9 +69,10 @@ public abstract class NokiaPageFragment extends Fragment implements NokiaPage {
     }
 
     /**
-     * 字体应用钩子。默认空实现，上层模块可在此递归应用自定义字体。
+     * 字体应用钩子。默认在整个视图树上递归应用生态点阵字体及全局字号缩放。
      */
     protected void onApplyFonts(@NonNull View view) {
+        NokiaFontManager.applyToViewTree(view);
     }
 
     /**
