@@ -117,6 +117,15 @@ public class NokiaLog {
     }
 
     /**
+     * 获取当前已初始化的日志目录（{@link #init} 时传入/推导的目录）。
+     * 未初始化时返回 null。
+     */
+    @Nullable
+    public static File getLogDir() {
+        return sLogDir;
+    }
+
+    /**
      * 获取当前是否开启了详细日志模式（开启时持久化 DEBUG 及以上日志；关闭时仅持久化 ERROR 及以上）。
      */
     public static boolean isDetailedLogEnabled(@NonNull Context context) {
