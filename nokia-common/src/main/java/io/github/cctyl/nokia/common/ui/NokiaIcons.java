@@ -219,7 +219,14 @@ public class NokiaIcons {
     public static final String ICON_WIDGETS = "\uE871";      // widgets (桌面组件设置)
     public static final String TOGGLE_AIRPLANE = "\uE539";   // flight / airplanemode_active
     public static final String TOGGLE_BLUETOOTH = "\uE1A7";  // bluetooth
-    public static final String TOGGLE_BRIGHTNESS = "\uE3A6"; // brightness_6
+    // 亮度：按实际渲染效果映射，不按 Material 命名。
+    // 在设备自带的 MaterialIcons-Regular.ttf 中，E1AD 视觉偏暗、E1AE 视觉偏亮，
+    // 与官方命名正好相反；因此 LOW 用 E1AD，MEDIUM 用 E1AE。
+    public static final String TOGGLE_BRIGHTNESS = "\uE1AC";        // brightness_high（兜底/默认态）
+    public static final String TOGGLE_BRIGHTNESS_HIGH = "\uE1AC";   // brightness_high
+    public static final String TOGGLE_BRIGHTNESS_MEDIUM = "\uE1AE"; // 官方名 brightness_low，实际视觉偏亮=中
+    public static final String TOGGLE_BRIGHTNESS_LOW = "\uE1AD";      // 官方名 brightness_medium，实际视觉偏暗=低
+    public static final String TOGGLE_BRIGHTNESS_AUTO = "\uE1AB";   // brightness_auto
     public static final String TOGGLE_CLEAN_BG = "\uE0B8";   // clear_all (清理后台)
     public static final String TOGGLE_DATA = "\uE1E2";       // swap_vert / data_usage
     public static final String TOGGLE_FREEZE = "\uEB3B";     // ac_unit (一键冻结)
@@ -232,6 +239,11 @@ public class NokiaIcons {
     public static final String TOGGLE_TORCH = "\uEF56";      // flashlight_on
     public static final String TOGGLE_UNFREEZE = "\uE430";   // wb_sunny (太阳/解冻/融化)
     public static final String TOGGLE_WIFI = "\uE63E";       // wifi
+    // 电源类（需 mini_shizuku / shell 权限，瞬态动作无开关状态，触发前须二次确认）
+    public static final String TOGGLE_SHUTDOWN = "\uE8AC";   // power_settings_new (关机)
+    public static final String TOGGLE_REBOOT = "\uE042";     // replay (重启，单箭头绕圆)
+    public static final String TOGGLE_RECOVERY = "\uE8C6";   // settings_power (重启到 Recovery)
+    public static final String TOGGLE_FASTBOOT = "\uE869";   // build (重启到 Fastboot/Bootloader)
     public static final String ICON_ALBUM = "\uE019";
     public static final String ICON_LIBRARY_MUSIC = "\uE030";
     public static final String ICON_RADIO = "\uE03E";
