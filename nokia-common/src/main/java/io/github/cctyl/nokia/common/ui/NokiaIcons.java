@@ -228,22 +228,22 @@ public class NokiaIcons {
     public static final String TOGGLE_BRIGHTNESS_LOW = "\uE1AD";      // 官方名 brightness_medium，实际视觉偏暗=低
     public static final String TOGGLE_BRIGHTNESS_AUTO = "\uE1AB";   // brightness_auto
     public static final String TOGGLE_CLEAN_BG = "\uE0B8";   // clear_all (清理后台)
-    public static final String TOGGLE_DATA = "\uE1E2";       // swap_vert / data_usage
+    public static final String TOGGLE_DATA = "\uE8D5";       // swap_vert (移动数据，上下箭头)
     public static final String TOGGLE_FREEZE = "\uEB3B";     // ac_unit (一键冻结)
-    public static final String TOGGLE_HOTSPOT = "\uE1DA";    // wifi_tethering
+    public static final String TOGGLE_HOTSPOT = "\uEBBA";    // cell_tower (个人热点)
     public static final String TOGGLE_LOCATION = "\uE0C8";   // location_on
     public static final String TOGGLE_LOCK = "\uE897";       // lock
     public static final String TOGGLE_ROTATE = "\uE84D";     // screen_rotation
-    public static final String TOGGLE_SAVER = "\uE1A4";      // battery_saver
+    public static final String TOGGLE_SAVER = "\uEFDE";      // battery_saver (省电模式)
     public static final String TOGGLE_SOUND = "\uE050";      // volume_up
-    public static final String TOGGLE_TORCH = "\uEF56";      // flashlight_on
-    public static final String TOGGLE_UNFREEZE = "\uE430";   // wb_sunny (太阳/解冻/融化)
+    public static final String TOGGLE_TORCH = "\uF00B";      // flashlight_on (手电筒)
+    public static final String TOGGLE_UNFREEZE = "\uE80E";   // whatshot (一键解冻，火焰)
     public static final String TOGGLE_WIFI = "\uE63E";       // wifi
     // 电源类（需 mini_shizuku / shell 权限，瞬态动作无开关状态，触发前须二次确认）
     public static final String TOGGLE_SHUTDOWN = "\uE8AC";   // power_settings_new (关机)
     public static final String TOGGLE_REBOOT = "\uE042";     // replay (重启，单箭头绕圆)
-    public static final String TOGGLE_RECOVERY = "\uE8C6";   // settings_power (重启到 Recovery)
-    public static final String TOGGLE_FASTBOOT = "\uE869";   // build (重启到 Fastboot/Bootloader)
+    public static final String TOGGLE_RECOVERY = "\uEA3C";   // construction (重启到 Recovery)
+    public static final String TOGGLE_FASTBOOT = "\uE868";   // bug_report (重启到 Fastboot/Bootloader)
     public static final String ICON_ALBUM = "\uE019";
     public static final String ICON_LIBRARY_MUSIC = "\uE030";
     public static final String ICON_RADIO = "\uE03E";
