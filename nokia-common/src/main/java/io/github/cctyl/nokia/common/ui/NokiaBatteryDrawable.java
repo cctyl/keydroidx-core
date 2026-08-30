@@ -39,8 +39,18 @@ public class NokiaBatteryDrawable extends Drawable {
 
     private int levelPct = 100;
     private boolean isCharging = false;
+    private boolean isPowerSaveMode = false;
     private int customWidth = -1;
     private int customHeight = -1;
+
+    /** 省电模式电量格颜色（醒目黄）。 */
+    private static final int COLOR_POWER_SAVE = 0xFFFFC107;
+    /** 低电量告警红。 */
+    private static final int COLOR_LOW = 0xFFF44336;
+    /** 正常电量绿。 */
+    private static final int COLOR_NORMAL = 0xFF4CAF50;
+    /** 充电中亮绿。 */
+    private static final int COLOR_CHARGING = 0xFF00E676;
 
     public NokiaBatteryDrawable(Context context) {
         float density = context != null ? context.getResources().getDisplayMetrics().density : 1f;
@@ -72,6 +82,17 @@ public class NokiaBatteryDrawable extends Drawable {
         if (this.levelPct != pct || this.isCharging != charging) {
             this.levelPct = pct;
             this.isCharging = charging;
+            invalidateSelf();
+        }
+    }
+
+    /**
+     * 设置省电模式开关。开启后电量格变为黄色（而非绿色），与系统省电状态保持一致。
+     * 优先级高于充电态的亮绿，但充电闪电仍照常绘制。
+     */
+    public void setPowerSaveMode(boolean powerSave) {
+        if (this.isPowerSaveMode != powerSave) {
+            this.isPowerSaveMode = powerSave;
             invalidateSelf();
         }
     }
@@ -127,23 +148,28 @@ public class NokiaBatteryDrawable extends Drawable {
 
         if (levelPct <= 10) {
             activeBars = 1;
-            barColor = 0xFFF44336;
+            barColor = COLOR_LOW;
         } else if (levelPct <= 25) {
             activeBars = 1;
-            barColor = 0xFF4CAF50;
+            barColor = COLOR_NORMAL;
         } else if (levelPct <= 50) {
             activeBars = 2;
-            barColor = 0xFF4CAF50;
+            barColor = COLOR_NORMAL;
         } else if (levelPct <= 75) {
             activeBars = 3;
-            barColor = 0xFF4CAF50;
+            barColor = COLOR_NORMAL;
         } else {
             activeBars = 4;
-            barColor = 0xFF4CAF50;
+            barColor = COLOR_NORMAL;
         }
 
+        // 充电中显示亮绿。
         if (isCharging) {
-            barColor = 0xFF00E676;
+            barColor = COLOR_CHARGING;
+        }
+        // 省电模式优先：电量格统一变黄（低电量红告警仍保留，因其语义为危险）。
+        if (isPowerSaveMode && levelPct > 10) {
+            barColor = COLOR_POWER_SAVE;
         }
 
         fillPaint.setColor(barColor);
