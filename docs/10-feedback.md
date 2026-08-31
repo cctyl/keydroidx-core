@@ -278,14 +278,20 @@ SDK 不代做脱敏（无法理解业务语义）。
 | device_brand / device_model / device_manufacturer | `Build.*` |
 | android_version / android_api | `Build.VERSION.*` |
 | supported_abis（或 cpu_abi） | `Build.SUPPORTED_ABIS` |
+| cpu_cores | `Runtime.availableProcessors()` |
+| cpu_model / cpu_hardware | `/proc/cpuinfo` |
+| cpu_max_freq_mhz / cpu_min_freq_mhz | `/sys/.../cpufreq/` |
+| gpu_renderer / gpu_vendor / gpu_version | EGL 临时上下文 GL strings |
 | total_mem_mb / avail_mem_mb / memory_class_mb | `ActivityManager.MemoryInfo` |
 | free_disk_mb / total_disk_mb | `StatFs` |
 | screen_px / screen_density | `DisplayMetrics` |
 | battery_pct / charging | `ACTION_BATTERY_CHANGED` 粘性广播 |
 | locale / uptime_days | `Locale` / `SystemClock` |
+| android_id | `Settings.Secure.ANDROID_ID` |
 | app_package / app_version_name / app_version_code | `PackageManager` |
 
-全部来自系统公开 API，不含 IMEI、位置等隐私敏感数据。
+全部来自系统公开 API，不含 IMEI、MAC 地址、位置等隐私敏感数据。
+`android_id` 为系统公开设备标识（Android 8+ 按签名密钥+设备唯一，无额外权限）。
 宿主可通过 `submit()` 的 extraInfo 参数追加自己的字段（值支持 Number/Boolean/String，
 String 自动截断 200 字符，序列化后 extras 总量 ≤4096 字节）。
 
