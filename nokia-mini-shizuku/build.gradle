@@ -1,0 +1,54 @@
+plugins {
+    id 'com.android.library'
+    id 'maven-publish'
+}
+
+android {
+    namespace 'io.github.cctyl.nokia.shizuku'
+    compileSdk rootProject.ext.COMPILE_SDK
+
+    defaultConfig {
+        minSdk rootProject.ext.MIN_SDK
+        targetSdk rootProject.ext.TARGET_SDK
+        consumerProguardFiles 'consumer-rules.pro'
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    lint {
+        abortOnError false
+    }
+
+    publishing {
+        singleVariant('release') {
+            withSourcesJar()
+        }
+    }
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+                groupId = 'io.github.cctyl.nokia'
+                artifactId = 'mini-shizuku-client'
+                version = '1.0.0'
+            }
+        }
+    }
+}
+
+dependencies {
+    // 纯 IPC 客户端，无第三方依赖，仅用 Android 公开 API（android.net.LocalSocket）。
+}

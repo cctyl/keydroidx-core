@@ -20,4 +20,4 @@ dependencyResolutionManagement {
 }
 
 rootProject.name = "nokia-key-core"
-include ':nokia-common', ':nokia-key-core', ':sample'
+include ':nokia-common', ':nokia-key-core', ':nokia-mini-shizuku', ':sample'

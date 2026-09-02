@@ -6,6 +6,10 @@ def localProps = new Properties()
 def localPropsFile = rootProject.file("local.properties")
 if (localPropsFile.exists()) localPropsFile.withInputStream { localProps.load(it) }
 
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file("keystore.properties")
+if (keystorePropsFile.exists()) keystorePropsFile.withInputStream { keystoreProps.load(it) }
+
 android {
     namespace 'io.github.cctyl.nokia.sample'
     compileSdk rootProject.ext.COMPILE_SDK
@@ -28,10 +32,10 @@ android {
 
     signingConfigs {
         release {
-            storeFile file(project.hasProperty("RELEASE_STORE_FILE") ? RELEASE_STORE_FILE : "test.jks")
-            storePassword project.hasProperty("RELEASE_STORE_PASSWORD") ? RELEASE_STORE_PASSWORD : ""
-            keyAlias project.hasProperty("RELEASE_KEY_ALIAS") ? RELEASE_KEY_ALIAS : "key0"
-            keyPassword project.hasProperty("RELEASE_KEY_PASSWORD") ? RELEASE_KEY_PASSWORD : ""
+            storeFile file(keystoreProps.getProperty("RELEASE_STORE_FILE") ?: (project.hasProperty("RELEASE_STORE_FILE") ? RELEASE_STORE_FILE : "test.jks"))
+            storePassword keystoreProps.getProperty("RELEASE_STORE_PASSWORD") ?: (project.hasProperty("RELEASE_STORE_PASSWORD") ? RELEASE_STORE_PASSWORD : "")
+            keyAlias keystoreProps.getProperty("RELEASE_KEY_ALIAS") ?: (project.hasProperty("RELEASE_KEY_ALIAS") ? RELEASE_KEY_ALIAS : "key0")
+            keyPassword keystoreProps.getProperty("RELEASE_KEY_PASSWORD") ?: (project.hasProperty("RELEASE_KEY_PASSWORD") ? RELEASE_KEY_PASSWORD : "")
             v1SigningEnabled true
             v2SigningEnabled true
         }
@@ -56,5 +60,6 @@ android {
 
 dependencies {
     implementation project(':nokia-key-core')
+    implementation project(':nokia-mini-shizuku')
     implementation 'androidx.appcompat:appcompat:1.3.1'
 }
