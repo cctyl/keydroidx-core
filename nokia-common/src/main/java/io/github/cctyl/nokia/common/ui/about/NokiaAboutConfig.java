@@ -8,6 +8,8 @@ import androidx.annotation.DrawableRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import io.github.cctyl.nokia.common.ecosystem.KeydroidXApps;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -30,6 +32,9 @@ public class NokiaAboutConfig implements Serializable {
     private String extraStatement;
     private boolean showDetailedLogToggle = true;
     private boolean showUpdateCheck = false;
+    private boolean showMoreApps = true;
+    /** 「更多应用」清单。createDefault 默认填充「除自己外」的全部生态应用；宿主可覆盖。 */
+    private List<KeydroidXApps.App> moreApps = Collections.emptyList();
     /** 可选：覆盖检查更新时使用的「当前版本号」。不设则用 PackageInfo.versionName。
      *  用于宿主在版本号带渠道后缀（如 1.3.1-open）时传入剥干净的逻辑版本号，避免 semver 误判。 */
     private String updateCurrentVersion;
@@ -71,6 +76,8 @@ public class NokiaAboutConfig implements Serializable {
         } catch (Exception e) {
             config.versionName = "v1.0.0";
         }
+        // 默认展示「除自己外」的全部生态应用
+        config.moreApps = KeydroidXApps.allExcept(context.getPackageName());
         return config;
     }
 
@@ -148,6 +155,20 @@ public class NokiaAboutConfig implements Serializable {
     public String getUpdateCurrentVersion() { return updateCurrentVersion; }
     public NokiaAboutConfig setUpdateCurrentVersion(String updateCurrentVersion) {
         this.updateCurrentVersion = updateCurrentVersion;
+        return this;
+    }
+
+    public boolean isShowMoreApps() { return showMoreApps; }
+    public NokiaAboutConfig setShowMoreApps(boolean showMoreApps) {
+        this.showMoreApps = showMoreApps;
+        return this;
+    }
+
+    public List<KeydroidXApps.App> getMoreApps() {
+        return moreApps;
+    }
+    public NokiaAboutConfig setMoreApps(@Nullable List<KeydroidXApps.App> moreApps) {
+        this.moreApps = (moreApps == null) ? Collections.emptyList() : moreApps;
         return this;
     }
 

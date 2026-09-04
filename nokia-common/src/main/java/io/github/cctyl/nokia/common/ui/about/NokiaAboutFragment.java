@@ -25,12 +25,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 import io.github.cctyl.nokia.common.R;
+import io.github.cctyl.nokia.common.ecosystem.KeydroidXApps;
 import io.github.cctyl.nokia.common.log.NokiaLog;
 import io.github.cctyl.nokia.common.model.NokiaKeyAction;
 import io.github.cctyl.nokia.common.ui.NokiaFontManager;
 import io.github.cctyl.nokia.common.ui.NokiaIcons;
 import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.common.ui.dialog.NokiaOptionsDialog;
+import io.github.cctyl.nokia.common.ui.page.NokiaPageHost;
 import io.github.cctyl.nokia.common.ui.page.NokiaScrollPageFragment;
 import io.github.cctyl.nokia.common.update.NokiaUpdateConfig;
 import io.github.cctyl.nokia.common.update.NokiaUpdateDialog;
@@ -48,7 +50,7 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
     private int focusedIndex = 0;
 
     private static class InteractiveItem {
-        enum Type { URL, LOG_TOGGLE, CUSTOM, CHECK_UPDATE }
+        enum Type { URL, LOG_TOGGLE, CUSTOM, CHECK_UPDATE, MORE_APPS }
         final Type type;
         final String title;
         final String subtitle;
@@ -110,6 +112,8 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
                 return "打开";
             } else if (item.type == InteractiveItem.Type.CHECK_UPDATE) {
                 return "检查";
+            } else if (item.type == InteractiveItem.Type.MORE_APPS) {
+                return "打开";
             }
         }
         return "选择";
@@ -182,22 +186,27 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
             addCheckUpdateCard(llLinks);
         }
 
-        // 3.2 开源地址
+        // 3.2 更多应用（common 内置生态清单，默认除自己外）
+        if (config.isShowMoreApps() && config.getMoreApps() != null && !config.getMoreApps().isEmpty()) {
+            addMoreAppsCard(llLinks);
+        }
+
+        // 3.3 开源地址
         if (!TextUtils.isEmpty(config.getRepoUrl())) {
             addUrlCard(llLinks, "开源地址 (GitHub)", config.getRepoUrl(), "#90CAF9");
         }
 
-        // 3.3 演示视频
+        // 3.4 演示视频
         if (!TextUtils.isEmpty(config.getVideoUrl())) {
             addUrlCard(llLinks, "演示视频 (Bilibili)", config.getVideoUrl(), "#FF80AB");
         }
 
-        // 3.4 额外自定义链接
+        // 3.5 额外自定义链接
         for (NokiaAboutConfig.LinkItem link : config.getExtraLinks()) {
             addUrlCard(llLinks, link.getTitle(), link.getUrl(), "#80DEEA");
         }
 
-        // 3.5 详细日志开关
+        // 3.6 详细日志开关
         if (config.isShowDetailedLogToggle()) {
             addLogToggleCard(llLinks);
         }
@@ -329,6 +338,57 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
             updateConfig.setCurrentVersion(config.getUpdateCurrentVersion());
         }
         NokiaUpdateDialog.checkAndShow(getActivity(), updateConfig);
+    }
+
+    private void addMoreAppsCard(LinearLayout container) {
+        if (getContext() == null) return;
+        Context ctx = getContext();
+
+        LinearLayout card = new LinearLayout(ctx);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(8), dp(6), dp(8), dp(6));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(6);
+        card.setLayoutParams(lp);
+        card.setClickable(true);
+
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText("更多应用");
+        tvTitle.setTextColor(Color.WHITE);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 12);
+        tvTitle.getPaint().setFakeBoldText(true);
+
+        TextView tvSub = new TextView(ctx);
+        tvSub.setText("探索 KeydroidX 生态的其他应用");
+        tvSub.setTextColor(Color.parseColor("#CE93D8"));
+        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 10);
+        tvSub.setPadding(0, dp(2), 0, 0);
+
+        card.addView(tvTitle);
+        card.addView(tvSub);
+
+        final int idx = interactiveItems.size();
+        card.setOnClickListener(v -> {
+            focusedIndex = idx;
+            updateFocusHighlight();
+            openMoreApps();
+        });
+
+        interactiveItems.add(new InteractiveItem(InteractiveItem.Type.MORE_APPS,
+                "更多应用", null, null, card, tvSub));
+        container.addView(card);
+    }
+
+    private void openMoreApps() {
+        if (config == null || getActivity() == null) return;
+        List<KeydroidXApps.App> apps = config.getMoreApps();
+        if (apps == null || apps.isEmpty()) {
+            apps = KeydroidXApps.all();
+        }
+        if (getActivity() instanceof NokiaPageHost) {
+            ((NokiaPageHost) getActivity()).openFragment(NokiaMoreAppsFragment.newInstance(apps));
+        }
     }
 
     private void addLogToggleCard(LinearLayout container) {
@@ -468,6 +528,8 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
                 showUrlOptions(item);
             } else if (item.type == InteractiveItem.Type.CHECK_UPDATE) {
                 checkUpdate();
+            } else if (item.type == InteractiveItem.Type.MORE_APPS) {
+                openMoreApps();
             }
             return true;
         }

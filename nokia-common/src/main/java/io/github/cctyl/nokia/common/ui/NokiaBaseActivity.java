@@ -30,6 +30,7 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.fragment.app.Fragment;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -608,6 +609,14 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
         } else {
             finish();
         }
+    }
+
+    @Override
+    public void openFragment(@NonNull Fragment fragment) {
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.midPanel, fragment)
+                .addToBackStack(null)
+                .commit();
     }
 
     @Override
