@@ -18,6 +18,8 @@ import java.util.zip.ZipOutputStream;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import io.github.cctyl.nokia.common.log.NokiaLog;
+
 /**
  * HTTP 日志上传与意见反馈客户端实现（纯 Java 1.8，零第三方依赖）。
  *
@@ -66,7 +68,7 @@ public final class FeedbackUploader {
             String metaJson = buildMetaJson(appName, appVersion, contact, comment, extras);
             return send(url, hexToBytes(secretKeyHex), metaJson, zip);
         } catch (Throwable t) {
-            android.util.Log.w(TAG, "submit error: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+            NokiaLog.w(TAG, "submit error: " + t.getClass().getSimpleName() + ": " + t.getMessage());
             return false;
         }
     }
@@ -78,7 +80,7 @@ public final class FeedbackUploader {
         try {
             return send(url, hexToBytes(secretKeyHex), metaJson, zip != null ? zip : new byte[0]);
         } catch (Throwable t) {
-            android.util.Log.w(TAG, "submit error: " + t.getClass().getSimpleName() + ": " + t.getMessage());
+            NokiaLog.w(TAG, "submit error: " + t.getClass().getSimpleName() + ": " + t.getMessage());
             return false;
         }
     }
@@ -119,11 +121,11 @@ public final class FeedbackUploader {
 
             int code = conn.getResponseCode();
             if (code != 200) {
-                android.util.Log.w(TAG, "server response code: " + code);
+                NokiaLog.w(TAG, "server response code: " + code);
             }
             return code == 200;
         } catch (IOException e) {
-            android.util.Log.w(TAG, "send failed: " + e.getClass().getSimpleName() + ": " + e.getMessage());
+            NokiaLog.w(TAG, "send failed: " + e.getClass().getSimpleName() + ": " + e.getMessage());
             return false;
         } finally {
             if (conn != null) {

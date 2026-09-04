@@ -8,7 +8,7 @@ import android.database.Cursor;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
-import android.util.Log;
+import io.github.cctyl.nokia.common.log.NokiaLog;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
@@ -91,7 +91,7 @@ public class NokiaClient implements ThemeProvider {
         this.currentFontScale = sp.getFloat(KEY_FONT_SCALE, 1.0f);
         NokiaFontManager.setCurrentFontId(this.currentFontId);
         NokiaFontManager.setFontScale(this.currentFontScale);
-        Log.i(TAG, "loadLocalPrefs: theme=" + currentThemeId + " font=" + currentFontId + " scale=" + currentFontScale);
+        NokiaLog.i(TAG, "loadLocalPrefs: theme=" + currentThemeId + " font=" + currentFontId + " scale=" + currentFontScale);
     }
 
     private void saveLocalPrefs() {
@@ -123,23 +123,23 @@ public class NokiaClient implements ThemeProvider {
         boolean preferDebug = isDebugLauncherPreferred();
         if (preferDebug) {
             if (tryQueryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG)) {
-                Log.i(TAG, "reload: from debug desktop, theme=" + currentThemeId + " source=" + configSource);
+                NokiaLog.i(TAG, "reload: from debug desktop, theme=" + currentThemeId + " source=" + configSource);
                 saveLocalPrefs();
                 return;
             }
             if (tryQueryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE)) {
-                Log.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
+                NokiaLog.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
                 saveLocalPrefs();
                 return;
             }
         } else {
             if (tryQueryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE)) {
-                Log.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
+                NokiaLog.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
                 saveLocalPrefs();
                 return;
             }
             if (tryQueryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG)) {
-                Log.i(TAG, "reload: from debug desktop, theme=" + currentThemeId + " source=" + configSource);
+                NokiaLog.i(TAG, "reload: from debug desktop, theme=" + currentThemeId + " source=" + configSource);
                 saveLocalPrefs();
                 return;
             }
@@ -154,7 +154,7 @@ public class NokiaClient implements ThemeProvider {
         keyBinding.initDefaults();
         configSource = ConfigSource.FALLBACK_DEFAULT;
         dispatchConfigChanged();
-        Log.i(TAG, "reload: final theme=" + currentThemeId + " source=" + configSource);
+        NokiaLog.i(TAG, "reload: final theme=" + currentThemeId + " source=" + configSource);
     }
 
     private boolean tryQueryProvider(String authority, ConfigSource source) {
@@ -221,9 +221,9 @@ public class NokiaClient implements ThemeProvider {
                 return true;
             }
         } catch (SecurityException e) {
-            Log.w(TAG, "Package visibility 或权限受限无法查询: " + authority, e);
+            NokiaLog.w(TAG, "Package visibility 或权限受限无法查询: " + authority, e);
         } catch (Exception e) {
-            Log.e(TAG, "查询 Provider 异常: " + authority, e);
+            NokiaLog.e(TAG, "查询 Provider 异常: " + authority, e);
         }
         return false;
     }
@@ -233,14 +233,14 @@ public class NokiaClient implements ThemeProvider {
             contentObserver = new ContentObserver(mainHandler) {
                 @Override
                 public void onChange(boolean selfChange, Uri uri) {
-                    Log.i(TAG, "收到桌面配置变更通知，自动重新加载");
+                    NokiaLog.i(TAG, "收到桌面配置变更通知，自动重新加载");
                     reload();
                 }
             };
             try {
                 context.getContentResolver().registerContentObserver(uri, true, contentObserver);
             } catch (Exception e) {
-                Log.w(TAG, "注册 ContentObserver 失败", e);
+                NokiaLog.w(TAG, "注册 ContentObserver 失败", e);
             }
         }
     }

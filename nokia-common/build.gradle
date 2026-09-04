@@ -47,6 +47,7 @@ afterEvaluate {
 
 dependencies {
     implementation 'androidx.appcompat:appcompat:1.6.1'
+    api 'com.github.getActivity:XXPermissions:20.0'
     testImplementation 'junit:junit:4.13.2'
     testImplementation 'org.json:json:20231013'
 }

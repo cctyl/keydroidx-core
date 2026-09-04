@@ -20,6 +20,9 @@
 | 11 | [字体与排版设计规范](./11-typography-and-font-spec.md) | 240×320 官方推荐字号阶梯、点阵字体规范、全自动树缩放拦截机制 | `NokiaFontManager` `NokiaDimens` |
 | 12 | [宿主应用开发规范](./HOST_APP_DEVELOPMENT_SPEC.md) | 打造纯正诺基亚风格的强制类继承、UI 渲染、按键分发与交互规范 | `NokiaBaseActivity` `NokiaListPageFragment` `NokiaTheme` |
 | 13 | [生态分层架构演进](./12-architecture-layering.md) | 拆出 `keydroidx-common` 纯基础库，桌面与 SDK 共享主题/日志/反馈协议而不互相依赖 | `ThemeProvider` `NokiaTheme` `NokiaLog` `NokiaFeedback` |
+| 14 | [安装统计上报](./13-install-stats.md) | 首装/升级自动上报一次设备信息，`(app, android_id)` 去重，与反馈上报共用配置与鉴权 | `NokiaInstall` `InstallUploader` `NokiaFeedbackConfig` |
+| 15 | [权限管理与跨机型适配规范](./14-permissions.md) | 统一权限门面，XXPermissions 多 ROM 自动适配，Android 4.4 兼容与诺基亚复古弹窗规范 | `NokiaPermissionManager` `XXPermissions` |
+| 16 | [检查更新](./15-update-check.md) | GitHub Release 版本对比检查、失败网盘兜底引导、可选复古弹窗一站式接入 | `NokiaUpdateChecker` `NokiaUpdateDialog` `NokiaUpdateConfig` |
 
 ## 📐 架构与设计（延伸阅读）
 

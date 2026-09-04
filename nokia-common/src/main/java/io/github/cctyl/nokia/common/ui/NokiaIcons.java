@@ -199,6 +199,8 @@ public class NokiaIcons {
     public static final String ICON_LOCK_OPEN = "\uE898";    // lock_open
     public static final String ICON_LOG = "\uE873";          // subject /日志
     public static final String ICON_MEMORY = "\uE30D";       // memory (内存)
+    public static final String ICON_NOTIFICATIONS = "\uE7F4";     // notifications (铃铛，通知中心)
+    public static final String ICON_NOTIFICATIONS_OFF = "\uE7F6"; // notifications_off
     public static final String ICON_PALETTE = "\uE40A";      // palette (主题调色)
     public static final String ICON_POWER = "\uE8AC";        // power_settings_new (电源)
     public static final String ICON_POWER_OFF = "\uE8AC";    // power_settings_new

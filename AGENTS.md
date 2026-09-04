@@ -74,10 +74,11 @@ SDK 内部代码简洁严谨，自底向上分为三层：
 
 ### 4. 反馈上报层 (`io.github.cctyl.nokia.common.feedback` / `io.github.cctyl.nokia.keycore.feedback` + `ui.NokiaFeedbackActivity`)
 - **`NokiaFeedbackActivity`**：内置诺基亚风格通用反馈页（问题类型/联系方式必填/描述/日志开关），宿主 `startActivity` 即用，入口自定。
-- **`NokiaFeedback` / `NokiaFeedbackConfig`**：门面与配置。宿主启动时 `init()` 注册服务 URL 与通信密钥（值来自宿主 BuildConfig，**密钥绝不入库、不进 SDK**）。
+- **`NokiaFeedback` / `NokiaFeedbackConfig`**：门面与配置。宿主启动时 `init()` 注册服务 URL 与通信密钥（值来自宿主 BuildConfig，**密钥绝不入库、不进 SDK**）。配置同时持有反馈上传地址 `uploadUrl` 与安装统计地址 `installUrl`（后者可省略，由 `resolveInstallUrl()` 从 `uploadUrl` 自动推导 `/upload`→`/install`）。
 - **`FeedbackUploader`**：HTTP POST + HMAC-SHA256 签名协议实现（日志 zip 打包 ≤9MB 超限裁剪、meta 组装、X-Timestamp / X-Nonce / X-AccessKey / X-Meta 请求头组装与 HTTP 发送）；失败静默且禁止自动重试（服务端限流 3 次/分钟/IP）。
-- **`DeviceInfoCollector`**：设备信息采集（仅公开 API）。
-- 详细接入文档见 `docs/10-feedback.md`；默认生态日志目录约定为 `Android/data/<包名>/log`，可在配置中覆盖。
+- **`NokiaInstall` / `InstallUploader`**：安装统计上报（`POST /install`），与反馈上报共用同一份 `NokiaFeedbackConfig` 与同一套 HMAC-SHA256 鉴权，仅路径与请求体不同（Body 为 JSON，非 zip）。`NokiaInstall.reportOnce(context)` 用 `SharedPreferences` 记录 `(android_id, version)` 实现客户端幂等：**首装/升级各报一次，同版本跳过**；`InstallUploader` 复用 `FeedbackUploader` 的签名工具方法（同包 package-private static），零重复实现；失败最多重试 1 次。服务端按 `(app, android_id)` 去重，重复上报不重复计安装数但更新版本字段。协议见 `log_upload/docs/CLIENT_API.md` 第 3 节，接入文档见 `docs/13-install-stats.md`。
+- **`DeviceInfoCollector`**：设备信息采集（仅公开 API），反馈与安装上报共用。
+- 详细接入文档见 `docs/10-feedback.md`、`docs/13-install-stats.md`；默认生态日志目录约定为 `Android/data/<包名>/log`，可在配置中覆盖。
 - **`NokiaLog`**：生态标准零依赖文件日志器（对齐桌面架构），支持按天轮转（保留 7 天）、详细日志开关持久化（`isDetailedLogEnabled` / `setDetailedLogEnabled`）、未捕获崩溃同步瞬时落盘。
 
 ---
@@ -109,4 +110,10 @@ SDK 内部代码简洁严谨，自底向上分为三层：
    - 桌面端的 `ru.playsoftware.j2meloader.nokia.NokiaKeyProvider` 与 SDK 端的 `NokiaKeyAction` / `NokiaKeyClient` 字段命名（`action`, `actionId`, `keyCode`, `keyName`）必须保持严格对应。
 3. **零业务依赖原则**：
    - `nokia-key-core` 模块作为通用基础 SDK，必须保持绝对轻量，禁止引入任何第三方网络、UI 重型库（仅允许基础 `androidx.appcompat`）。
+4. **统一日志器（强制）**：
+   - 所有模块的日志一律走 `io.github.cctyl.nokia.common.log.NokiaLog`，**禁止直接使用 `android.util.Log`**。
+   - `NokiaLog` 是生态标准日志器（按天轮转、落盘到 `Android/data/<包名>/log/yyyyMMdd.log`、未捕获崩溃同步落盘、详细日志开关持久化），直接用 `android.util.Log` 会绕过落盘机制，导致反馈上报「附带运行日志」抓不到现场、崩溃堆栈丢失。
+   - 含堆栈的日志用带 `Throwable` 的重载：`NokiaLog.w(tag, msg, throwable)` / `NokiaLog.e(tag, msg, throwable)`，**不要**回退到 `android.util.Log.w(tag, msg, t)`。
+   - 标签命名：按模块/组件取简短稳定 tag（如 `NokiaInstall`、`EmulatorApp`），不要用类名全限定。
+   - **例外**：`nokia-mini-shizuku` 模块刻意保持「纯 IPC 客户端，零依赖」，仅为它引入 `nokia-common` 用 `NokiaLog` 会破坏其零依赖定位，因此该模块内允许使用 `android.util.Log`。其他模块一律走 `NokiaLog`。
 

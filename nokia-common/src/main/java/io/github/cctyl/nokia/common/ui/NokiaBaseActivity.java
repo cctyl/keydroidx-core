@@ -11,7 +11,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.SystemClock;
-import android.util.Log;
+import io.github.cctyl.nokia.common.log.NokiaLog;
 import android.util.TypedValue;
 import android.view.KeyEvent;
 import android.view.LayoutInflater;
@@ -542,7 +542,7 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
             lastDownTime = now;
 
             int action = resolveAction(event);
-            Log.d(TAG, "dispatchKeyEvent keyCode=" + keyCode
+            NokiaLog.d(TAG, "dispatchKeyEvent keyCode=" + keyCode
                     + " repeat=" + event.getRepeatCount()
                     + " resolvedAction=" + action);
             if (action >= 0) {
