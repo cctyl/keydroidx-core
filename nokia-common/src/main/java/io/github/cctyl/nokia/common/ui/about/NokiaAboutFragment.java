@@ -32,6 +32,8 @@ import io.github.cctyl.nokia.common.ui.NokiaIcons;
 import io.github.cctyl.nokia.common.ui.NokiaTheme;
 import io.github.cctyl.nokia.common.ui.dialog.NokiaOptionsDialog;
 import io.github.cctyl.nokia.common.ui.page.NokiaScrollPageFragment;
+import io.github.cctyl.nokia.common.update.NokiaUpdateConfig;
+import io.github.cctyl.nokia.common.update.NokiaUpdateDialog;
 
 /**
  * KeydroidX 生态标准复古关于页面。
@@ -46,7 +48,7 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
     private int focusedIndex = 0;
 
     private static class InteractiveItem {
-        enum Type { URL, LOG_TOGGLE, CUSTOM }
+        enum Type { URL, LOG_TOGGLE, CUSTOM, CHECK_UPDATE }
         final Type type;
         final String title;
         final String subtitle;
@@ -90,6 +92,8 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
             InteractiveItem item = interactiveItems.get(focusedIndex);
             if (item.type == InteractiveItem.Type.LOG_TOGGLE) {
                 return "切换";
+            } else if (item.type == InteractiveItem.Type.CHECK_UPDATE) {
+                return "检查";
             }
         }
         return "选项";
@@ -104,6 +108,8 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
                 return "切换";
             } else if (item.type == InteractiveItem.Type.URL) {
                 return "打开";
+            } else if (item.type == InteractiveItem.Type.CHECK_UPDATE) {
+                return "检查";
             }
         }
         return "选择";
@@ -171,22 +177,27 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         llLinks.removeAllViews();
         interactiveItems.clear();
 
-        // 3.1 开源地址
+        // 3.1 检查更新（复用 repoUrl，置于链接区首位作为主操作）
+        if (config.isShowUpdateCheck() && !TextUtils.isEmpty(config.getRepoUrl())) {
+            addCheckUpdateCard(llLinks);
+        }
+
+        // 3.2 开源地址
         if (!TextUtils.isEmpty(config.getRepoUrl())) {
             addUrlCard(llLinks, "开源地址 (GitHub)", config.getRepoUrl(), "#90CAF9");
         }
 
-        // 3.2 演示视频
+        // 3.3 演示视频
         if (!TextUtils.isEmpty(config.getVideoUrl())) {
             addUrlCard(llLinks, "演示视频 (Bilibili)", config.getVideoUrl(), "#FF80AB");
         }
 
-        // 3.3 额外自定义链接
+        // 3.4 额外自定义链接
         for (NokiaAboutConfig.LinkItem link : config.getExtraLinks()) {
             addUrlCard(llLinks, link.getTitle(), link.getUrl(), "#80DEEA");
         }
 
-        // 3.4 详细日志开关
+        // 3.5 详细日志开关
         if (config.isShowDetailedLogToggle()) {
             addLogToggleCard(llLinks);
         }
@@ -265,6 +276,54 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
 
         interactiveItems.add(new InteractiveItem(InteractiveItem.Type.URL, title, url, url, card, tvUrl));
         container.addView(card);
+    }
+
+    private void addCheckUpdateCard(LinearLayout container) {
+        if (getContext() == null) return;
+        Context ctx = getContext();
+
+        LinearLayout card = new LinearLayout(ctx);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(8), dp(6), dp(8), dp(6));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(6);
+        card.setLayoutParams(lp);
+        card.setClickable(true);
+
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText("检查更新");
+        tvTitle.setTextColor(Color.WHITE);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 12);
+        tvTitle.getPaint().setFakeBoldText(true);
+
+        TextView tvSub = new TextView(ctx);
+        tvSub.setText("查看 GitHub 最新版本");
+        tvSub.setTextColor(Color.parseColor("#A5D6A7"));
+        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 10);
+        tvSub.setPadding(0, dp(2), 0, 0);
+
+        card.addView(tvTitle);
+        card.addView(tvSub);
+
+        final int idx = interactiveItems.size();
+        card.setOnClickListener(v -> {
+            focusedIndex = idx;
+            updateFocusHighlight();
+            checkUpdate();
+        });
+
+        interactiveItems.add(new InteractiveItem(InteractiveItem.Type.CHECK_UPDATE,
+                "检查更新", null, null, card, tvSub));
+        container.addView(card);
+    }
+
+    private void checkUpdate() {
+        if (getContext() == null || config == null || TextUtils.isEmpty(config.getRepoUrl())) return;
+        if (getActivity() == null) return;
+        Toast.makeText(getContext(), "正在检查更新…", Toast.LENGTH_SHORT).show();
+        NokiaUpdateDialog.checkAndShow(getActivity(),
+                new NokiaUpdateConfig(config.getRepoUrl()));
     }
 
     private void addLogToggleCard(LinearLayout container) {
@@ -402,6 +461,8 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
                 toggleDetailedLog();
             } else if (item.type == InteractiveItem.Type.URL) {
                 showUrlOptions(item);
+            } else if (item.type == InteractiveItem.Type.CHECK_UPDATE) {
+                checkUpdate();
             }
             return true;
         }

@@ -29,6 +29,7 @@ public class NokiaAboutConfig implements Serializable {
     private String acknowledgements;
     private String extraStatement;
     private boolean showDetailedLogToggle = true;
+    private boolean showUpdateCheck = false;
     private final List<LinkItem> extraLinks = new ArrayList<>();
 
     public static class LinkItem implements Serializable {
@@ -131,6 +132,13 @@ public class NokiaAboutConfig implements Serializable {
     public boolean isShowDetailedLogToggle() { return showDetailedLogToggle; }
     public NokiaAboutConfig setShowDetailedLogToggle(boolean showDetailedLogToggle) {
         this.showDetailedLogToggle = showDetailedLogToggle;
+        return this;
+    }
+
+    /** 是否在关于页显示「检查更新」卡片（复用 {@link #repoUrl} 作为 GitHub 仓库地址）。 */
+    public boolean isShowUpdateCheck() { return showUpdateCheck; }
+    public NokiaAboutConfig setShowUpdateCheck(boolean showUpdateCheck) {
+        this.showUpdateCheck = showUpdateCheck;
         return this;
     }
 
