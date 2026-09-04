@@ -41,7 +41,7 @@ import io.github.cctyl.nokia.common.update.NokiaUpdateDialog;
  */
 public class NokiaAboutFragment extends NokiaScrollPageFragment {
 
-    private static final String ARG_CONFIG = "arg_about_config";
+    protected static final String ARG_CONFIG = "arg_about_config";
 
     private NokiaAboutConfig config;
     private final List<InteractiveItem> interactiveItems = new ArrayList<>();
