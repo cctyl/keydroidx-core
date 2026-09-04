@@ -322,8 +322,13 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         if (getContext() == null || config == null || TextUtils.isEmpty(config.getRepoUrl())) return;
         if (getActivity() == null) return;
         Toast.makeText(getContext(), "正在检查更新…", Toast.LENGTH_SHORT).show();
-        NokiaUpdateDialog.checkAndShow(getActivity(),
-                new NokiaUpdateConfig(config.getRepoUrl()));
+        NokiaUpdateConfig updateConfig = new NokiaUpdateConfig(config.getRepoUrl());
+        // 宿主可传入剥干净的逻辑版本号，覆盖默认读 PackageInfo.versionName 的行为
+        // （用于版本号带渠道后缀的场景，如 1.3.1-open → 1.3.1）
+        if (!TextUtils.isEmpty(config.getUpdateCurrentVersion())) {
+            updateConfig.setCurrentVersion(config.getUpdateCurrentVersion());
+        }
+        NokiaUpdateDialog.checkAndShow(getActivity(), updateConfig);
     }
 
     private void addLogToggleCard(LinearLayout container) {

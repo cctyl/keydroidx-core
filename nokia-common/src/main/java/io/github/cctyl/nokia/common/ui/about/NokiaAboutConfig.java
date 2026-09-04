@@ -30,6 +30,9 @@ public class NokiaAboutConfig implements Serializable {
     private String extraStatement;
     private boolean showDetailedLogToggle = true;
     private boolean showUpdateCheck = false;
+    /** 可选：覆盖检查更新时使用的「当前版本号」。不设则用 PackageInfo.versionName。
+     *  用于宿主在版本号带渠道后缀（如 1.3.1-open）时传入剥干净的逻辑版本号，避免 semver 误判。 */
+    private String updateCurrentVersion;
     private final List<LinkItem> extraLinks = new ArrayList<>();
 
     public static class LinkItem implements Serializable {
@@ -139,6 +142,12 @@ public class NokiaAboutConfig implements Serializable {
     public boolean isShowUpdateCheck() { return showUpdateCheck; }
     public NokiaAboutConfig setShowUpdateCheck(boolean showUpdateCheck) {
         this.showUpdateCheck = showUpdateCheck;
+        return this;
+    }
+
+    public String getUpdateCurrentVersion() { return updateCurrentVersion; }
+    public NokiaAboutConfig setUpdateCurrentVersion(String updateCurrentVersion) {
+        this.updateCurrentVersion = updateCurrentVersion;
         return this;
     }
 
