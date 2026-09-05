@@ -54,12 +54,12 @@
 
 ### 2.1 档位选用规则
 
-- **正文一律 `nokia_font_body` (9sp)**：列表主标题、歌名、设置项名、弹窗内容文本。**不得用 12sp/14sp 当正文**——历史代码里有 `item_playlist`/`item_download_task` 用 12sp/14sp 当主标题，属违规，需收口到 9sp。
-- **副文本一律 `nokia_font_caption` (8sp)**：歌手、专辑、序号、时间、URL、卡片副标题。
-- **分组小标题栏用 `nokia_font_small_title` (11sp)**，不是 8–9sp（旧规范写法已废弃）。Section Header 不加粗、半透明背景。
-- **弹窗标题用 `nokia_font_title` (13sp)**，弹窗内容行用 `nokia_font_body` (9sp)。
-- **大数字 / About 应用名用 `nokia_font_display` (16sp)**，仅在强调场景出现，整屏不超过一处。
-- **`nokia_font_micro` (7sp) 慎用**，仅限角标/徽标，不可用于承载阅读内容的正文。
+- **正文一律 `nokia_font_body` (12sp)**：单列列表主标题、歌名、设置项名、反馈表单主 Label、输入框主文本。**单列全宽列表必须使用 12sp**，与桌面设置菜单保持 100% 视觉对齐。
+- **副文本一律 `nokia_font_caption` (9sp)**：歌手、专辑、序号、时间、URL、卡片副标题、输入框占位符、免责提示说明、九宫格应用名。
+- **操作/小标题栏用 `nokia_font_small_title` (11sp)**：左右软键文本、表单提交按钮、分组小标题栏（Section Header）、选项弹窗内容行。Section Header 不加粗、半透明背景。
+- **弹窗/页面主标题用 `nokia_font_title` (13sp)**：顶栏页面大标题、弹窗标题栏、播放器歌曲大名、软键中键主操作。
+- **大数字 / About 应用名用 `nokia_font_display` (16sp)**：仅在强调场景出现，整屏不超过一处。
+- **`nokia_font_micro` (7sp) 慎用**：仅限角标/徽标，不可用于承载阅读内容的正文。
 
 ### 2.2 各倍率下的实际渲染
 
@@ -82,12 +82,12 @@
 
 | 控件类型 | 推荐尺寸/高度 | 主文本 Token | 副文本 Token | 备注 |
 | :--- | :--- | :--- | :--- | :--- |
-| **标准列表行 (List Row)** | `minHeight="36dp ~ 38dp"` | `nokia_font_body` (9sp) | `nokia_font_caption` (8sp) | 左侧图标 20dp，保持紧凑 |
-| **两行列表行 (Two-line Row)** | `minHeight="44dp ~ 48dp"` | `nokia_font_body` (9sp) | `nokia_font_caption` (8sp) | 主文本视觉占优 |
-| **快捷宫格卡片 (Grid Card)** | `height="42dp ~ 46dp"` | `nokia_font_body` (9sp) | `nokia_font_caption` (8sp) | 卡片图标 20dp ~ 22dp |
+| **标准列表行 (List Row)** | `minHeight="36dp ~ 38dp"` | `nokia_font_body` (12sp) | `nokia_font_caption` (9sp) | 左侧图标 20dp，饱满清晰 |
+| **两行列表行 (Two-line Row)** | `minHeight="44dp ~ 48dp"` | `nokia_font_body` (12sp) | `nokia_font_caption` (9sp) | 主文本视觉占优 |
+| **快捷宫格卡片 (Grid Card)** | `height="42dp ~ 46dp"` | `nokia_font_body` (12sp) | `nokia_font_caption` (9sp) | 卡片图标 20dp ~ 22dp |
 | **分组小标题栏 (Section Header)** | `height="20dp ~ 22dp"` | `nokia_font_small_title` (11sp) | — | 不加粗，半透明背景 |
 | **弹窗标题栏 (Dialog Title)** | `height="28dp"` | `nokia_font_title` (13sp) | — | 背景为主题色渐变 |
-| **弹窗内容行 (Dialog Row)** | `minHeight="32dp ~ 36dp"` | `nokia_font_body` (9sp) | — | 选中时圆角高亮 |
+| **弹窗内容行 (Dialog Row)** | `minHeight="32dp ~ 36dp"` | `nokia_font_small_title` (11sp) | — | 选中时圆角高亮 |
 | **软键栏 (Softkey Bar)** | `height="22dp"` | `nokia_font_small_title` (11sp) | — | 中间标题 ≤4字 12sp / 5~6字 11sp / ≥7字 10sp（动态自适应，仍以 11sp 为基准） |
 | **大数字时钟 (Clock)** | — | `nokia_font_display` (16sp) | — | 整屏仅一处 |
 
@@ -198,9 +198,9 @@ NokiaFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源时�
 - [ ] 文字单位统一 `sp`，无 `dp` 写字号。
 - [ ] 无小数 sp（如 8.5sp）。
 - [ ] ≤13sp 文本无 `bold`。
-- [ ] 正文用 `nokia_font_body` (9sp)，副文本用 `nokia_font_caption` (8sp)，未用 12/14sp 当正文。
-- [ ] 弹窗标题 `nokia_font_title` (13sp)，弹窗内容 `nokia_font_body` (9sp)。
-- [ ] 分组小标题用 `nokia_font_small_title` (11sp)，未用 8–9sp。
+- [ ] 正文用 `nokia_font_body` (12sp)，副文本用 `nokia_font_caption` (9sp)，未用 14/15sp 当正文。
+- [ ] 弹窗标题 `nokia_font_title` (13sp)，弹窗内容 `nokia_font_small_title` (11sp)。
+- [ ] 分组小标题用 `nokia_font_small_title` (11sp)。
 - [ ] 动态建字走 `NokiaFontManager.setTextSizeResource`，未直接 `tv.setTextSize`。
 - [ ] 未在 `attachBaseContext` 把 `userFontScale` 写进 `Configuration.fontScale`（应固定为 `1.0` 中和系统设置，倍率走 `NokiaFontManager.sFontScale`）。
 - [ ] App 已接入 `NokiaClient`，`font_scale` 同步进 common `NokiaFontManager`。
@@ -213,12 +213,12 @@ NokiaFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源时�
 
 | 偏差 | 现状 | 目标 |
 | :--- | :--- | :--- |
-| `dimens.xml` Token 失效 | `nokia_font_body=12sp`（无人使用） | 改为 `9sp`，与实际用法对齐 |
-| 列表主标题字号不一 | 9 / 12 / 14 / 15 sp 混用 | 统一 `nokia_font_body` (9sp) |
+| `dimens.xml` Token 统一 | 12sp / 11sp / 9sp / 7sp | 统一收口到 `@dimen/nokia_font_*` 6 级层级 |
+| 列表主标题字号不一 | 9 / 12 / 14 / 15 sp 混用 | 统一 `nokia_font_body` (12sp) |
 | common 文字用 `dp` | `activity_nokia_base.xml` 用 `11dp/14dp/16dp` | 改为 `sp` 并引用 Token |
-| 小数 sp | 关于页 `8.5sp` | 改为 `8sp` |
+| 小数 sp | 关于页 `8.5sp` | 改为 `8sp/9sp` 标准整数字号 |
 | 关于页/弹窗裸写数字 | `setTextSize(tv, 9)` 等 | 改为 `setTextSizeResource(..., R.dimen.nokia_font_body)` |
-| `font_scale` 默认 1.5 | 把"标准"当"过小" | 默认改回 `1.0`，迁移时给老用户一次性提示 |
+| `font_scale` 默认 1.5 | 把"标准"当"过小" | 默认改回 `1.0`，倍率平滑缩放 |
 | Music 死 Token `music_font_*` | 与 `nokia_font_*` 重复且无人引用 | 删除，Music XML 迁移到 `nokia_font_*` |
 
 > 已完成：~~Launcher 本地 `NokiaFontManager` 与 common 字段不通~~ → 已统一进 common（本地类删除，全部 27+2 处引用改用 `io.github.cctyl.nokia.common.ui.NokiaFontManager`，`sFontScale` 为唯一缩放源，`attachBaseContext` 固定 `Configuration.fontScale=1.0`）。
