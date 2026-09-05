@@ -264,13 +264,13 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.WHITE);
-        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 12);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 9);
         tvTitle.getPaint().setFakeBoldText(true);
 
         TextView tvUrl = new TextView(ctx);
         tvUrl.setText(url);
         tvUrl.setTextColor(Color.parseColor(linkColorHex));
-        NokiaFontManager.setTextSize(tvUrl, TypedValue.COMPLEX_UNIT_SP, 10);
+        NokiaFontManager.setTextSize(tvUrl, TypedValue.COMPLEX_UNIT_SP, 8f);
         tvUrl.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
@@ -303,13 +303,13 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText("检查更新");
         tvTitle.setTextColor(Color.WHITE);
-        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 12);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 9);
         tvTitle.getPaint().setFakeBoldText(true);
 
         TextView tvSub = new TextView(ctx);
         tvSub.setText("查看 GitHub 最新版本");
         tvSub.setTextColor(Color.parseColor("#A5D6A7"));
-        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 10);
+        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 8f);
         tvSub.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
@@ -356,13 +356,13 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText("更多应用");
         tvTitle.setTextColor(Color.WHITE);
-        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 12);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 9);
         tvTitle.getPaint().setFakeBoldText(true);
 
         TextView tvSub = new TextView(ctx);
         tvSub.setText("探索 KeydroidX 生态的其他应用");
         tvSub.setTextColor(Color.parseColor("#CE93D8"));
-        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 10);
+        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 8f);
         tvSub.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
@@ -407,14 +407,14 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText("详细日志输出 (Debug Log)");
         tvTitle.setTextColor(Color.WHITE);
-        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 12);
+        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 9);
         tvTitle.getPaint().setFakeBoldText(true);
 
         TextView tvSub = new TextView(ctx);
         boolean enabled = NokiaLog.isDetailedLogEnabled(ctx);
         tvSub.setText(enabled ? "已开启 (详细记录所有调试日志)" : "已关闭 (仅记录错误日志)");
         tvSub.setTextColor(enabled ? Color.parseColor("#81C784") : Color.parseColor("#B0BEC5"));
-        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 10);
+        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 8f);
         tvSub.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
