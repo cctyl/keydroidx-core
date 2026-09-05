@@ -125,13 +125,12 @@ public abstract class NokiaBaseActivity extends AppCompatActivity implements Nok
             fixed = nearest;
         }
 
+        Configuration newConfig = new Configuration(config);
         if (fixed != dpi) {
-            Configuration newConfig = new Configuration(config);
             newConfig.densityDpi = fixed;
-            super.attachBaseContext(newBase.createConfigurationContext(newConfig));
-        } else {
-            super.attachBaseContext(newBase);
         }
+        newConfig.fontScale = 1.0f;
+        super.attachBaseContext(newBase.createConfigurationContext(newConfig));
     }
 
     @Override

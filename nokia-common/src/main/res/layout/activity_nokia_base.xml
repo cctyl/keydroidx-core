@@ -47,8 +47,7 @@
             android:ellipsize="end"
             android:includeFontPadding="false"
             android:textColor="@color/nokia_top_text"
-            android:textSize="16dp"
-            android:textStyle="bold" />
+            android:textSize="@dimen/nokia_font_title" />
 
         <!-- 右侧状态栏：信号图标 + 电量 -->
         <LinearLayout
@@ -119,8 +118,7 @@
             android:ellipsize="end"
             android:includeFontPadding="false"
             android:textColor="@color/nokia_bottom_text"
-            android:textSize="11dp"
-            android:textStyle="bold" />
+            android:textSize="@dimen/nokia_font_small_title" />
 
         <TextView
             android:id="@+id/tvSoftCenter"
@@ -133,8 +131,7 @@
             android:ellipsize="end"
             android:includeFontPadding="false"
             android:textColor="#FDE047"
-            android:textSize="11dp"
-            android:textStyle="bold" />
+            android:textSize="@dimen/nokia_font_small_title" />
 
         <TextView
             android:id="@+id/tvSoftRight"
@@ -148,8 +145,7 @@
             android:ellipsize="end"
             android:includeFontPadding="false"
             android:textColor="@color/nokia_bottom_text"
-            android:textSize="11dp"
-            android:textStyle="bold" />
+            android:textSize="@dimen/nokia_font_small_title" />
     </LinearLayout>
 
 </LinearLayout>

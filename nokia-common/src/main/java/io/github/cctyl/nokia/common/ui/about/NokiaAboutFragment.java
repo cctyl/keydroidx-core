@@ -243,6 +243,9 @@ public class NokiaAboutFragment extends NokiaScrollPageFragment {
         }
 
         // 应用点阵字体与缩放
+        NokiaLog.d("NokiaAboutFragment", "about render fontScale=" + NokiaFontManager.getFontScale()
+                + " fontId=" + NokiaFontManager.getCurrentFontId()
+                + " process=" + android.os.Process.myPid());
         NokiaFontManager.applyToViewTree(root);
 
         updateFocusHighlight();

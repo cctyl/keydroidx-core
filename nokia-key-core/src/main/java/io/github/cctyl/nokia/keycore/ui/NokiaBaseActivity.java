@@ -26,17 +26,22 @@ public abstract class NokiaBaseActivity extends io.github.cctyl.nokia.common.ui.
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
+        // 先从 NokiaClient 同步一次字体与缩放状态到 NokiaFontManager，确保 super.onCreate 内部 inflate 视图时处于正确倍率
+        NokiaClient client = NokiaClient.get(this);
+        NokiaFontManager.setFontScale(client.getCurrentFontScale());
+        NokiaFontManager.setCurrentFontId(client.getCurrentFontId());
+
         super.onCreate(savedInstanceState);
 
         // 注册全局配置监听
-        NokiaClient.get(this).addListener(this);
+        client.addListener(this);
 
         // 主动触发一次主题与字体应用
-        NokiaTheme.ThemeDef currentTheme = NokiaTheme.getTheme(NokiaClient.get(this).getCurrentThemeId());
+        NokiaTheme.ThemeDef currentTheme = NokiaTheme.getTheme(client.getCurrentThemeId());
         if (currentTheme != null) {
-            onThemeChanged(NokiaClient.get(this).getCurrentThemeId(), currentTheme);
+            onThemeChanged(client.getCurrentThemeId(), currentTheme);
         }
-        onFontChanged(NokiaClient.get(this).getCurrentFontId(), NokiaClient.get(this).getCurrentFontScale());
+        onFontChanged(client.getCurrentFontId(), client.getCurrentFontScale());
     }
 
     @Override
