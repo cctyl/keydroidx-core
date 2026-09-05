@@ -1,84 +1,229 @@
 # 11 · 字体与字号排版设计规范
 
-本文档定义了 KeydroidX 按键机生态中 **基准 240×320 分辨率** 下的官方推荐字号、排版规范以及 SDK 的全自动字体缩放机制。
+> **本文件是 KeydroidX 按键机生态字号体系的唯一事实源 (Single Source of Truth)。**
+> 生态内所有 App（桌面 Launcher、Music 及后续衍生应用）的字体大小、语义档位、缩放机制，**一律以本文件为准**，与 `nokia-common/res/values/dimens.xml` 的 Token 严格一一对应。
+
+---
+
+## 0. 一句话总则
+
+> **在 240×320 基准分辨率下，以 `font_scale = 1.0` 为"标准舒适默认"，定义 6 档语义字号；用户在桌面"设置 → 字体大小"调节 `font_scale`（1.0 / 1.25 / 1.5…），所有字号统一乘以该倍率。**
+
+实际渲染字号 = 基准字号（Token）× `font_scale`
+
+- 基准字号是设计师在 1.0x 下敲定的"标准舒适大小"，**不是"过小"**。
+- `font_scale = 1.0` 就是标准默认；1.25 / 1.5 是给视力需求或特殊机型留的可达性放大，**不作为默认值**。
+- 所有 App 通过 `KeyProvider` 读取同一个 `font_scale`，经 `NokiaFontManager` 统一下发，保证三边渲染一致。
 
 ---
 
 ## 1. 核心设计原则
 
-1. **基准视口原则（240×320）**：
+1. **基准视口原则（240×320）**
    - 生态所有界面的设计基准分辨率为 **240dp × 320dp**。
-   - `NokiaBaseActivity` 在初始化时会自动通过屏幕宽度比例将 DPI 规范化缩放至 240 视口，开发者在布局文件中编写的 `sp` / `dp` 均直接映射到该基准。
-2. **点阵像素字体的细腻感**：
-   - 像素点阵字体（如 Ark Pixel 12px / 16px、Unifont 等）自身具有极高的像素对齐度。
-   - **禁止滥用 `android:textStyle="bold"`**：在点阵字体下加粗会直接使横纵像素加厚 1~2 倍，破坏复古细腻感并导致视觉过度膨胀。仅在大标题或特定高强调场景使用。
-3. **字号层级克制**：
-   - 屏幕尺寸通常为 2.4 / 2.8 英寸，界面应保证高信息密度且舒适可读。
-   - 标准正文严守 **9sp ~ 10sp** 黄金区间，紧凑列表对齐桌面功能表。
+   - `NokiaBaseActivity` 在初始化时按屏幕宽度比例将 DPI 规范化缩放至 240 视口，开发者在布局文件中编写的 `sp` 均直接映射到该基准。
+2. **1.0x 即舒适默认**
+   - `font_scale = 1.0` 是设计师认可的"标准舒适大小"，**不再是"过小需放大"**。
+   - 严禁把 1.5x 当默认——那等于承认基准本身设计错了。基准错了应改基准，而不是用倍率去补。
+3. **点阵像素字体的细腻感**
+   - 生态使用 ArkPixel-12px / FusionPixel-12px 等点阵像素字体，像素对齐天然锐利，故基准字号可小于通用功能机（KaiOS body ~14–16px），以换取更高信息密度。
+   - **禁止滥用 `android:textStyle="bold"`**：点阵字体加粗只是算法横向加重，会使像素糊成块。仅 `nokia_font_display` 大标题可在必要时加粗。
+4. **单一缩放源**
+   - 缩放倍率只存在一个存储点：`io.github.cctyl.nokia.common.ui.NokiaFontManager.sFontScale`。
+   - 严禁在宿主 `attachBaseContext` 中修改 `Configuration.fontScale`（双重缩放陷阱，见 §6.1）。
+   - 严禁在衍生 App / Launcher 里另起一个本地 `NokiaFontManager` 静态字段——所有 App 必须共用 common 那一套。
+5. **Token 即法律**
+   - 禁止在 XML 或代码里裸写字号数字（`android:textSize="9sp"`、`setTextSize(tv, 9f)`）。
+   - 一律引用 `@dimen/nokia_font_*` Token 或 `NokiaFontManager.setTextSizeResource(tv, R.dimen.nokia_font_*)`。
+   - 改一个 Token，全生态对应语义同步生效。
 
 ---
 
-## 2. 官方推荐字号阶梯 (Typography Tokens)
+## 2. 官方字号阶梯 (Typography Tokens)
 
-所有标准字号均已沉淀在 `nokia-common` 模块的 `res/values/dimens.xml` 中，推荐优先直接引用 Token：
+**基准倍率 `font_scale = 1.0` 下的 6 档语义字号**。已沉淀在 `nokia-common/res/values/dimens.xml`：
 
-| Token 名称 | 尺寸 (SP) | 适用场景与视觉层级 | 对标原生/桌面组件 |
+| Token | 基准 (1.0x) | 语义层级 | 适用场景 | 真实代码范例 |
+| :--- | :--- | :--- | :--- | :--- |
+| **`@dimen/nokia_font_display`** | **16sp** | 大主视觉 | 大数字时钟、About 应用名、首屏核心主视觉大标题 | 桌面时钟大数字、关于页 App 名 |
+| **`@dimen/nokia_font_title`** | **13sp** | 标题 | 页面大标题、弹窗标题栏、软键中键主操作 | `NokiaBaseActivity` 软键中键、`NokiaOptionsDialog` 标题 |
+| **`@dimen/nokia_font_small_title`** | **11sp** | 小标题/标签 | 左右软键文本、顶栏标题、分组小标题栏（Section Header） | `tv_soft_left` / `tv_soft_right`、顶栏标题、列表分组头 |
+| **`@dimen/nokia_font_body`** | **9sp** | **正文基准** | 列表主标题、歌名、搜索词、设置项名、功能表条目、弹窗内容行 | 桌面九宫格/列表功能表项、`item_song` 主文本、设置项 |
+| **`@dimen/nokia_font_caption`** | **8sp** | **副文本** | 歌手名、专辑名、列表序号、时间戳、URL、卡片副标题、歌曲辅助信息 | `item_song` 副文本、关于页 URL/副标题、桌面应用角标 |
+| **`@dimen/nokia_font_micro`** | **7sp** | 极致紧凑 | 角标 Badge、下载进度百分比、微型徽标、极致紧凑状态 | 下载角标、进度百分比 |
+
+### 2.1 档位选用规则
+
+- **正文一律 `nokia_font_body` (9sp)**：列表主标题、歌名、设置项名、弹窗内容文本。**不得用 12sp/14sp 当正文**——历史代码里有 `item_playlist`/`item_download_task` 用 12sp/14sp 当主标题，属违规，需收口到 9sp。
+- **副文本一律 `nokia_font_caption` (8sp)**：歌手、专辑、序号、时间、URL、卡片副标题。
+- **分组小标题栏用 `nokia_font_small_title` (11sp)**，不是 8–9sp（旧规范写法已废弃）。Section Header 不加粗、半透明背景。
+- **弹窗标题用 `nokia_font_title` (13sp)**，弹窗内容行用 `nokia_font_body` (9sp)。
+- **大数字 / About 应用名用 `nokia_font_display` (16sp)**，仅在强调场景出现，整屏不超过一处。
+- **`nokia_font_micro` (7sp) 慎用**，仅限角标/徽标，不可用于承载阅读内容的正文。
+
+### 2.2 各倍率下的实际渲染
+
+| Token | 1.0x | 1.25x | 1.5x |
 | :--- | :--- | :--- | :--- |
-| **`@dimen/nokia_font_large_title`** | **14sp ~ 16sp** | 极少使用：首屏超大数字时钟、核心主视觉大标题 | 桌面时钟大数字、关于页主应用名 |
-| **`@dimen/nokia_font_title`** | **12sp ~ 13sp** | 页面大标题、软键中间主操作、弹窗标题栏 | `NokiaBaseActivity` 软键中键、弹窗 Title |
-| **`@dimen/nokia_font_small_title`** | **11sp** | 左右软键文本、顶栏标题、二级突出按钮 | `tv_soft_left`、`tv_soft_right`、顶栏标题 |
-| **`@dimen/nokia_font_body`** | **9sp ~ 10sp** | **正文基准**：列表主标题、歌名、搜索词、设置项名、功能表条目 | **桌面九宫格/列表功能表项**、标准 ListView 行 |
-| **`@dimen/nokia_font_caption`** | **8sp** | **副文本**：歌手名、专辑名、列表序号、时间戳、二级辅助提示 | 桌面应用角标、歌曲辅助信息行 |
-| **`@dimen/nokia_font_tiny`** | **7sp ~ 8sp** | 微型徽标、角标 Badge、极致紧凑状态信息 | 极小标签、下载进度百分比角标 |
+| `nokia_font_display` | 16sp | 20sp | 24sp |
+| `nokia_font_title` | 13sp | 16.25sp | 19.5sp |
+| `nokia_font_small_title` | 11sp | 13.75sp | 16.5sp |
+| `nokia_font_body` | 9sp | 11.25sp | 13.5sp |
+| `nokia_font_caption` | 8sp | 10sp | 12sp |
+| `nokia_font_micro` | 7sp | 8.75sp | 10.5sp |
+
+> 上表用于设计评审与真机对照。1.0x 是默认，1.25/1.5 是可选放大。
 
 ---
 
 ## 3. 常见控件尺寸与间距推荐
 
-为保证独立 App 与桌面 Launcher 交互体验的一致性，推荐使用以下尺寸参数：
+为保证独立 App 与桌面 Launcher 交互体验一致，控件尺寸与字号必须配套：
 
-| 控件类型 | 推荐尺寸/高度 | 推荐字号 | 备注 |
-| :--- | :--- | :--- | :--- |
-| **标准列表行 (List Row)** | `minHeight="36dp ~ 38dp"` | 主文本 9sp / 副文本 8sp | 左侧图标推荐 20dp，保持紧凑 |
-| **快捷宫格卡片 (Grid Card)** | `height="42dp ~ 46dp"` | 标题 9sp / 描述 8sp | 卡片图标 20dp ~ 22dp |
-| **分组小标题栏 (Section Header)**| `height="20dp ~ 22dp"` | 标题 8sp ~ 9sp | 不加粗，半透明背景 |
-| **弹窗 (Dialog) 标题栏** | `height="28dp"` | 标题 12sp ~ 13sp | 背景为主题色渐变 |
-| **弹窗 (Dialog) 内容行** | `minHeight="32dp ~ 36dp"` | 文本 10sp | 选中时圆角高亮 |
+| 控件类型 | 推荐尺寸/高度 | 主文本 Token | 副文本 Token | 备注 |
+| :--- | :--- | :--- | :--- | :--- |
+| **标准列表行 (List Row)** | `minHeight="36dp ~ 38dp"` | `nokia_font_body` (9sp) | `nokia_font_caption` (8sp) | 左侧图标 20dp，保持紧凑 |
+| **两行列表行 (Two-line Row)** | `minHeight="44dp ~ 48dp"` | `nokia_font_body` (9sp) | `nokia_font_caption` (8sp) | 主文本视觉占优 |
+| **快捷宫格卡片 (Grid Card)** | `height="42dp ~ 46dp"` | `nokia_font_body` (9sp) | `nokia_font_caption` (8sp) | 卡片图标 20dp ~ 22dp |
+| **分组小标题栏 (Section Header)** | `height="20dp ~ 22dp"` | `nokia_font_small_title` (11sp) | — | 不加粗，半透明背景 |
+| **弹窗标题栏 (Dialog Title)** | `height="28dp"` | `nokia_font_title` (13sp) | — | 背景为主题色渐变 |
+| **弹窗内容行 (Dialog Row)** | `minHeight="32dp ~ 36dp"` | `nokia_font_body` (9sp) | — | 选中时圆角高亮 |
+| **软键栏 (Softkey Bar)** | `height="22dp"` | `nokia_font_small_title` (11sp) | — | 中间标题 ≤4字 12sp / 5~6字 11sp / ≥7字 10sp（动态自适应，仍以 11sp 为基准） |
+| **大数字时钟 (Clock)** | — | `nokia_font_display` (16sp) | — | 整屏仅一处 |
 
 ---
 
 ## 4. 全局自动字体与字号缩放机制
 
-### 4.1 缩放机制说明
-KeydroidX 生态采用 **“单一源头 (Single Source of Truth) + 自动树劫持”** 的字体缩放架构：
-- 用户在桌面【设置】→【外观与显示】→【字体大小】中调节缩放倍率（如 1.0x, 1.25x, 1.5x）。
-- `NokiaClient` 监听 Provider 广播并通知当前 Activity。
-- `NokiaFontManager` 统一管理 `sFontScale` 与全局点阵 `Typeface`。
+### 4.1 缩放链路
+
+```
+桌面【设置 → 字体大小】
+        │ 写入 SharedPreferences
+        ▼
+KeyProvider (ContentProvider) 暴露 font_scale
+        │ 各 App 通过 <queries> 跨进程读取
+        ▼
+NokiaClient 监听 Provider 广播
+        │ 调用 NokiaFontManager.setFontScale(fontScale)
+        ▼
+NokiaFontManager.sFontScale  ← 全局唯一缩放源
+        │ applyToViewTree() 遍历时乘以 sFontScale
+        ▼
+TextView 实际渲染：基准设计 px × sFontScale
+```
+
+**关键约束**：
+- `sFontScale` 是全进程静态字段，由 `NokiaClient` 在启动与配置变更时**唯一**写入。
+- Launcher 与所有衍生 App **必须**接入 `NokiaClient`（或等价的 Provider 监听），把 `font_scale` 同步进 common 的 `NokiaFontManager`，**禁止各自维护本地倍率字段**。
+- `Configuration.fontScale` 全程不修改——缩放完全由 `NokiaFontManager` 承担，杜绝双重缩放。
 
 ### 4.2 零手动负担：View 树自动拦截
-从 `nokia-common` 升级后，SDK 在 `NokiaBaseActivity` / `NokiaFontManager` 层面内置了 **`ViewGroup.OnHierarchyChangeListener` 自动劫持**：
-- **静态 XML 布局**：`NokiaBaseActivity` 初始化时自动遍历并应用缩放。
-- **动态创建 View**：无论是业务层调用 `container.removeAllViews()` 重新 `inflate`，还是代码 `container.addView(tv)`，**底层的 HierarchyWatcher 都会在子节点挂载瞬间自动应用点阵 Typeface 并乘以 `sFontScale` 缩放**。
-- **业务开发者无需手动编写任何 `NokiaFontManager.applyToViewTree` 代码**。
+
+SDK 在 `NokiaBaseActivity` / `NokiaFontManager` 层内置 `ViewGroup.OnHierarchyChangeListener` 自动劫持：
+- **静态 XML 布局**：`NokiaBaseActivity` 初始化时自动遍历整棵 View 树，记录每个 `TextView` 的"设计基准 px"并乘以 `sFontScale`。
+- **动态创建 View**：无论是 `container.removeAllViews()` 后重新 `inflate`，还是代码 `container.addView(tv)`，HierarchyWatcher 都会在子节点挂载瞬间自动应用点阵 Typeface 并乘以 `sFontScale`。
+- **业务开发者无需手动编写任何 `NokiaFontManager.applyToViewTree` 代码**（动态添加的根容器除外，需调一次以挂载 watcher）。
 
 ### 4.3 动态设置字号的安全 API
-如果代码中需要动态为某个 `TextView` 设置字号，**请勿直接调用 `tv.setTextSize(sp)`**（这会破坏原始设计基准记录），而应使用 SDK 提供的专属助手方法：
+
+代码中动态设置字号时，**严禁直接调用 `tv.setTextSize(sp)`**（会破坏原始设计基准记录，导致重复缩放或漏缩放）。必须使用 SDK 助手方法：
 
 ```java
-// 方式一：直接指定设计 SP 字号（自动记录基准并即时乘以 fontScale）
-NokiaFontManager.setTextSize(myTextView, 9f);
-
-// 方式二：直接引用 dimens.xml 资源
+// 方式一（首选）：引用 dimens Token，语义清晰
 NokiaFontManager.setTextSizeResource(myTextView, R.dimen.nokia_font_body);
+
+// 方式二：直接指定设计 SP 字号（自动记录基准并即时乘以 fontScale）
+NokiaFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源时使用
 ```
+
+> 即便使用方式二，传入的数字也必须与本文件 §2 的某档基准一致（9 / 8 / 11 / 13 / 16 / 7），**不得出现 8.5 / 10 / 12 / 15 等非档位值**。
 
 ---
 
-## 5. 常见排版避坑指南
+## 5. 使用规则（强制）
 
-1. **避免双重缩放**：
-   - 严禁在宿主 `attachBaseContext` 中再次修改 `Configuration.fontScale`。
-2. **避免大面积设置 `textStyle="bold"`**：
-   - 现代字体的加粗是经过字形设计的，而点阵像素字体的加粗只是算法扩展，会导致像素糊在一起。9sp/10sp 字体请保持正常粗细。
-3. **单行截断规范**：
-   - 按键机屏幕宽度有限（240px），主标题务必配置 `android:singleLine="true"` 与 `android:ellipsize="end"`，配合焦点滚动（Marquee）提升视觉体验。
+1. **必须用 Token，禁止裸写数字**
+   - XML：`android:textSize="@dimen/nokia_font_body"` ✅ / `android:textSize="9sp"` ❌
+   - 代码：`NokiaFontManager.setTextSizeResource(tv, R.dimen.nokia_font_body)` ✅ / `tv.setTextSize(9f)` ❌
+
+2. **统一单位 sp**
+   - 所有文字字号用 `sp`。**禁止用 `dp` 写文字字号**（common `activity_nokia_base.xml` 历史用 `11dp/14dp/16dp`，需收口为 `sp`）。
+   - `dp` 仅用于控件尺寸、间距、图标大小。
+
+3. **禁止小数 sp**
+   - 禁止 `8.5sp` 这类小数——点阵字体在非整数像素上会插值糊化。所有字号取整数。
+
+4. **禁止 `textStyle="bold"` 用于 ≤13sp 文本**
+   - 点阵字体加粗是算法加重，小字号下会糊。仅 `nokia_font_display` (16sp) 大标题可在必要时加粗。
+
+5. **单行截断规范**
+   - 屏宽 240px，主标题务必 `android:singleLine="true"` + `android:ellipsize="end"`；焦点项可配合 Marquee 滚动。
+
+6. **软键栏三栏等宽**
+   - 软键栏为三栏等宽（`0dp + weight=1`），空软键用 `View.INVISIBLE` 占位，**严禁 `View.GONE`**（会塌陷布局）。
+   - 软键文字基准 `nokia_font_small_title` (11sp)，中间标题按字数动态自适应：≤4字 12sp / 5~6字 11sp / ≥7字 10sp，`ellipsize="middle"`。
+
+---
+
+## 6. 排版避坑指南
+
+### 6.1 双重缩放陷阱
+- **现象**：文字被放大到 2.25 倍（1.5 × 1.5）。
+- **根因**：宿主在 `attachBaseContext` 改了 `Configuration.fontScale=1.5`，**同时** `NokiaFontManager.sFontScale` 也被设为 1.5；XML inflate 时系统先按 `Configuration.fontScale` 放大一次，`NokiaFontManager` 又乘一次。
+- **对策**：缩放只走 `NokiaFontManager` 一条路；`Configuration.fontScale` 全程不动。
+
+### 6.2 漏缩放陷阱（本规范重点修复项）
+- **现象**：某 App 的"关于"页字体明显比其他 App 小。
+- **根因**：该 App 未把桌面 `font_scale` 同步进 common 的 `NokiaFontManager.sFontScale`，`sFontScale` 停在默认 1.0，所有走 common 的 Fragment（About、弹窗）拿到的是 1.0 倍率。
+- **对策**：所有 App（含 Launcher）必须经 `NokiaClient` 把 `font_scale` 写进 common `NokiaFontManager`，三边共用同一 `sFontScale`。
+
+### 6.3 重复放大陷阱
+- **现象**：动态创建的 TextView 字越来越大，有的字大有的字小。
+- **根因**：直接 `tv.setTextSize(px)`，每次 `applyToViewTree` 都把"当前已放大值"当"设计值"再次放大。
+- **对策**：动态设字号走 `NokiaFontManager.setTextSizeResource / setTextSize`，由 SDK 记录"设计基准 px"，重复应用不漂移。
+
+### 6.4 字体覆盖陷阱
+- **现象**：MaterialIcons 矢量图标变成方块字。
+- **根因**：`applyToViewTree` 把点阵字体覆盖到了图标字体上。
+- **对策**：SDK 已内置保护——检测到当前 Typeface 是 `NokiaIcons` 字体时自动跳过。业务层无需处理，但**禁止**对图标 `TextView` 手动 `setTypeface(...)`。
+
+---
+
+## 7. 自查清单
+
+实现任何页面 / 修改任何字号前，对照：
+
+- [ ] 所有文字字号引用 `@dimen/nokia_font_*` Token，无裸写数字。
+- [ ] 文字单位统一 `sp`，无 `dp` 写字号。
+- [ ] 无小数 sp（如 8.5sp）。
+- [ ] ≤13sp 文本无 `bold`。
+- [ ] 正文用 `nokia_font_body` (9sp)，副文本用 `nokia_font_caption` (8sp)，未用 12/14sp 当正文。
+- [ ] 弹窗标题 `nokia_font_title` (13sp)，弹窗内容 `nokia_font_body` (9sp)。
+- [ ] 分组小标题用 `nokia_font_small_title` (11sp)，未用 8–9sp。
+- [ ] 动态建字走 `NokiaFontManager.setTextSizeResource`，未直接 `tv.setTextSize`。
+- [ ] 未在 `attachBaseContext` 修改 `Configuration.fontScale`。
+- [ ] App 已接入 `NokiaClient`，`font_scale` 同步进 common `NokiaFontManager`。
+
+---
+
+## 8. 迁移说明（向本规范对齐）
+
+本规范发布时，存量代码存在以下偏差，需在后续提交中逐项收口（不在本次规范提交内动代码）：
+
+| 偏差 | 现状 | 目标 |
+| :--- | :--- | :--- |
+| `dimens.xml` Token 失效 | `nokia_font_body=12sp`（无人使用） | 改为 `9sp`，与实际用法对齐 |
+| 列表主标题字号不一 | 9 / 12 / 14 / 15 sp 混用 | 统一 `nokia_font_body` (9sp) |
+| common 文字用 `dp` | `activity_nokia_base.xml` 用 `11dp/14dp/16dp` | 改为 `sp` 并引用 Token |
+| 小数 sp | 关于页 `8.5sp` | 改为 `8sp` |
+| 关于页/弹窗裸写数字 | `setTextSize(tv, 9)` 等 | 改为 `setTextSizeResource(..., R.dimen.nokia_font_body)` |
+| `font_scale` 默认 1.5 | 把"标准"当"过小" | 默认改回 `1.0`，迁移时给老用户一次性提示 |
+| Launcher 本地 `NokiaFontManager` | 与 common 字段不通 | 统一进 common，删除本地静态倍率字段 |
+
+---
+
+## 9. 版本
+
+- **v2.0** — 重定为 6 档语义阶梯（display/title/small_title/body/caption/micro = 16/13/11/9/8/7 sp），明确 `font_scale=1.0` 为标准舒适默认，确立 `NokiaFontManager.sFontScale` 为唯一缩放源，禁止裸写数字与 `Configuration.fontScale` 改写。
+- v1.0 — 初版（Token 与实际用法不一致，已废弃）。

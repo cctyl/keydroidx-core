@@ -1,17 +1,39 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  KeydroidX 生态字号 Token —— 唯一定义文件。
+  规范见 docs/11-typography-and-font-spec.md（§2 字号阶梯）。
+  所有字号在 font_scale = 1.0 基准下定义；实际渲染 = 基准 × font_scale。
+  严禁裸写 9sp / 8sp 等数字，一律引用本文件 Token。
+-->
 <resources>
-    <!-- 诺基亚复古标准字体尺寸规范 (基准 240x320 设计) -->
-    <dimen name="nokia_font_large_title">16sp</dimen>
-    <dimen name="nokia_font_title">14sp</dimen>
-    <dimen name="nokia_font_body">12sp</dimen>
-    <dimen name="nokia_font_small">11sp</dimen>
-    <dimen name="nokia_font_caption">10sp</dimen>
-    <dimen name="nokia_font_tiny">8sp</dimen>
 
-    <!-- 诺基亚弹窗尺寸规范 -->
+    <!-- ===== 字号阶梯 (Typography Tokens) ===== -->
+    <!-- 规范 docs/11-typography-and-font-spec.md §2 -->
+
+    <!-- 大主视觉：大数字时钟、About 应用名、首屏核心大标题 -->
+    <dimen name="nokia_font_display">16sp</dimen>
+
+    <!-- 标题：页面大标题、弹窗标题栏、软键中键主操作 -->
+    <dimen name="nokia_font_title">13sp</dimen>
+
+    <!-- 小标题/标签：左右软键、顶栏标题、分组小标题栏 (Section Header) -->
+    <dimen name="nokia_font_small_title">11sp</dimen>
+
+    <!-- 正文基准：列表主标题、歌名、设置项名、功能表条目、弹窗内容行 -->
+    <dimen name="nokia_font_body">9sp</dimen>
+
+    <!-- 副文本：歌手、专辑、序号、时间戳、URL、卡片副标题 -->
+    <dimen name="nokia_font_caption">8sp</dimen>
+
+    <!-- 极致紧凑：角标 Badge、下载进度百分比、微型徽标 -->
+    <dimen name="nokia_font_micro">7sp</dimen>
+
+    <!-- ===== 弹窗尺寸规范 ===== -->
+    <!-- 文字 Token 对齐字号阶梯：标题用 nokia_font_title，内容用 nokia_font_body -->
     <dimen name="nokia_dialog_title_bar_height">26dp</dimen>
-    <dimen name="nokia_dialog_title_text">11sp</dimen>
-    <dimen name="nokia_dialog_body_text">10sp</dimen>
+    <dimen name="nokia_dialog_title_text">13sp</dimen>
+    <dimen name="nokia_dialog_body_text">9sp</dimen>
     <dimen name="nokia_dialog_content_padding">10dp</dimen>
     <dimen name="nokia_dialog_icon_size">22dp</dimen>
+
 </resources>
