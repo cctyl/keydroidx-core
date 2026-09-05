@@ -187,6 +187,18 @@ notifyHostRefresh(); // 触发宿主 Activity 重新调用 getter 刷新软键�
   NokiaFontManager.applyToViewTree(newView);
   ```
 
+#### 2.1.1 语义字号规范（6 级标准 Token）
+> 📌 **排版规范唯一事实源**：详见 **`11-typography-and-font-spec.md`**。所有界面文本必须引用 `@dimen/nokia_font_*` 语义 Token，严禁在 XML 中裸写字号数字或滥用加粗。
+
+| 语义 Token | 基准字号 (1.0x) | 适用场景 |
+| :--- | :---: | :--- |
+| **`@dimen/nokia_font_display`** | **16sp** | 待机大时钟、关于页应用名、品牌大标题 |
+| **`@dimen/nokia_font_title`** | **13sp** | 顶栏页面标题、弹窗标题栏、播放器歌曲大名、OK 中键 |
+| **`@dimen/nokia_font_body`** | **12sp** | **核心正文**：单列设置列表项、反馈表单主项、歌曲/歌单名 |
+| **`@dimen/nokia_font_small_title`** | **11sp** | 左右软键文本、表单提交按钮、分组小标题、选项弹窗行 |
+| **`@dimen/nokia_font_caption`** | **9sp** | 副标题（歌手/专辑）、输入框占位符/提示、底部说明、九宫格应用名 |
+| **`@dimen/nokia_font_micro`** | **7sp** | 极小角标（未读数/下载进度等徽标） |
+
 ---
 
 ### 2.2 配色规范：动态生态主题跟随
