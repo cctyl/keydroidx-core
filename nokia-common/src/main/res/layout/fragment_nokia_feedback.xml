@@ -20,14 +20,14 @@
         <LinearLayout
             android:id="@+id/rowType"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="36dp"
             android:background="@drawable/bg_nokia_input_field"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp">
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
 
             <TextView
                 android:id="@+id/lblType"
@@ -36,7 +36,7 @@
                 android:layout_weight="1"
                 android:text="问题类型"
                 android:textColor="#333333"
-                android:textSize="14sp" />
+                android:textSize="@dimen/nokia_font_body" />
 
             <TextView
                 android:id="@+id/valType"
@@ -44,21 +44,21 @@
                 android:layout_height="wrap_content"
                 android:text="请选择 >"
                 android:textColor="#AAAAAA"
-                android:textSize="13sp" />
+                android:textSize="@dimen/nokia_font_caption" />
         </LinearLayout>
 
         <!-- 行：联系方式（文本输入） -->
         <LinearLayout
             android:id="@+id/rowContact"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="36dp"
             android:background="@drawable/bg_nokia_input_field"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp">
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
 
             <TextView
                 android:id="@+id/lblContact"
@@ -67,7 +67,7 @@
                 android:layout_weight="1"
                 android:text="联系方式"
                 android:textColor="#333333"
-                android:textSize="14sp" />
+                android:textSize="@dimen/nokia_font_body" />
 
             <TextView
                 android:id="@+id/valContact"
@@ -78,21 +78,21 @@
                 android:singleLine="true"
                 android:text="请输入 >"
                 android:textColor="#AAAAAA"
-                android:textSize="13sp" />
+                android:textSize="@dimen/nokia_font_caption" />
         </LinearLayout>
 
         <!-- 行：问题描述（文本输入） -->
         <LinearLayout
             android:id="@+id/rowComment"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="36dp"
             android:background="@drawable/bg_nokia_input_field"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:gravity="center_vertical"
             android:orientation="horizontal"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp">
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
 
             <TextView
                 android:id="@+id/lblComment"
@@ -101,7 +101,7 @@
                 android:layout_weight="1"
                 android:text="问题描述"
                 android:textColor="#333333"
-                android:textSize="14sp" />
+                android:textSize="@dimen/nokia_font_body" />
 
             <TextView
                 android:id="@+id/valComment"
@@ -112,7 +112,7 @@
                 android:singleLine="true"
                 android:text="请输入 >"
                 android:textColor="#AAAAAA"
-                android:textSize="13sp" />
+                android:textSize="@dimen/nokia_font_caption" />
         </LinearLayout>
 
         <!-- 行：附带日志（布尔开关，两行：副行显示日志状态） -->
@@ -124,18 +124,18 @@
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:gravity="center_vertical"
-            android:minHeight="44dp"
+            android:minHeight="36dp"
             android:orientation="horizontal"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp">
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
 
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:orientation="vertical"
-                android:paddingTop="6dp"
-                android:paddingBottom="6dp">
+                android:paddingTop="4dp"
+                android:paddingBottom="4dp">
 
                 <TextView
                     android:id="@+id/lblLog"
@@ -143,14 +143,14 @@
                     android:layout_height="wrap_content"
                     android:text="附带运行日志"
                     android:textColor="#333333"
-                    android:textSize="14sp" />
+                    android:textSize="@dimen/nokia_font_body" />
 
                 <TextView
                     android:id="@+id/tvLogInfo"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:textColor="#888888"
-                    android:textSize="11sp" />
+                    android:textSize="@dimen/nokia_font_caption" />
             </LinearLayout>
 
         </LinearLayout>
@@ -159,14 +159,14 @@
         <LinearLayout
             android:id="@+id/rowSubmit"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="36dp"
             android:background="@drawable/bg_nokia_input_field"
             android:focusable="true"
             android:focusableInTouchMode="true"
             android:gravity="center"
             android:orientation="horizontal"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp">
+            android:paddingLeft="10dp"
+            android:paddingRight="10dp">
 
             <TextView
                 android:id="@+id/valSubmit"
@@ -174,8 +174,7 @@
                 android:layout_height="wrap_content"
                 android:text="提 交 反 馈"
                 android:textColor="#0055AA"
-                android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textSize="@dimen/nokia_font_small_title" />
         </LinearLayout>
 
         <!-- 隐私说明 -->
@@ -183,11 +182,11 @@
             android:id="@+id/tvPrivacyNote"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:lineSpacingExtra="3dp"
-            android:padding="10dp"
+            android:lineSpacingExtra="2dp"
+            android:padding="8dp"
             android:text="提交将附带设备信息（品牌/型号/内存等）用于问题定位，不涉及个人隐私数据。"
             android:textColor="#999999"
-            android:textSize="10sp" />
+            android:textSize="@dimen/nokia_font_caption" />
 
     </LinearLayout>
 </ScrollView>

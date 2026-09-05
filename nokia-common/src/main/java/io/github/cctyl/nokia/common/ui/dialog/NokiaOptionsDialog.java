@@ -198,7 +198,7 @@ public class NokiaOptionsDialog extends Dialog {
 
             TextView tv = new TextView(context);
             tv.setText(item.getTitle());
-            NokiaFontManager.setTextSize(tv, TypedValue.COMPLEX_UNIT_SP, 10f);
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, context.getResources().getDimension(R.dimen.nokia_dialog_body_text));
             tv.setTextColor(currentTheme.textColor);
             tv.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
             row.addView(tv);

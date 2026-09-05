@@ -156,18 +156,17 @@ public class NokiaMoreAppsFragment extends NokiaListPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.WHITE);
-        NokiaFontManager.setTextSize(tvTitle, TypedValue.COMPLEX_UNIT_SP, 9);
-        tvTitle.getPaint().setFakeBoldText(true);
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_body));
 
         TextView tvSub = new TextView(ctx);
         tvSub.setTextColor(Color.parseColor("#B0BEC5"));
-        NokiaFontManager.setTextSize(tvSub, TypedValue.COMPLEX_UNIT_SP, 8f);
+        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_caption));
         tvSub.setPadding(0, dp(2), 0, 0);
 
         TextView tvUrl = new TextView(ctx);
         tvUrl.setText(url);
         tvUrl.setTextColor(Color.parseColor(urlColorHex));
-        NokiaFontManager.setTextSize(tvUrl, TypedValue.COMPLEX_UNIT_SP, 8f);
+        tvUrl.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_caption));
         tvUrl.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);

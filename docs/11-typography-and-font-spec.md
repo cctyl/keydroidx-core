@@ -46,11 +46,11 @@
 | Token | 基准 (1.0x) | 语义层级 | 适用场景 | 真实代码范例 |
 | :--- | :--- | :--- | :--- | :--- |
 | **`@dimen/nokia_font_display`** | **16sp** | 大主视觉 | 大数字时钟、About 应用名、首屏核心主视觉大标题 | 桌面时钟大数字、关于页 App 名 |
-| **`@dimen/nokia_font_title`** | **13sp** | 标题 | 页面大标题、弹窗标题栏、软键中键主操作 | `NokiaBaseActivity` 软键中键、`NokiaOptionsDialog` 标题 |
-| **`@dimen/nokia_font_small_title`** | **11sp** | 小标题/标签 | 左右软键文本、顶栏标题、分组小标题栏（Section Header） | `tv_soft_left` / `tv_soft_right`、顶栏标题、列表分组头 |
-| **`@dimen/nokia_font_body`** | **9sp** | **正文基准** | 列表主标题、歌名、搜索词、设置项名、功能表条目、弹窗内容行 | 桌面九宫格/列表功能表项、`item_song` 主文本、设置项 |
-| **`@dimen/nokia_font_caption`** | **8sp** | **副文本** | 歌手名、专辑名、列表序号、时间戳、URL、卡片副标题、歌曲辅助信息 | `item_song` 副文本、关于页 URL/副标题、桌面应用角标 |
-| **`@dimen/nokia_font_micro`** | **7sp** | 极致紧凑 | 角标 Badge、下载进度百分比、微型徽标、极致紧凑状态 | 下载角标、进度百分比 |
+| **`@dimen/nokia_font_title`** | **13sp** | 页面/弹窗标题 | 页面大标题、弹窗标题栏、软键中键主操作、播放器歌名 | `NokiaBaseActivity` 顶栏/中键、`NokiaOptionsDialog` 标题 |
+| **`@dimen/nokia_font_body`** | **12sp** | **核心正文/列表项** | 桌面所有单列设置菜单（5.png）、意见反馈主 Label、歌曲名/歌单名、弹窗确认正文 | 桌面设置列表项、反馈表单项、`item_song` 主标题 |
+| **`@dimen/nokia_font_small_title`** | **11sp** | 小标题/操作按钮 | 左右软键文本、表单提交按钮、分组小标题栏（Section Header）、弹窗列表选项 | `tv_soft_left` / `tv_soft_right`、提交按钮、`NokiaOptionsDialog` 行 |
+| **`@dimen/nokia_font_caption`** | **9sp** | **辅助副文本** | 歌手名、专辑名、输入框占位符、免责说明、九宫格应用名、卡片副标题 | `item_song` 副文本、输入框 hint、关于页副标题、九宫格应用名 |
+| **`@dimen/nokia_font_micro`** | **7sp** | 极小角标 | 角标 Badge、下载进度百分比、微型徽标、极致紧凑状态 | 下载角标、未读数 |
 
 ### 2.1 档位选用规则
 
@@ -67,9 +67,9 @@
 | :--- | :--- | :--- | :--- |
 | `nokia_font_display` | 16sp | 20sp | 24sp |
 | `nokia_font_title` | 13sp | 16.25sp | 19.5sp |
+| `nokia_font_body` | 12sp | 15sp | 18sp |
 | `nokia_font_small_title` | 11sp | 13.75sp | 16.5sp |
-| `nokia_font_body` | 9sp | 11.25sp | 13.5sp |
-| `nokia_font_caption` | 8sp | 10sp | 12sp |
+| `nokia_font_caption` | 9sp | 11.25sp | 13.5sp |
 | `nokia_font_micro` | 7sp | 8.75sp | 10.5sp |
 
 > 上表用于设计评审与真机对照。1.0x 是默认，1.25/1.5 是可选放大。
