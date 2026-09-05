@@ -30,8 +30,8 @@
    - **禁止滥用 `android:textStyle="bold"`**：点阵字体加粗只是算法横向加重，会使像素糊成块。仅 `nokia_font_display` 大标题可在必要时加粗。
 4. **单一缩放源**
    - 缩放倍率只存在一个存储点：`io.github.cctyl.nokia.common.ui.NokiaFontManager.sFontScale`。
-   - 严禁在宿主 `attachBaseContext` 中修改 `Configuration.fontScale`（双重缩放陷阱，见 §6.1）。
-   - 严禁在衍生 App / Launcher 里另起一个本地 `NokiaFontManager` 静态字段——所有 App 必须共用 common 那一套。
+   - `Configuration.fontScale` 必须固定为 `1.0`（中和系统字体设置，避免 sp 字号被系统字体大小二次干扰），**用户倍率只走 `sFontScale`**，绝不把 `userFontScale` 写进 `Configuration.fontScale`（双重缩放陷阱，见 §6.1）。
+   - 生态只有一份 `NokiaFontManager` 实现（common 那一套）。衍生 App / Launcher 禁止另起本地 `NokiaFontManager` 静态字段，必须共用 common 那一套；启动早期把桌面读到的 `font_scale` 与 `font_id` 经 `NokiaFontManager.setFontScale()` / `setCurrentFontId()` 写入 common。
 5. **Token 即法律**
    - 禁止在 XML 或代码里裸写字号数字（`android:textSize="9sp"`、`setTextSize(tv, 9f)`）。
    - 一律引用 `@dimen/nokia_font_*` Token 或 `NokiaFontManager.setTextSizeResource(tv, R.dimen.nokia_font_*)`。
@@ -104,19 +104,19 @@
 KeyProvider (ContentProvider) 暴露 font_scale
         │ 各 App 通过 <queries> 跨进程读取
         ▼
-NokiaClient 监听 Provider 广播
-        │ 调用 NokiaFontManager.setFontScale(fontScale)
+NokiaClient / NokiaBaseActivity 启动早期读取 font_scale + font_id
+        │ 调用 NokiaFontManager.setFontScale() / setCurrentFontId()
         ▼
-NokiaFontManager.sFontScale  ← 全局唯一缩放源
+NokiaFontManager.sFontScale / sCurrentFontId  ← 全局唯一缩放源
         │ applyToViewTree() 遍历时乘以 sFontScale
         ▼
 TextView 实际渲染：基准设计 px × sFontScale
 ```
 
 **关键约束**：
-- `sFontScale` 是全进程静态字段，由 `NokiaClient` 在启动与配置变更时**唯一**写入。
-- Launcher 与所有衍生 App **必须**接入 `NokiaClient`（或等价的 Provider 监听），把 `font_scale` 同步进 common 的 `NokiaFontManager`，**禁止各自维护本地倍率字段**。
-- `Configuration.fontScale` 全程不修改——缩放完全由 `NokiaFontManager` 承担，杜绝双重缩放。
+- `sFontScale` 是全进程静态字段，由 `NokiaClient`（衍生 App）或 `NokiaBaseActivity.attachBaseContext`（Launcher 自身）在启动早期**唯一**写入。
+- 衍生 App 经 `NokiaClient` 读 KeyProvider；Launcher 自身直接读自身 SharedPreferences（`NokiaSettingsStorage`），两者最终都调 common 的 `NokiaFontManager.setFontScale()`，殊途同归。
+- `Configuration.fontScale` 固定为 `1.0`（中和系统字体设置），用户倍率只走 `NokiaFontManager.sFontScale`，杜绝双重缩放。
 
 ### 4.2 零手动负担：View 树自动拦截
 
@@ -170,8 +170,8 @@ NokiaFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源时�
 
 ### 6.1 双重缩放陷阱
 - **现象**：文字被放大到 2.25 倍（1.5 × 1.5）。
-- **根因**：宿主在 `attachBaseContext` 改了 `Configuration.fontScale=1.5`，**同时** `NokiaFontManager.sFontScale` 也被设为 1.5；XML inflate 时系统先按 `Configuration.fontScale` 放大一次，`NokiaFontManager` 又乘一次。
-- **对策**：缩放只走 `NokiaFontManager` 一条路；`Configuration.fontScale` 全程不动。
+- **根因**：宿主在 `attachBaseContext` 把 `Configuration.fontScale` 设为 `userFontScale`（如 1.5），**同时** `NokiaFontManager.sFontScale` 也被设为 1.5；XML inflate 时系统先按 `Configuration.fontScale` 放大一次，`NokiaFontManager` 又乘一次。
+- **对策**：`Configuration.fontScale` 固定为 `1.0`（仅中和系统字体设置），用户倍率只走 `NokiaFontManager.sFontScale` 一条路。
 
 ### 6.2 漏缩放陷阱（本规范重点修复项）
 - **现象**：某 App 的"关于"页字体明显比其他 App 小。
@@ -202,7 +202,7 @@ NokiaFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源时�
 - [ ] 弹窗标题 `nokia_font_title` (13sp)，弹窗内容 `nokia_font_body` (9sp)。
 - [ ] 分组小标题用 `nokia_font_small_title` (11sp)，未用 8–9sp。
 - [ ] 动态建字走 `NokiaFontManager.setTextSizeResource`，未直接 `tv.setTextSize`。
-- [ ] 未在 `attachBaseContext` 修改 `Configuration.fontScale`。
+- [ ] 未在 `attachBaseContext` 把 `userFontScale` 写进 `Configuration.fontScale`（应固定为 `1.0` 中和系统设置，倍率走 `NokiaFontManager.sFontScale`）。
 - [ ] App 已接入 `NokiaClient`，`font_scale` 同步进 common `NokiaFontManager`。
 
 ---
@@ -219,7 +219,9 @@ NokiaFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源时�
 | 小数 sp | 关于页 `8.5sp` | 改为 `8sp` |
 | 关于页/弹窗裸写数字 | `setTextSize(tv, 9)` 等 | 改为 `setTextSizeResource(..., R.dimen.nokia_font_body)` |
 | `font_scale` 默认 1.5 | 把"标准"当"过小" | 默认改回 `1.0`，迁移时给老用户一次性提示 |
-| Launcher 本地 `NokiaFontManager` | 与 common 字段不通 | 统一进 common，删除本地静态倍率字段 |
+| Music 死 Token `music_font_*` | 与 `nokia_font_*` 重复且无人引用 | 删除，Music XML 迁移到 `nokia_font_*` |
+
+> 已完成：~~Launcher 本地 `NokiaFontManager` 与 common 字段不通~~ → 已统一进 common（本地类删除，全部 27+2 处引用改用 `io.github.cctyl.nokia.common.ui.NokiaFontManager`，`sFontScale` 为唯一缩放源，`attachBaseContext` 固定 `Configuration.fontScale=1.0`）。
 
 ---
 
