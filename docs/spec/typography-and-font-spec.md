@@ -188,6 +188,17 @@ KeydroidxFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源�
 - **根因**：`applyToViewTree` 把点阵字体覆盖到了图标字体上。
 - **对策**：SDK 已内置保护——检测到当前 Typeface 是 `KeydroidxIcons` 字体时自动跳过。业务层无需处理，但**禁止**对图标 `TextView` 手动 `setTypeface(...)`。
 
+### 6.5 多进程与独立 Activity 容器的静态变量隔离陷阱
+- **现象**：主进程（如桌面）调整字体放大倍率（1.5x）后，进入子进程（如 J2ME 独立进程 `:midlet` / `MicroActivity`）弹出的挂机菜单或选项弹窗文字异常微小。
+- **根因**：
+  1. `KeydroidxFontManager.sFontScale` 是 Java 静态变量，在子进程（`android:process`）启动时是独立的虚拟机内存，静态变量不会自动跨进程共享，停留在默认 `1.0f`。
+  2. 独立 Activity（如 `MicroActivity`）继承自原生 `AppCompatActivity` 而非 `KeydroidxBaseActivity`，导致未走基类的自动同步链路。
+  3. 弹窗类（如 `KeydroidxOptionsDialog`）内部若使用了硬编码较小字号（如 `textSize(tv, 10)`），在 1.0x 子进程下瞬间暴露出极小字号问题。
+- **对策**：
+  1. **全进程入口兜底**：在自定义 `Application.onCreate()`（所有子进程启动必走入口）中从持久化配置（`SharedPreferences` / `SettingsStorage`）读取 `fontScale` 与 `fontId` 并注入 `KeydroidxFontManager`。
+  2. **独立容器拦截**：所有未能继承 `KeydroidxBaseActivity` 的原生 Activity（如 `MicroActivity`），必须显式覆写 `attachBaseContext(Context)`，在 Context 附加时同步 `fontScale` 与 `fontId`，并锁定 `Configuration.fontScale = 1.0f`。
+  3. **严格禁止魔数字号**：弹窗标题与列表行一律使用 `@dimen/keydroidx_dialog_*` Token 或 `13sp` / `11sp`，严禁在代码中写 `textSize(tv, 10)`。
+
 ---
 
 ## 7. 自查清单
@@ -203,6 +214,7 @@ KeydroidxFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源�
 - [ ] 分组小标题用 `keydroidx_font_small_title` (11sp)。
 - [ ] 动态建字走 `KeydroidxFontManager.setTextSizeResource`，未直接 `tv.setTextSize`。
 - [ ] 未在 `attachBaseContext` 把 `userFontScale` 写进 `Configuration.fontScale`（应固定为 `1.0` 中和系统设置，倍率走 `KeydroidxFontManager.sFontScale`）。
+- [ ] 多进程组件（如 `:midlet` 等子进程）或未继承 `KeydroidxBaseActivity` 的独立 Activity 已在 `Application.onCreate` 或 `attachBaseContext` 中显式同步 `KeydroidxFontManager.setFontScale`。
 - [ ] App 已接入 `KeydroidxClient`，`font_scale` 同步进 common `KeydroidxFontManager`。
 
 ---

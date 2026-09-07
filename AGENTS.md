@@ -140,4 +140,7 @@ SDK 内部代码简洁严谨，自底向上分为四层：
 5. **统一字号与排版规范（6 级标准 Token）**：
    - 详见 **`docs/spec/typography-and-font-spec.md`**。所有界面文本必须引用 `@dimen/keydroidx_font_*` 6 级语义 Token（`display:16sp`, `title:13sp`, `body:12sp`, `small_title:11sp`, `caption:9sp`, `micro:7sp`）。
    - 严禁在 XML 中裸写字号数字（如 `android:textSize="14sp"`），严禁在 ≤13sp 点阵字体上使用 `textStyle="bold"`。单列列表项主标题与表单主项强制对齐 `keydroidx_font_body` (12sp)。
+6. **多进程与独立 Activity 字体缩放同步**：
+   - `KeydroidxFontManager.sFontScale` 是 Java 静态变量，在子进程（`android:process`）启动时不会跨虚拟机内存自动共享。
+   - 自定义 `Application.onCreate()` 必须主动读取配置并注入 `KeydroidxFontManager`；未能继承 `KeydroidxBaseActivity` 的独立 Activity 必须在 `attachBaseContext` 中显式同步 `fontScale` 并锁定 `Configuration.fontScale = 1.0f`。
 
