@@ -3,7 +3,7 @@
 > 本文件是全生态（桌面 + 独立 App）反复踩坑总结的**硬性规则**。新增 / 修改任何诺基亚界面、弹窗、按键逻辑前，务必对照本文件自查。
 >
 >
-> 📌 **字体排版全生态唯一事实源**：详见 **`spec/typography-and-font-spec.md`**。所有界面文本必须引用 `@dimen/nokia_font_*` 6 级语义 Token（`display:16sp`, `title:13sp`, `body:12sp`, `small_title:11sp`, `caption:9sp`, `micro:7sp`），严禁在布局 XML 中硬编码裸数字号或滥用加粗。
+> 📌 **字体排版全生态唯一事实源**：详见 **`spec/typography-and-font-spec.md`**。所有界面文本必须引用 `@dimen/keydroidx_font_*` 6 级语义 Token（`display:16sp`, `title:13sp`, `body:12sp`, `small_title:11sp`, `caption:9sp`, `micro:7sp`），严禁在布局 XML 中硬编码裸数字号或滥用加粗。
 >
 > 📌 **分辨率 / 布局适配全生态唯一事实源**：详见 **`spec/responsive-layout-spec.md`**。
 
@@ -105,7 +105,7 @@ items.add(new KeydroidxOptionsDialog.OptionItem(
 
 1. Android 的按键连发事件 **action 仍然是 `ACTION_DOWN`**，只有 `getRepeatCount()` 递增（Q968 实测：首次连发出现在按下后约 400ms，之后每约 50ms 一次）。
 2. 因此上一节的配对逻辑（位于 `dispatchKeyEvent` 的「非 DOWN 分支」）**对连发完全无效**——连发根本进不了那个分支，会被当成一次全新的按下完整执行。当初注释里写的「含 REPEAT」是对 Android 连发机制的误解（误以为连发会以非 DOWN 的 action 到达）。
-3. 后果：按住左软键超过约 400ms → 首次按下进功能表，首个连发就弹出第一个应用的选项菜单；随后连发在「弹窗窗口取焦 → trigger 当前选项 → dismiss → Activity 取焦 → 再弹」之间反复横跳，把弹窗首项（冻结 / 解冻）反复执行。日志里 `Desktop` 与 `NokiaOptions` 两个 tag 交替出现即是此循环。
+3. 后果：按住左软键超过约 400ms → 首次按下进功能表，首个连发就弹出第一个应用的选项菜单；随后连发在「弹窗窗口取焦 → trigger 当前选项 → dismiss → Activity 取焦 → 再弹」之间反复横跳，把弹窗首项（冻结 / 解冻）反复执行。日志里 `Desktop` 与 `KeydroidxOptions` 两个 tag 交替出现即是此循环。
 
 正确做法（已修复，见 `KeydroidxDesktopActivity.java` 的「长按连发过滤」块与 `KeydroidxOptionsDialog` 的 `setOnKeyListener`）：
 
@@ -129,7 +129,7 @@ items.add(new KeydroidxOptionsDialog.OptionItem(
 1. 在 `dispatchKeyEvent` 入口临时打印 `action / keyCode / repeatCount / flags / isLongPress / eventTime`（用后已删除），确认是**标准系统 key repeat**、排除硬件抖动：连发事件 `action` 恒为 `0`（`ACTION_DOWN`），仅 `repeatCount` 递增到 39，未出现「DOWN/UP 成对且 repeat 恒为 0」的抖动特征。
 2. 首次连发出现在按下后 **约 400ms**（`53.242 → 53.637`），之后每 **约 50ms** 一次。即「稍微按长一点」= 越过 400ms 这条线。
 3. **`event.isLongPress()` 不可用作判据**：`FLAG_LONG_PRESS`（`flags=0x88`）仅在 `repeat=1` 出现，`repeat=2` 起 flags 回落 `0x8`。若用它过滤会漏掉后续几乎全部连发。**判据只能是 `getRepeatCount() > 0`。**
-4. 修复前一次 2 秒按压的完整链路：`导航 -> 功能表` ×1 → `弹出选项菜单: 日历` ×5 → `执行选项 (立即冻结)` ×5 → `执行选项 (解冻应用)` ×5；日志中 `Desktop` 与 `NokiaOptions` 两个 tag 交替出现，即「弹窗取焦 → trigger → dismiss → Activity 取焦 → 再弹」的自激振荡。
+4. 修复前一次 2 秒按压的完整链路：`导航 -> 功能表` ×1 → `弹出选项菜单: 日历` ×5 → `执行选项 (立即冻结)` ×5 → `执行选项 (解冻应用)` ×5；日志中 `Desktop` 与 `KeydroidxOptions` 两个 tag 交替出现，即「弹窗取焦 → trigger → dismiss → Activity 取焦 → 再弹」的自激振荡。
 5. 修复后同样操作：`执行选项` **0 次**，一次按压只产生一个动作；同时方向键连发仍放行 32 次（自动连发未误杀）。
 
 **具体修改逻辑**：
@@ -325,12 +325,12 @@ if (decor != null) {
 背景与原因：
 
 1. 在真机上，左软键、右软键是**两个固定的物理键**，底部左右文字只是它们的标签，左右键直接对应左右文字，**不存在"当前选中的是哪个软键"这种概念**。给软键栏套"焦点 + 高亮"逻辑是错误的。
-2. 软键栏底部布局通常是 `layout_width="0dp" + layout_weight="1"` 把宽度**平分给左右各 50%** 的写法（如 `dialog_nokia_installer.xml`、`dialog_nokia_uninstall.xml`、`nokia_bottom_bar.xml`）。一旦给某个软键设置 `bg_nokia_selected` 背景，背景会**填满整个 TextView 的 bounds**，于是出现"明明只有两个字，高亮却占了 50% 宽度"的色块——这是之前频繁出现的高亮 bug 的真正根因，**不是布局 weight 的问题，而是代码多余的高亮机制**。
-3. 列表 / 菜单里的**条目**用 `bg_nokia_selected` / `bg_nokia_selected_dark` 高亮是合理的（方向键导航选中某个应用 / 选项，属于需求"所有可选项可被方向键选中并高亮"）。**本规范只针对软键栏（底部左右菜单），不针对列表项。**
+2. 软键栏底部布局通常是 `layout_width="0dp" + layout_weight="1"` 把宽度**平分给左右各 50%** 的写法（如 `dialog_keydroidx_installer.xml`、`dialog_keydroidx_uninstall.xml`、`keydroidx_bottom_bar.xml`）。一旦给某个软键设置 `bg_keydroidx_selected` 背景，背景会**填满整个 TextView 的 bounds**，于是出现"明明只有两个字，高亮却占了 50% 宽度"的色块——这是之前频繁出现的高亮 bug 的真正根因，**不是布局 weight 的问题，而是代码多余的高亮机制**。
+3. 列表 / 菜单里的**条目**用 `bg_keydroidx_selected` / `bg_keydroidx_selected_dark` 高亮是合理的（方向键导航选中某个应用 / 选项，属于需求"所有可选项可被方向键选中并高亮"）。**本规范只针对软键栏（底部左右菜单），不针对列表项。**
 
 正确做法（弹窗 / 软键栏）：
 
-- **彻底删掉**软键栏上的 `focusIndex` / `setFocus()` / `applyFocus()` 这套焦点状态，以及任何 `setBackgroundResource(R.drawable.bg_nokia_selected)` 给软键设置背景的代码。**软键不需要高亮。**
+- **彻底删掉**软键栏上的 `focusIndex` / `setFocus()` / `applyFocus()` 这套焦点状态，以及任何 `setBackgroundResource(R.drawable.bg_keydroidx_selected)` 给软键设置背景的代码。**软键不需要高亮。**
 - **按键语义回归真机**：
   - 左软键（`ACTION_SOFT_LEFT`）→ 触发左文字动作。
   - 右软键（`ACTION_SOFT_RIGHT`）→ 触发右文字动作。
@@ -342,7 +342,7 @@ if (decor != null) {
 
 已有反例 / 待修清单（新增或修改弹窗时对照自查）：
 
-- `KeydroidxInstallerDialog.java`：曾用 `applyFocus()` 给 `softLeft` / `softRight` 设置 `bg_nokia_selected`，并用 `DPAD_LEFT` / `DPAD_RIGHT` 切焦点、`DPAD_CENTER` 触发 `trigger(focusIndex)` —— 这套全部应删除。
+- `KeydroidxInstallerDialog.java`：曾用 `applyFocus()` 给 `softLeft` / `softRight` 设置 `bg_keydroidx_selected`，并用 `DPAD_LEFT` / `DPAD_RIGHT` 切焦点、`DPAD_CENTER` 触发 `trigger(focusIndex)` —— 这套全部应删除。
 - `KeydroidxUninstallDialog.java`：同样的 `applyFocus()` 高亮 + 焦点切换逻辑 —— 同样应删除。
 - 凡是底部只有左右两个软键的弹窗，一律照此处理，不要再写回高亮 / 焦点代码。
 
@@ -354,7 +354,7 @@ if (decor != null) {
 背景与原因：
 
 1. 早期各 Fragment 各自写死 `setBottomBar(...)`、直接 `findViewById(R.id.bottomLeft)` 等，散乱且易出错。现已在 `ru.playsoftware.j2meloader.nokia.KeydroidxPage` 接口上收敛为统一契约。
-2. 底部栏三栏是 `layout_width="0dp" + layout_weight="1"` 平分宽度的布局（`nokia_bottom_bar.xml`）。某栏文字为空时**必须用 `View.INVISIBLE` 隐藏，禁止用 `View.GONE`**：
+2. 底部栏三栏是 `layout_width="0dp" + layout_weight="1"` 平分宽度的布局（`keydroidx_bottom_bar.xml`）。某栏文字为空时**必须用 `View.INVISIBLE` 隐藏，禁止用 `View.GONE`**：
    - `GONE` 会释放占位宽度 → 剩余两栏重新平分 → 中间界面名会偏移到空位一侧（真实踩过的 bug）；
    - `INVISIBLE` 保留占位宽度（三栏宽度不变），中间标题**始终居中**，且 INVISIBLE 的 View 不接收触摸，不会误触。
 3. 界面名可能较长（如「桌面组件设置」），固定字号在 240px 宽的小屏上显示不全。处理方式是**按字符数动态缩字号 + 单行省略号兜底**（已在 `KeydroidxBaseActivity.applyBottomText` 实现），不要再另想换行/截断字符串的方案。
@@ -366,9 +366,9 @@ if (decor != null) {
   - `KeydroidxDesktopActivity.refreshPageBar()` 通过 `findFragmentById(R.id.midPanel)` 取当前顶层 Fragment，若实现 `KeydroidxPage` 则自动调用 `setBottomBar(左, 中, 右)` 装配。
   - Fragment 在 `onViewCreated` / `onResume` 以及内部状态变化（焦点变化、mode 切换、覆盖模式、向导步骤切换等）后调用 `host.refreshPageBar()` 重新装配。
 - **动态字号规则**（`KeydroidxBaseActivity.applyBottomText`，只对中间界面名生效）：`≤4 字 12sp`、`5-6 字 11sp`、`≥7 字 10sp`。
-- **省略号兜底**：三个 TextView 均 `singleLine="true"`；中间栏 `ellipsize="middle"`，左右栏 `ellipsize="end"`（已写在 `nokia_bottom_bar.xml`）。
+- **省略号兜底**：三个 TextView 均 `singleLine="true"`；中间栏 `ellipsize="middle"`，左右栏 `ellipsize="end"`（已写在 `keydroidx_bottom_bar.xml`）。
 - **禁止**：在 Fragment 里直接 `findViewById(R.id.bottomLeft / bottomCenter / bottomRight)` 改文字/可见性；用 `View.GONE` 隐藏空栏；给中间标题加换行或多行。
-- 桌面场景：中间界面名为空，顶部也不显示标题（`nokia_top_bar.xml` 已删除 topTitle）。
+- 桌面场景：中间界面名为空，顶部也不显示标题（`keydroidx_top_bar.xml` 已删除 topTitle）。
 
 
 ## 选项弹窗规范（KeydroidxOptionsDialog）（重要）
@@ -377,7 +377,7 @@ if (decor != null) {
 
 背景与原因：
 
-1. 早期有 `NokiaAppOptionsDialog` / `NokiaWidgetOptionsDialog` / `NokiaWidgetDeleteDialog` 三个各自为政的弹窗，能力不全且行为不一致。现统一收敛为 `KeydroidxOptionsDialog`（复用 `dialog_nokia_widget_options.xml` 布局），旧类与旧布局已删除。
+1. 早期有 `KeydroidxAppOptionsDialog` / `KeydroidxWidgetOptionsDialog` / `KeydroidxWidgetDeleteDialog` 三个各自为政的弹窗，能力不全且行为不一致。现统一收敛为 `KeydroidxOptionsDialog`（复用 `dialog_keydroidx_widget_options.xml` 布局），旧类与旧布局已删除。
 2. 弹窗是独立 Window，`KeydroidxDesktopActivity.dispatchKeyEvent` 对其无效，弹窗必须自己接入 `KeydroidxKeyBinding`（见「按键处理规范」），禁止写死 keyCode。
 3. 弹窗底部左右软键同样禁止加高亮 / 焦点逻辑（见「软键栏规范」）。
 
@@ -395,7 +395,7 @@ if (decor != null) {
 - 动态刷新：宿主在选项动作里更新数据后调用 `dialog.setItems(newItems)`，重建列表容器并修正焦点（跳过禁用项），**不重新膨胀整个布局**。
 - 交互语义：点击已启用项执行 `action`；`keepOpen=false` 的项执行后自动 `dismiss()`；`keepOpen=true` 的项（全选/取消全选）执行后不关闭，配合 `setItems()` 刷新。
 - 按键：`onCreate` 里通过 `((KeydroidxDesktopActivity) requireActivity()).getKeyBinding()` 取得真实绑定，`setOnKeyListener` 内先 `keyBinding.resolveAction(event)` 解析成语义动作再分发；`KEYCODE_BACK` 由弹窗单独处理关闭。
-- **禁止**：新建/复用旧弹窗类或旧布局 `dialog_nokia_app_options.xml`；写死 keyCode；给软键加高亮/焦点；点击选项后无法刷新文案。
+- **禁止**：新建/复用旧弹窗类或旧布局 `dialog_keydroidx_app_options.xml`；写死 keyCode；给软键加高亮/焦点；点击选项后无法刷新文案。
 
 
 ## Android 4.4 (API 19) 兼容性踩坑
@@ -403,7 +403,7 @@ if (decor != null) {
 1. **矢量图 / drawable 膨胀**：4.4 的 `Resources` 在膨胀含特定 `vectorDrawables` 或 drawable 的布局时易抛 `InflateException` / `invalid drawable`。涉及顶栏、桌面背景等图形资源时，优先用兼容写法（如 `AppCompat` 矢量、或自定义 `Drawable`）；构建侧已开启 `vectorDrawables.useSupportLibrary`。
 2. **`android.telephony.SubscriptionManager` 是 API 22+ 才有的类**。`StatusBarController` 中对该类的强制类型转换必须用 `Build.VERSION.SDK_INT >= 22` 守卫，否则 4.4 上 `NoClassDefFoundError`。其余使用点（双卡监听、`getPhoneCount` 等）也须守卫并降级单卡。
 3. **设备管理员激活页 `ACTION_ADD_DEVICE_ADMIN` 不能用 `FLAG_ACTIVITY_NEW_TASK` 启动**。4.4（及部分 ROM）的 `DeviceAdminAdd` 会直接拒绝：`W/DeviceAdminAdd: Cannot start ADD_DEVICE_ADMIN as a new task`，导致锁屏按钮「点击无反应」（激活页不弹出）。该 intent 应从前台 Activity 上下文启动（**不加** NEW_TASK）；只有当 `context` 非 Activity 时才补 NEW_TASK 兜底（实际调用方均为前台 Activity，见 `KeydroidxLockScreen`）。
-4. **layer-list 的 `android:width` / `android:height` 是 API 23+ 属性**。Android 4.4 上会被**静默忽略**（不报错），导致所有图层被拉伸成整块叠在一起：信号 4 根竖条合成一整块、电池格子被最后一层盖掉（看起来图标「消失」/「变灰」）。**禁止**在 `<item>` 上用 `android:width/height` 控制图层尺寸（也不要指望 item `gravity` + shape `<size>`——4.4 的 layer bounds 是「layer-list 区域 inset 后的整块」，shape 会填满整块，`<size>` 只影响 intrinsic、不影响绘制尺寸）。**正确做法**：用 `android:left/top/right/bottom` inset 精确控制每个 layer 的绘制区域 = 图层期望大小（如 3×4dp 信号条、2×5dp 电池格），shape 在 inset 后的区域内填充；layer-list 整体大小 = 所有 layer 的 `inset + 图形宽高` 之和的最大值（如信号 15×7dp、电池 18×9dp），ImageView 用固定宽高 + `fitCenter` 缩放。已按此修复：`ic_signal_0..4`、`ic_battery_0/25/50/75/100`、`ic_nokia_battery`（这些文件是标准范例，新增多格图标照抄此结构）。
+4. **layer-list 的 `android:width` / `android:height` 是 API 23+ 属性**。Android 4.4 上会被**静默忽略**（不报错），导致所有图层被拉伸成整块叠在一起：信号 4 根竖条合成一整块、电池格子被最后一层盖掉（看起来图标「消失」/「变灰」）。**禁止**在 `<item>` 上用 `android:width/height` 控制图层尺寸（也不要指望 item `gravity` + shape `<size>`——4.4 的 layer bounds 是「layer-list 区域 inset 后的整块」，shape 会填满整块，`<size>` 只影响 intrinsic、不影响绘制尺寸）。**正确做法**：用 `android:left/top/right/bottom` inset 精确控制每个 layer 的绘制区域 = 图层期望大小（如 3×4dp 信号条、2×5dp 电池格），shape 在 inset 后的区域内填充；layer-list 整体大小 = 所有 layer 的 `inset + 图形宽高` 之和的最大值（如信号 15×7dp、电池 18×9dp），ImageView 用固定宽高 + `fitCenter` 缩放。已按此修复：`ic_signal_0..4`、`ic_battery_0/25/50/75/100`、`ic_keydroidx_battery`（这些文件是标准范例，新增多格图标照抄此结构）。
 5. **`Canvas` 的部分 float 重载是 API 21+ 才有，4.4 上运行时调用直接 `NoSuchMethodError` 闪退**。例如 `drawRoundRect(float, float, float, float, float, float, Paint)`（7 参数 float 版）是 API 21 才引入；API 19 只有 `drawRoundRect(RectF, float, float, Paint)`。若在自绘 View 的 `onDraw()` 里调用（页面一打开即执行绘制），会像本次「高级设置 → 电源键拦截开关」一样整个进程闪退——这与「VFY 无害告警」不同，**方法被执行到就会崩**。**正确做法**：自绘时只用 API 1 就有的重载——`drawRoundRect(RectF, rx, ry, Paint)`、`drawRect(RectF, Paint)` / `drawRect(int, int, int, int, Paint)`、`drawCircle(float, float, float, Paint)`（circle 的 float 版 API 1 就有，安全）；需要 float 版本时构造/缓存一个 `RectF`（`onDraw` 里复用字段，不要每帧 `new`）。已按此修复：`KeydroidxAdvancedSettingsFragment$KeydroidxSwitchView`（`drawRoundRect(RectF, ...)` + 缓存 `trackRect`）。新写自绘控件时，先查 Android API 参考确认方法的最低 API 级别。
 
 通用原则：所有 API 22+ 的类/方法引用都要 `SDK_INT` 守卫；Dalvik 验证器对运行时不执行到的高版本类引用只会打 `VFY Could not find class '...'` **无害告警**，不算崩溃；**但运行时会实际执行到的方法/重载必须保证 API 19 可用，否则直接 `NoSuchMethodError`**。低版本设备（尤其 4.4）建议用「修一处→构建→装到 4a24ecf 实测」的迭代方式，以设备真实崩溃为准逐个修，而非盲目猜测。
@@ -437,7 +437,7 @@ if (decor != null) {
 子类只需实现：
 - `getLayoutRes()`：返回布局（根宽固定 240dp、根高 match_parent）；
 - `onPageCreated(View, Bundle)`：自己的初始化（findViewById / 建列表 / 设焦点等）；
-- 特殊页面覆写 `isTopAlign()`（默认 true；百宝箱等居中页返回 false）与 `getWallpaperRes()`（默认 `bg_nokia_menu`；桌面 `bg_nokia_desktop`、百宝箱 `bg_nokia_box`）。
+- 特殊页面覆写 `isTopAlign()`（默认 true；百宝箱等居中页返回 false）与 `getWallpaperRes()`（默认 `bg_keydroidx_menu`；桌面 `bg_keydroidx_desktop`、百宝箱 `bg_keydroidx_box`）。
 
 > 历史教训：缩放/高度/壁纸/底栏这四件套曾被每个页面手抄 17 处，漏抄/写错一处就出「右侧露缝/内容偏下」类 bug。收进基类 final 方法后，新页面想漏都不可能（留着旧 `onCreateView`/`onViewCreated` 覆写会直接编译失败）。
 >
@@ -574,13 +574,13 @@ KeydroidxDimens.dp(getResources(), 36)
 
 #### 弹窗尺寸收敛至 dimens.xml
 
-弹窗标题栏/底栏高度、标题/内容字号已收敛至 `values/dimens.xml`（`nokia_dialog_title_bar_height` 等），新增弹窗同理，禁止在布局 XML 中硬编码 `28dp` / `14sp` / `12sp`。
+弹窗标题栏/底栏高度、标题/内容字号已收敛至 `values/dimens.xml`（`keydroidx_dialog_title_bar_height` 等），新增弹窗同理，禁止在布局 XML 中硬编码 `28dp` / `14sp` / `12sp`。
 
 #### 写死高度导致二次缩小的风险
 
 任何 Fragment 根布局 `android:layout_height="262dp"`（写死设计稿高度）在 panelH < 262dp 时会触发 `scaleMidContent` 二次缩小分支（`finalScale = panelH / contentH`），导致内容整体缩水、右侧出现缝隙。**新 Fragment 一律用 `match_parent`，或确保内容总高 ≤ panelH。**
 
-已修复的案例：`fragment_nokia_desktop.xml`、`fragment_nokia_key_bind.xml`、`fragment_nokia_key_bind_wizard.xml`。
+已修复的案例：`fragment_keydroidx_desktop.xml`、`fragment_keydroidx_key_bind.xml`、`fragment_keydroidx_key_bind_wizard.xml`。
 
 ### 点线（虚线分隔线）标准实现
 
@@ -685,11 +685,11 @@ public void fixMidContentHeight(final View content, final boolean topAlign) {
 - **高度可用 `match_parent`**（配合 ScrollView 纵向滚动，如桌面、百宝箱），仅宽度必须 240dp。
 - 行内均分（如网格 cell 的 `0dp + weight=1`）按 240dp 计算，随后被整体缩放，逻辑不变。
 - **禁止**：根宽用 `match_parent`；在 240 基准之外再写宽度（如写死 dp 撑满屏）。
-- 已修复的案例：`fragment_nokia_box.xml`（根宽 `match_parent` → `240dp`，修复 320×480 横向溢出）。
+- 已修复的案例：`fragment_keydroidx_box.xml`（根宽 `match_parent` → `240dp`，修复 320×480 横向溢出）。
 
 ### 新界面 Checklist
 
-新增或修改任何 nokia 界面时，逐项自查：
+新增或修改任何 keydroidx 界面时，逐项自查：
 
 - [ ] 页面 Fragment **继承 `KeydroidxPageFragment`**（禁止裸 `extends Fragment implements KeydroidxPage`），且未覆写 `onCreateView`/`onViewCreated`（final，覆写即编译错）
 - [ ] 纵向列表页**继承 `KeydroidxListPageFragment`**（禁止直接继承 `KeydroidxPageFragment` 再手抄焦点三件套），且未覆写 `onDirection`（final，循环导航强制）
@@ -872,6 +872,6 @@ public boolean dispatchKeyEvent(KeyEvent event) {
    - 业务打点调用 `KeydroidxLog.d(TAG, "...")`、`KeydroidxLog.e(TAG, "...", tr)`，或者在项目中建立如 `NLog` 的轻量门面。
    - 禁止在日志中写入用户密码、Token 等未脱敏隐私信息。
 
-> 📌 **校注（2026-09 文档整理时核实）**：原旧版文档中的 `io.github.cctyl.nokia.keycore.log.NokiaLog` 是 common 拆分后遗留的**兼容桥接类**（10 行空壳），真实实现在 `io.github.cctyl.nokia.common.log.KeydroidxLog`。该 `keycore.log` 桥接类已随 2026-09-06 的生态类名重构（Nokia→Keydroidx）**直接删除**（生态内 0 引用）。日志统一使用 `io.github.cctyl.nokia.common.log.KeydroidxLog`，见 `architecture/module-layering.md`。
+> 📌 **校注（2026-09 文档整理时核实）**：原旧版文档中 `keycore.log` 包下的旧日志门面类（Nokia 时代命名）是 common 拆分后遗留的**兼容桥接类**（10 行空壳），真实实现在 `io.github.cctyl.nokia.common.log.KeydroidxLog`。该 `keycore.log` 桥接类已随 2026-09-06 的生态类名重构（Nokia→Keydroidx）**直接删除**（生态内 0 引用）。日志统一使用 `io.github.cctyl.nokia.common.log.KeydroidxLog`，见 `architecture/module-layering.md`。
 
 

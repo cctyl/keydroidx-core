@@ -159,10 +159,10 @@ MediaSession 的 metadata 里没有歌词（音乐 App 只 set 了 title/artist/
 
 | 早期规划 | 实际落地 | 状态 |
 |:---|:---|:---|
-| `NokiaKeyResolver`（自动解析按键 + DOWN/UP 配对） | `KeydroidxBaseActivity.dispatchKeyEvent` + `KeyResolver` / `DefaultKeyResolver` | ✅ 已实现（名不同） |
-| `NokiaScaledActivity`（240dp 基准缩放 + 标题栏 + 三软键栏） | `common.ui.KeydroidxBaseActivity` | ✅ 已实现，但**缩放机制已改为响应式原生 DP**，见 [../spec/responsive-layout-spec.md](../spec/responsive-layout-spec.md) |
-| `NokiaListPageActivity`（循环焦点导航） | `KeydroidxListPageFragment` / `KeydroidxListFocusHelper` | ✅ 已实现（Fragment 形态） |
-| `NokiaScrollPageActivity`（平滑翻页，45% 视口步长） | `KeydroidxScrollPageFragment.getScrollStepPx()` | ✅ 已实现，默认**可视高度 45%**（兜底 100dp / 160px） |
+| `KeydroidxKeyResolver`（自动解析按键 + DOWN/UP 配对） | `KeydroidxBaseActivity.dispatchKeyEvent` + `KeyResolver` / `DefaultKeyResolver` | ✅ 已实现（名不同） |
+| `KeydroidxScaledActivity`（240dp 基准缩放 + 标题栏 + 三软键栏） | `common.ui.KeydroidxBaseActivity` | ✅ 已实现，但**缩放机制已改为响应式原生 DP**，见 [../spec/responsive-layout-spec.md](../spec/responsive-layout-spec.md) |
+| `KeydroidxListPageActivity`（循环焦点导航） | `KeydroidxListPageFragment` / `KeydroidxListFocusHelper` | ✅ 已实现（Fragment 形态） |
+| `KeydroidxScrollPageActivity`（平滑翻页，45% 视口步长） | `KeydroidxScrollPageFragment.getScrollStepPx()` | ✅ 已实现，默认**可视高度 45%**（兜底 100dp / 160px） |
 | `retro-keyphone-template` 脚手架仓库 | — | ❌ 未建 |
 
 ---

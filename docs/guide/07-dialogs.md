@@ -95,7 +95,7 @@ KeydroidxConfirmDialog(this, "删除歌单", "确定删除「${name}」吗？")
 
 ## 文本输入：改用全屏编辑页 `KeydroidxTextInputFragment`
 
-> **已移除 `NokiaInputDialog`。**
+> **旧版底部输入小弹窗（Nokia 时代命名）已移除。**
 > 底部小弹窗不符合功能机输入范式（FEATURE_PHONE_UI_SPEC §19/§20）：
 > 在 240×320 屏幕上弹窗高度仅约 70px，输入区被压缩到 30px 左右，
 > 且**软键条被挤压为 0×0 完全不可见**，用户看不到「确定/取消」，
