@@ -180,8 +180,8 @@ public final class MiniShizukuClient {
             if (b != null) {
                 sKey = b.getString(MiniShizukuConst.EXTRA_KEY);
             }
-        } catch (SecurityException e) {
-            Log.w(TAG, "getKey denied: " + e.getMessage());
+        } catch (Throwable e) {
+            Log.w(TAG, "getKey failed: " + e.getMessage());
         }
         return sKey;
     }
@@ -192,6 +192,15 @@ public final class MiniShizukuClient {
      */
     private static String resolveLauncherPackage(Context ctx) {
         if (sLauncherPackage != null) return sLauncherPackage;
+        // 1. 优先：若调用者自身就是 launcher 候选包名（无论 debug/release 变体），直接使用自身
+        String selfPkg = ctx.getPackageName();
+        for (String pkg : MiniShizukuConst.LAUNCHER_PACKAGES) {
+            if (pkg.equals(selfPkg)) {
+                return sLauncherPackage = selfPkg;
+            }
+        }
+
+        // 2. 第三方应用调用：解析同签名且可用的 launcher 包名
         byte[] selfSig = selfSignatureDigest(ctx);
         PackageManager pm = ctx.getPackageManager();
         for (String pkg : MiniShizukuConst.LAUNCHER_PACKAGES) {
@@ -200,6 +209,14 @@ public final class MiniShizukuClient {
                         Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
                                 ? PackageManager.GET_SIGNING_CERTIFICATES
                                 : PackageManager.GET_SIGNATURES);
+                // 忽略未启用/已冻结的包
+                if (info.applicationInfo != null && !info.applicationInfo.enabled) {
+                    continue;
+                }
+                // 确保 provider 实际存在且已导出
+                if (pm.resolveContentProvider(pkg + MiniShizukuConst.AUTHORITY_SUFFIX, 0) == null) {
+                    continue;
+                }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && info.signingInfo != null) {
                     for (Signature s : info.signingInfo.getApkContentsSigners()) {
                         if (digestEquals(s.toByteArray(), selfSig)) {

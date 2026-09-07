@@ -875,3 +875,78 @@ public boolean dispatchKeyEvent(KeyEvent event) {
 > 📌 **校注（2026-09 文档整理时核实）**：原旧版文档中 `keycore.log` 包下的旧日志门面类（Nokia 时代命名）是 common 拆分后遗留的**兼容桥接类**（10 行空壳），真实实现在 `io.github.cctyl.nokia.common.log.KeydroidxLog`。该 `keycore.log` 桥接类已随 2026-09-06 的生态类名重构（Nokia→Keydroidx）**直接删除**（生态内 0 引用）。日志统一使用 `io.github.cctyl.nokia.common.log.KeydroidxLog`，见 `architecture/module-layering.md`。
 
 
+### 16. 应用冻结/解冻与 MiniShizuku 跨进程鉴权避坑规范（重要）
+
+**应用冻结（Freeze）、解冻（Unfreeze）及基于 `mini_shizuku` 的跨进程 Shell 权限调度是生态的核心基础设施。此链路涉及「系统级组件停用」、「ContentProvider 生命周期」、「跨进程签名校验」与「静态 UI 缓存」，极易产生隐蔽时序与鉴权死锁，必须遵循以下硬性规范。**
+
+#### 一、典型故障场景复盘（2026-09 实测 Bug）
+
+1. **现象一：一键冻结后功能表不显示冰块图标**
+   - **根因（广播丢失 + 静态缓存毒化）**：功能表 `KeydroidxMenuFragment` 的广播接收器仅在 View 存活期（`onPageCreated` ~ `onDestroyView`）注册。当用户在桌面快捷开关触发「一键冻结」时，功能表不在前台未注册接收器，广播丢失；而 `frozenStateCache` 是跨 Fragment 存活的静态 Map，此前加载过的未冻结状态（`false`）未被失效。用户随后点进功能表，`getCachedFrozen(pkg)` 命中陈旧的 `false`，导致不渲染立体冰块覆盖层。
+   - **机理总结**：**桌面自身就是执行冻结动作的主体，桌面本身就是事实源，绝不能将 UI 的真实状态寄托在脆弱的「异步广播 → 接收器在场」单向通知链路上。**
+
+2. **现象二：解冻应用提示「解冻失败」，报错 `Unknown authority io.github.cctyl.nokia.shizuku`**
+   - **根因（多 Flavor 双包名冲突 + 自身被冻结导致 Provider 关闭）**：
+     - 测试设备上同时安装了 Debug 版（`io.github.cctyl.nokia.debug`）与 Release 版（`io.github.cctyl.nokia`）启动器，二者使用相同的开发 Keystore 签名。
+     - `MiniShizukuClient` 寻找派发密钥的 Launcher Provider 时，按常量列表 `["io.github.cctyl.nokia", "io.github.cctyl.nokia.debug"]` 遍历候选包名并校验签名匹配。
+     - 运行在 Debug 进程中的客户端优先匹配到了排在首位的 Release 包 `io.github.cctyl.nokia`。
+     - 而在此前的「一键冻结」中，Release 包因未被加入白名单而被停用（`pm disable-user`），系统关闭了其 ContentProvider `content://io.github.cctyl.nokia.shizuku`。
+     - Debug 客户端向已停用的 Release Provider 获取密钥 K，触发 Android 系统抛出 `IllegalArgumentException: Unknown authority`，导致密钥 K 为空，后续所有 `pm enable` 等特权命令鉴权失败。
+
+---
+
+#### 二、硬性设计与开发规则
+
+##### 规则 1：状态事实源自洽，不依赖异步广播（A + B 双重防线）
+- **A. 批量操作必须广播预期全集**：
+  `freezeAll` / `unfreezeAll` 完成后，必须携带成功操作的包名列表（`EXTRA_PACKAGES`）及预期状态（`EXTRA_FROZEN`）发送批量广播，接收方直接据此批量预写静态缓存，避免逐包查询 PMS 产生的 Binder 延迟。
+- **B. 页面进入主动校准**：
+  `KeydroidxFreezeManager` 必须维护运行期已知冻结集合 `knownFrozen`（`markKnownFrozen` / `unmarkKnownFrozen` / `getKnownFrozenSet()`）。`KeydroidxMenuFragment` 在 `onPageCreated` 时必须主动执行 `invalidateFrozenCache()`，并读取 `getKnownFrozenSet()` 预写入缓存。无论广播是否丢失，页面构建均能瞬间得到 100% 准确的冻结状态。
+
+##### 规则 2：MiniShizukuClient 解析 Launcher 必须「自身优先 + 停用过滤」
+`MiniShizukuClient.resolveLauncherPackage(Context ctx)` 在寻找密钥派发 Provider 时：
+1. **当前进程自身优先**：若 `ctx.getPackageName()` 属于 `LAUNCHER_PACKAGES`（无论是 Debug 还是 Release），**必须直接使用自身包名**，严禁跨进程向外部同签名的候选包请求。
+2. **过滤已停用包名**：第三方生态 App（如音乐、独立工具等）寻找 Launcher 时，必须校验 `info.applicationInfo.enabled`，且必须验证 `pm.resolveContentProvider(authority, 0) != null`，跳过任何已被停用/冻结的包。
+3. **全局异常兜底**：`ctx.getContentResolver().call(...)` 必须捕获 `Throwable`，禁止仅捕获 `SecurityException`，防止 `IllegalArgumentException` 等系统级运行时异常引发业务中断。
+
+```java
+// 标准解析范式
+private static String resolveLauncherPackage(Context ctx) {
+    if (sLauncherPackage != null) return sLauncherPackage;
+    
+    // 1. 若当前进程自身就是 launcher 候选包名之一，直接使用自身包名
+    String selfPkg = ctx.getPackageName();
+    for (String pkg : MiniShizukuConst.LAUNCHER_PACKAGES) {
+        if (pkg.equals(selfPkg)) {
+            return sLauncherPackage = selfPkg;
+        }
+    }
+    
+    // 2. 第三方应用调用：遍历候选包名，校验签名并严格过滤停用包
+    byte[] selfSig = selfSignatureDigest(ctx);
+    PackageManager pm = ctx.getPackageManager();
+    for (String pkg : MiniShizukuConst.LAUNCHER_PACKAGES) {
+        try {
+            PackageInfo info = pm.getPackageInfo(pkg, ...);
+            if (info.applicationInfo != null && !info.applicationInfo.enabled) {
+                continue; // 忽略已被冻结/停用的包，防止 authority 无法解析
+            }
+            if (pm.resolveContentProvider(pkg + MiniShizukuConst.AUTHORITY_SUFFIX, 0) == null) {
+                continue; // 忽略 Provider 未激活的包
+            }
+            // 校验同签名...
+            return sLauncherPackage = pkg;
+        } catch (PackageManager.NameNotFoundException ignored) {}
+    }
+    return null;
+}
+```
+
+##### 规则 3：生态核心组件必须纳入冻结保护白名单（isProtectedPackage）
+`KeydroidxFreezeManager` 必须实现强校验 `isProtectedPackage(String pkg)`，以下包名**严禁**加入冻结名单，**严禁**执行 `pm disable-user` 或 `pm hide`：
+- 当前宿主应用自身（`appContext.getPackageName()`）
+- Launcher 核心包名及 Debug 变体（`io.github.cctyl.nokia`、`io.github.cctyl.nokia.debug`）
+- Shizuku 权限管理服务（`moe.shizuku.privileged.api`）
+
+
+
