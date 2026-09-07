@@ -22,7 +22,7 @@
 
 | 类 | 职责 | 所在包 |
 |---|---|---|
-| `KeydroidxFeedbackConfig` | 全局配置（已扩展 `installUrl` 字段） | `io.github.cctyl.nokia.common.feedback` |
+| `KeydroidxFeedbackConfig` | 全局配置（持有 `baseUrl`，SDK 自动拼出 `/upload`、`/install`） | `io.github.cctyl.nokia.common.feedback` |
 | `KeydroidxInstall` | 门面：`reportOnce(context)` 自动幂等上报 | 同上 |
 | `InstallUploader` | 协议实现：JSON 组装、HTTP POST（复用 `FeedbackUploader` 的协议工具方法） | 同上 |
 | `DeviceInfoCollector` | 设备信息采集（与反馈上报共用） | 同上 |
@@ -32,17 +32,16 @@
 
 ## 三、快速接入（两步）
 
-### ① `local.properties` 配置安装上报地址（可选）
+### ① `local.properties` 配置服务端根地址
 
 ```properties
-FEEDBACK_UPLOAD_URL=https://your.server.com/upload
-FEEDBACK_INSTALL_URL=https://your.server.com/install
+FEEDBACK_URL=https://your.server.com
 FEEDBACK_SECRET_KEY=<feedback_secret.key 文件里的 hex 字符串>
 ```
 
-> 与反馈上报共用密钥；`FEEDBACK_INSTALL_URL` **可省略**——
-> 未配置时 `KeydroidxFeedbackConfig.resolveInstallUrl()` 会自动把 `FEEDBACK_UPLOAD_URL`
-> 推导规则：`uploadUrl` 末尾是 `/upload` 则替换为 `/install`；否则在末尾**追加** `/install`。显式配置更清晰，推荐。
+> 与反馈上报共用同一份配置与密钥，只配一个根地址 `FEEDBACK_URL`。SDK 内部
+> 通过 `KeydroidxFeedbackConfig.resolveInstallUrl()` 自动拼出 `baseUrl + /install`，
+> 无需、也不允许单独配置安装统计地址。
 
 ### ② 宿主 `build.gradle` 注入 BuildConfig
 
@@ -53,10 +52,8 @@ if (f.exists()) localProps.load(new FileInputStream(f))
 
 android {
     defaultConfig {
-        buildConfigField "String", "FEEDBACK_UPLOAD_URL",
-            "\"${localProps.getProperty('FEEDBACK_UPLOAD_URL', 'http://127.0.0.1/upload')}\""
-        buildConfigField "String", "FEEDBACK_INSTALL_URL",
-            "\"${localProps.getProperty('FEEDBACK_INSTALL_URL', 'http://127.0.0.1/install')}\""
+        buildConfigField "String", "FEEDBACK_URL",
+            "\"${localProps.getProperty('FEEDBACK_URL', 'http://127.0.0.1')}\""
         buildConfigField "String", "FEEDBACK_SECRET_KEY",
             "\"${localProps.getProperty('FEEDBACK_SECRET_KEY', '')}\""
     }
@@ -78,16 +75,16 @@ public class MyApplication extends Application {
         KeydroidxLog.init(this);
         KeydroidxLog.installCrashHandler(this);
 
-        // 反馈 + 安装统计共用同一份配置
+        // 反馈 + 安装统计共用同一份配置（只传一个根地址 baseUrl）
         KeydroidxFeedback.init(new KeydroidxFeedbackConfig(
-                BuildConfig.FEEDBACK_UPLOAD_URL,
-                BuildConfig.FEEDBACK_INSTALL_URL,   // 传 null 也可，会自动从 uploadUrl 推导
+                BuildConfig.FEEDBACK_URL,
                 BuildConfig.FEEDBACK_SECRET_KEY,
                 "myapp",
                 BuildConfig.VERSION_NAME,
                 null));
 
         // 首次安装 / 版本升级时自动上报一次；同版本不重复打
+        // SDK 内部自动用 baseUrl + /install 作为安装上报地址
         KeydroidxInstall.reportOnce(this);
     }
 }
@@ -176,7 +173,7 @@ Manifest 权限（与反馈上报相同，已有则无需重复声明）：
 ```
                  ┌─────────────────────────────────────────────┐
                  │           KeydroidxFeedbackConfig              │
-                 │  uploadUrl / installUrl / secretKeyHex /    │
+                 │  baseUrl / secretKeyHex /                    │
                  │  appName / appVersion / logDir              │
                  └───────────────┬─────────────────────────────┘
                                  │
@@ -198,7 +195,7 @@ Manifest 权限（与反馈上报相同，已有则无需重复声明）：
 
 - **同一份配置**：`KeydroidxFeedback.init(...)` 一次即可，安装统计无需单独 init；
 - **同一套鉴权**：算法与密钥完全一致（由 SDK 内部完成，两端共用同一实现）；
-- **同一台服务器**：仅路径 `/upload` vs `/install` 不同；
+- **同一台服务器**：仅路径 `/upload` vs `/install` 不同，均由 SDK 从 `baseUrl` 自动拼出；
 - **同一份设备信息**：`DeviceInfoCollector` 采集一次，两个场景按各自字段约束裁剪后使用。
 
 ## 八、实测验证（两台设备 · 三时机）
@@ -219,7 +216,7 @@ Manifest 权限（与反馈上报相同，已有则无需重复声明）：
 3. **升级触发**：`versionName 1.0 → 1.1`，启动即自动重新上报；服务端不重复计安装数，仅把该设备的版本字段更新为 `v1.1`。
 4. **幂等跳过**：同 `(android_id, version)` 命中 prefs → 直接返回，零网络开销。
 5. **多设备去重**：两台 `android_id` 不同，服务端分别计为 2 次安装；升级不重复计安装数。
-6. **installUrl 自动推导**：未配置 `FEEDBACK_INSTALL_URL` 时，`resolveInstallUrl()` 从 `http://<服务端地址>/upload` 推导出 `http://<服务端地址>/install`，上报成功（HTTP 200）。
+6. **installUrl 自动拼接**：`resolveInstallUrl()` 从 `baseUrl` 自动拼出 `http://<服务端地址>/install`，上报成功（HTTP 200）。
 
 查看上报日志：
 

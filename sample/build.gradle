@@ -22,8 +22,8 @@ android {
         versionName "1.1"
 
         // 反馈服务配置：由接入方提供，密钥绝不入库（见 .gitignore）
-        buildConfigField "String", "FEEDBACK_UPLOAD_URL", '"' + (localProps.getProperty('FEEDBACK_UPLOAD_URL') ?: 'http://127.0.0.1/upload') + '"'
-        buildConfigField "String", "FEEDBACK_INSTALL_URL", '"' + (localProps.getProperty('FEEDBACK_INSTALL_URL') ?: '') + '"'
+        // 仅一个根地址 FEEDBACK_URL，SDK 内部自动拼接 /upload、/install 路径
+        buildConfigField "String", "FEEDBACK_URL", '"' + (localProps.getProperty('FEEDBACK_URL') ?: 'http://127.0.0.1') + '"'
         buildConfigField "String", "FEEDBACK_SECRET_KEY", '"' + (localProps.getProperty('FEEDBACK_SECRET_KEY') ?: '') + '"'
     }
 

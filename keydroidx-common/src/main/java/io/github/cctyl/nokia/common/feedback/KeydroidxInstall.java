@@ -14,7 +14,8 @@ import io.github.cctyl.nokia.common.log.KeydroidxLog;
  * 安装统计上报门面（单例/静态方法）。
  *
  * <p>与 {@link KeydroidxFeedback} 共享 {@link KeydroidxFeedbackConfig}（同一台服务器、同一套
- * 鉴权方式、同一个应用标识与版本），仅接口路径不同（{@code /install}）。</p>
+ * 鉴权方式、同一个应用标识与版本）。SDK 内部从配置中的 {@code baseUrl} 自动拼接
+ * {@code /install} 路径，无需接入方单独配置。</p>
  *
  * <h3>上报时机（自动幂等）</h3>
  * <ul>

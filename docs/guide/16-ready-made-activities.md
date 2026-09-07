@@ -70,9 +70,12 @@ startActivity(new Intent(context, KeydroidxFeedbackActivity.class));
 
 ```java
 // Application.onCreate 中
-KeydroidxFeedback.init(new KeydroidxFeedbackConfig()
-        .setUploadUrl(BuildConfig.FEEDBACK_UPLOAD_URL)
-        .setAccessKey(BuildConfig.FEEDBACK_ACCESS_KEY));
+KeydroidxFeedback.init(new KeydroidxFeedbackConfig(
+        BuildConfig.FEEDBACK_URL,
+        BuildConfig.FEEDBACK_SECRET_KEY,
+        "myapp",
+        BuildConfig.VERSION_NAME,
+        null));
 ```
 
 详见 [11-feedback](./11-feedback.md)。

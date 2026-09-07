@@ -24,10 +24,13 @@
 ### ① 密钥与服务地址放 `local.properties`（该文件不进 Git）
 
 ```properties
-FEEDBACK_UPLOAD_URL=https://your.server.com/upload
+FEEDBACK_URL=https://your.server.com
 FEEDBACK_SECRET_KEY=<feedback_secret.key 文件里的 hex 字符串>
 ```
 
+> 只配一个服务端根地址 `FEEDBACK_URL`（不带任何接口路径）。SDK 内部会自动拼接
+> 反馈上传路径 `/upload` 与安装统计路径 `/install`，无需也不允许单独配置。
+>
 > ⚠️ 通信密钥属于生态方分发物。任何情况下不要把它提交进 Git（含历史 commit）、
 > 不要写死在源码或示例里。CI 打包时存为 secret 环境变量注入，方式相同。
 
@@ -40,8 +43,8 @@ if (f.exists()) localProps.load(new FileInputStream(f))
 
 android {
     defaultConfig {
-        buildConfigField "String", "FEEDBACK_UPLOAD_URL",
-            "\"${localProps.getProperty('FEEDBACK_UPLOAD_URL', 'http://127.0.0.1/upload')}\""
+        buildConfigField "String", "FEEDBACK_URL",
+            "\"${localProps.getProperty('FEEDBACK_URL', 'http://127.0.0.1')}\""
         buildConfigField "String", "FEEDBACK_SECRET_KEY",
             "\"${localProps.getProperty('FEEDBACK_SECRET_KEY', '')}\""
     }
@@ -74,7 +77,7 @@ class MyApplication : Application() {
         // 2. 初始化反馈能力（传入 null 自动与 KeydroidxLog 目录对齐）
         KeydroidxFeedback.init(
             KeydroidxFeedbackConfig(
-                BuildConfig.FEEDBACK_UPLOAD_URL,
+                BuildConfig.FEEDBACK_URL,
                 BuildConfig.FEEDBACK_SECRET_KEY,
                 "myapp", // 应用标识（需与服务端登记的名称一致）
                 BuildConfig.VERSION_NAME,
@@ -99,7 +102,7 @@ public class MyApplication extends Application {
 
         // 2. 初始化反馈能力
         KeydroidxFeedback.init(new KeydroidxFeedbackConfig(
-                BuildConfig.FEEDBACK_UPLOAD_URL,
+                BuildConfig.FEEDBACK_URL,
                 BuildConfig.FEEDBACK_SECRET_KEY,
                 "myapp",
                 BuildConfig.VERSION_NAME,
@@ -299,7 +302,7 @@ String 自动截断 200 字符，序列化后 extras 总量 ≤4096 字节）。
 
 ## 五、排查问题（客户端视角）
 
-- **请求方式**：`POST`，地址即 `KeydroidxFeedbackConfig.uploadUrl`（默认以 `/upload` 结尾）；
+- **请求方式**：`POST`，地址即 `KeydroidxFeedbackConfig.resolveUploadUrl()`（`baseUrl + /upload`）；
 - **请求体**：zip 压缩后的字节流（无日志附件时长度为 0）；
 - **请求签名**：由 `FeedbackUploader` 内部完成，宿主无需参与，**协议细节不对外公开**；
 - **失败判定**：非 200 一律视为失败，静默处理；

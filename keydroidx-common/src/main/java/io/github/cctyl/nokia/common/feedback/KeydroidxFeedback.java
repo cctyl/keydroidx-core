@@ -17,7 +17,7 @@ import io.github.cctyl.nokia.common.log.KeydroidxLog;
  * <p>宿主接入示例：</p>
  * <pre>
  *   KeydroidxFeedback.init(new KeydroidxFeedbackConfig(
- *       BuildConfig.FEEDBACK_UPLOAD_URL,
+ *       BuildConfig.FEEDBACK_URL,
  *       BuildConfig.FEEDBACK_SECRET_KEY,
  *       "myapp",
  *       BuildConfig.VERSION_NAME,
@@ -101,7 +101,7 @@ public class KeydroidxFeedback {
         }
 
         FeedbackRequest req = new FeedbackRequest(
-                cfg.uploadUrl,
+                cfg.resolveUploadUrl(),
                 cfg.secretKeyHex,
                 cfg.appName,
                 cfg.appVersion,

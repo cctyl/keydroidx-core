@@ -26,10 +26,9 @@ public class SampleApplication extends Application {
         KeydroidxLog.installCrashHandler(this);
 
         // 2. 初始化反馈 + 安装统计（共用同一份配置）
-        //    installUrl 传 null 也会自动从 uploadUrl 推导（/upload -> /install）
+        //    只传一个根地址 baseUrl，SDK 内部自动拼接 /upload、/install 路径
         KeydroidxFeedback.init(new KeydroidxFeedbackConfig(
-                BuildConfig.FEEDBACK_UPLOAD_URL,
-                BuildConfig.FEEDBACK_INSTALL_URL,
+                BuildConfig.FEEDBACK_URL,
                 BuildConfig.FEEDBACK_SECRET_KEY,
                 "keydroidx-sample",
                 BuildConfig.VERSION_NAME,

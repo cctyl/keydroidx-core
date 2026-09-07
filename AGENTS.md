@@ -94,7 +94,7 @@ SDK 内部代码简洁严谨，自底向上分为四层：
 
 ### 4. 反馈上报层 (`io.github.cctyl.nokia.common.feedback` + `keycore.ui.KeydroidxFeedbackActivity`)
 - **`KeydroidxFeedbackActivity`**：内置诺基亚风格通用反馈页（问题类型/联系方式必填/描述/日志开关），宿主 `startActivity` 即用，入口自定。
-- **`KeydroidxFeedback` / `KeydroidxFeedbackConfig`**：门面与配置。宿主启动时 `init()` 注册服务 URL 与通信密钥（值来自宿主 BuildConfig，**密钥绝不入库、不进 SDK**）。配置同时持有反馈上传地址 `uploadUrl` 与安装统计地址 `installUrl`（后者可省略，由 `resolveInstallUrl()` 从 `uploadUrl` 自动推导 `/upload`→`/install`）。
+- **`KeydroidxFeedback` / `KeydroidxFeedbackConfig`**：门面与配置。宿主启动时 `init()` 注册服务 URL 与通信密钥（值来自宿主 BuildConfig，**密钥绝不入库、不进 SDK**）。配置只持有一个根地址 `baseUrl`，SDK 内部通过 `resolveUploadUrl()`（`baseUrl+/upload`）与 `resolveInstallUrl()`（`baseUrl+/install`）自动拼出两个接口路径，无需也不允许单独配置 `installUrl`。
 - **`FeedbackUploader`**：HTTP POST 上传实现（日志 zip 打包 ≤9MB 超限裁剪、设备信息组装与发送）；失败静默且禁止自动重试。请求签名由 SDK 内部完成。
 - **`KeydroidxInstall` / `InstallUploader`**：安装统计上报（`POST /install`），与反馈上报共用同一份 `KeydroidxFeedbackConfig`，仅路径与请求体不同（Body 为 JSON，非 zip）。`KeydroidxInstall.reportOnce(context)` 用 `SharedPreferences` 记录 `(android_id, version)` 实现客户端幂等：**首装/升级各报一次，同版本跳过**；失败最多重试 1 次。服务端按 `(app, android_id)` 去重，重复上报不重复计安装数但更新版本字段。协议见 `log_upload/docs/CLIENT_API.md` 第 3 节，接入文档见 `docs/guide/12-install-stats.md`。
 - **`DeviceInfoCollector`**：设备信息采集（仅公开 API），反馈与安装上报共用。

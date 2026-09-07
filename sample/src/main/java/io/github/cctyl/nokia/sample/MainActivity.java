@@ -190,6 +190,7 @@ public class MainActivity extends AppCompatActivity {
         if (cfg != null) {
             tvInstallResult.setText("配置：app=" + cfg.appName
                     + " ver=" + cfg.appVersion
+                    + "\nbaseUrl=" + cfg.baseUrl
                     + "\ninstallUrl=" + cfg.resolveInstallUrl());
         }
     }
