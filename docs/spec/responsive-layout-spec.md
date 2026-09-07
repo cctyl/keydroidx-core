@@ -128,7 +128,7 @@ newConfig.fontScale = 1.0f;
 | 分隔线 | 弹性 | 横向撑满 |
 | 图标 | 固定 | 按设计稿给 dp |
 
-> 底栏 24dp 已核实：`nokia_bottom_bar.xml:15`。
+> 底栏 24dp 已核实：`keydroidx_bottom_bar.xml:15`。
 > 分隔线实现见 `KeydroidxDashedLineDrawable`。
 
 ---

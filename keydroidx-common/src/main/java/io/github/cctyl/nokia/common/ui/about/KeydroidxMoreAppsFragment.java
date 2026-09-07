@@ -57,7 +57,7 @@ public class KeydroidxMoreAppsFragment extends KeydroidxListPageFragment {
 
     @Override
     protected int getLayoutRes() {
-        return R.layout.fragment_nokia_more_apps;
+        return R.layout.fragment_keydroidx_more_apps;
     }
 
     @Override
@@ -156,17 +156,17 @@ public class KeydroidxMoreAppsFragment extends KeydroidxListPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.WHITE);
-        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_body));
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_body));
 
         TextView tvSub = new TextView(ctx);
         tvSub.setTextColor(Color.parseColor("#B0BEC5"));
-        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_caption));
+        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_caption));
         tvSub.setPadding(0, dp(2), 0, 0);
 
         TextView tvUrl = new TextView(ctx);
         tvUrl.setText(url);
         tvUrl.setTextColor(Color.parseColor(urlColorHex));
-        tvUrl.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_caption));
+        tvUrl.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_caption));
         tvUrl.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);

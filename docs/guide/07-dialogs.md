@@ -8,7 +8,7 @@
 - `onCreate` 时自动应用当前生态主题（标题栏渐变、卡片底色、文字颜色）——**禁止在业务里再自绘弹窗配色**；
 - 按键解析走 `KeydroidxUi.getKeyResolver(context).resolveAction(event)`：要求**调起弹窗的 Activity 实现 `KeyResolver` 接口**（继承 keycore 的 `KeydroidxBaseActivity` 已自动实现，委托给 `KeydroidxClient` 的四级降级映射）；未实现时回退 `DefaultKeyResolver`（标准 Android 键码）；软键语义与页面一致；
 - `show()` 时自动执行 `KeydroidxDialogFocus.forceNonTouchMode(this)` 修复 Android 12+ 首个按键被吞问题，并整树应用点阵字体；
-- 尺寸收敛于 `values/dimens.xml`（如 `nokia_dialog_title_bar_height`），勿硬编码。
+- 尺寸收敛于 `values/dimens.xml`（如 `keydroidx_dialog_title_bar_height`），勿硬编码。
 
 ## KeydroidxOptionsDialog — 选项菜单
 

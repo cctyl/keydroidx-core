@@ -80,7 +80,7 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
 
     @Override
     protected int getLayoutRes() {
-        return R.layout.fragment_nokia_about;
+        return R.layout.fragment_keydroidx_about;
     }
 
     @Override
@@ -267,12 +267,12 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText(title);
         tvTitle.setTextColor(Color.WHITE);
-        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_body));
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_body));
 
         TextView tvUrl = new TextView(ctx);
         tvUrl.setText(url);
         tvUrl.setTextColor(Color.parseColor(linkColorHex));
-        tvUrl.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_caption));
+        tvUrl.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_caption));
         tvUrl.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
@@ -305,12 +305,12 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText("检查更新");
         tvTitle.setTextColor(Color.WHITE);
-        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_body));
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_body));
 
         TextView tvSub = new TextView(ctx);
         tvSub.setText("查看 GitHub 最新版本");
         tvSub.setTextColor(Color.parseColor("#A5D6A7"));
-        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_caption));
+        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_caption));
         tvSub.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
@@ -357,12 +357,12 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText("更多应用");
         tvTitle.setTextColor(Color.WHITE);
-        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_body));
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_body));
 
         TextView tvSub = new TextView(ctx);
         tvSub.setText("探索 KeydroidX 生态的其他应用");
         tvSub.setTextColor(Color.parseColor("#CE93D8"));
-        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_caption));
+        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_caption));
         tvSub.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);
@@ -407,13 +407,13 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
         TextView tvTitle = new TextView(ctx);
         tvTitle.setText("详细日志输出 (Debug Log)");
         tvTitle.setTextColor(Color.WHITE);
-        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_body));
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_body));
 
         TextView tvSub = new TextView(ctx);
         boolean enabled = KeydroidxLog.isDetailedLogEnabled(ctx);
         tvSub.setText(enabled ? "已开启 (详细记录所有调试日志)" : "已关闭 (仅记录错误日志)");
         tvSub.setTextColor(enabled ? Color.parseColor("#81C784") : Color.parseColor("#B0BEC5"));
-        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.nokia_font_caption));
+        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_caption));
         tvSub.setPadding(0, dp(2), 0, 0);
 
         card.addView(tvTitle);

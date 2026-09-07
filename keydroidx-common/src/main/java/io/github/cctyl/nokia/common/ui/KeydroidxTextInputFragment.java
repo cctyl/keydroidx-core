@@ -121,7 +121,7 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
 
     @Override
     protected int getLayoutRes() {
-        return R.layout.fragment_nokia_text_input;
+        return R.layout.fragment_keydroidx_text_input;
     }
 
     @Override

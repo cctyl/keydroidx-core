@@ -321,7 +321,7 @@ public class KeydroidxFontManager {
 
     /**
      * 从 dimens 资源读取尺寸并作为设计字号应用。
-     * @param dimenResId 尺寸资源 ID（如 R.dimen.nokia_font_body）
+     * @param dimenResId 尺寸资源 ID（如 R.dimen.keydroidx_font_body）
      */
     public static void setTextSizeResource(TextView tv, int dimenResId) {
         if (tv == null || tv.getResources() == null) return;

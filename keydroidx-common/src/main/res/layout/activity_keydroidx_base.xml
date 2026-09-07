@@ -23,7 +23,7 @@
         android:paddingLeft="6dp"
         android:paddingRight="6dp"
         android:orientation="horizontal"
-        android:background="@color/nokia_top_bg">
+        android:background="@color/keydroidx_top_bg">
 
         <!-- 标题图标 -->
         <TextView
@@ -31,7 +31,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:includeFontPadding="false"
-            android:textColor="@color/nokia_top_text"
+            android:textColor="@color/keydroidx_top_text"
             android:textSize="16dp"
             android:visibility="gone" />
 
@@ -46,8 +46,8 @@
             android:singleLine="true"
             android:ellipsize="end"
             android:includeFontPadding="false"
-            android:textColor="@color/nokia_top_text"
-            android:textSize="@dimen/nokia_font_title" />
+            android:textColor="@color/keydroidx_top_text"
+            android:textSize="@dimen/keydroidx_font_title" />
 
         <!-- 右侧状态栏：信号图标 + 电量 -->
         <LinearLayout
@@ -104,7 +104,7 @@
         android:minHeight="30dp"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:background="@color/nokia_bottom_bg">
+        android:background="@color/keydroidx_bottom_bg">
 
         <TextView
             android:id="@+id/tvSoftLeft"
@@ -117,8 +117,8 @@
             android:singleLine="true"
             android:ellipsize="end"
             android:includeFontPadding="false"
-            android:textColor="@color/nokia_bottom_text"
-            android:textSize="@dimen/nokia_font_small_title" />
+            android:textColor="@color/keydroidx_bottom_text"
+            android:textSize="@dimen/keydroidx_font_small_title" />
 
         <TextView
             android:id="@+id/tvSoftCenter"
@@ -131,7 +131,7 @@
             android:ellipsize="end"
             android:includeFontPadding="false"
             android:textColor="#FDE047"
-            android:textSize="@dimen/nokia_font_small_title" />
+            android:textSize="@dimen/keydroidx_font_small_title" />
 
         <TextView
             android:id="@+id/tvSoftRight"
@@ -144,8 +144,8 @@
             android:singleLine="true"
             android:ellipsize="end"
             android:includeFontPadding="false"
-            android:textColor="@color/nokia_bottom_text"
-            android:textSize="@dimen/nokia_font_small_title" />
+            android:textColor="@color/keydroidx_bottom_text"
+            android:textSize="@dimen/keydroidx_font_small_title" />
     </LinearLayout>
 
 </LinearLayout>

@@ -1,18 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <!-- 诺基亚标准窗口主题（通用，供桌面与独立 App 共享） -->
-    <style name="Theme.Nokia" parent="Theme.AppCompat.NoActionBar">
+    <style name="Theme.Keydroidx" parent="Theme.AppCompat.NoActionBar">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowFullscreen">true</item>
-        <item name="android:windowBackground">@color/nokia_content_bg</item>
-        <item name="android:textColor">@color/nokia_content_text</item>
+        <item name="android:windowBackground">@color/keydroidx_content_bg</item>
+        <item name="android:textColor">@color/keydroidx_content_text</item>
     </style>
 
     <!-- 兼容别名 -->
-    <style name="Theme.NokiaKeyCore" parent="Theme.Nokia" />
+    <style name="Theme.KeydroidxKeyCore" parent="Theme.Keydroidx" />
 
     <!-- 诺基亚标准弹窗主题（通用，供桌面与独立 App 共享） -->
-    <style name="Theme.Nokia.Dialog" parent="Theme.AppCompat.Dialog">
+    <style name="Theme.Keydroidx.Dialog" parent="Theme.AppCompat.Dialog">
         <item name="android:windowNoTitle">true</item>
         <item name="android:windowBackground">@android:color/transparent</item>
         <item name="android:windowIsFloating">true</item>
@@ -21,14 +21,14 @@
     </style>
 
     <!-- 兼容别名 -->
-    <style name="Theme.NokiaKeyCore.Dialog" parent="Theme.Nokia.Dialog" />
+    <style name="Theme.KeydroidxKeyCore.Dialog" parent="Theme.Keydroidx.Dialog" />
 
     <!-- 反馈页问题类型选项 -->
-    <style name="NokiaFeedbackTypeItem">
+    <style name="KeydroidxFeedbackTypeItem">
         <item name="android:layout_width">0dp</item>
         <item name="android:layout_height">32dp</item>
         <item name="android:layout_weight">1</item>
-        <item name="android:background">@drawable/bg_nokia_input_field</item>
+        <item name="android:background">@drawable/bg_keydroidx_input_field</item>
         <item name="android:clickable">true</item>
         <item name="android:focusable">true</item>
         <item name="android:gravity">center</item>

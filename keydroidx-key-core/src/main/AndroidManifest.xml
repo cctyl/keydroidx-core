@@ -13,7 +13,7 @@
             android:name="io.github.cctyl.nokia.keycore.ui.KeydroidxKeyWizardActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
-            android:theme="@style/Theme.NokiaKeyCore" />
+            android:theme="@style/Theme.KeydroidxKeyCore" />
 
         <!-- 通用反馈页：宿主 APP 自行决定入口并跳转 -->
         <activity
@@ -24,11 +24,11 @@
             android:name="io.github.cctyl.nokia.keycore.ui.KeydroidxFeedbackActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
-            android:theme="@style/Theme.NokiaKeyCore" />
+            android:theme="@style/Theme.KeydroidxKeyCore" />
         <activity
             android:name="io.github.cctyl.nokia.keycore.ui.KeydroidxAboutActivity"
             android:configChanges="orientation|screenSize|keyboardHidden"
             android:exported="false"
-            android:theme="@style/Theme.NokiaKeyCore" />
+            android:theme="@style/Theme.KeydroidxKeyCore" />
     </application>
 </manifest>

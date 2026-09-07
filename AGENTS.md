@@ -138,6 +138,6 @@ SDK 内部代码简洁严谨，自底向上分为四层：
    - 标签命名：按模块/组件取简短稳定 tag（如 `KeydroidxInstall`、`EmulatorApp`），不要用类名全限定。
    - **例外**：`keydroidx-mini-shizuku` 模块刻意保持「纯 IPC 客户端，零依赖」，仅为它引入 `keydroidx-common` 用 `KeydroidxLog` 会破坏其零依赖定位，因此该模块内允许使用 `android.util.Log`。其他模块一律走 `KeydroidxLog`。
 5. **统一字号与排版规范（6 级标准 Token）**：
-   - 详见 **`docs/spec/typography-and-font-spec.md`**。所有界面文本必须引用 `@dimen/nokia_font_*` 6 级语义 Token（`display:16sp`, `title:13sp`, `body:12sp`, `small_title:11sp`, `caption:9sp`, `micro:7sp`）。
-   - 严禁在 XML 中裸写字号数字（如 `android:textSize="14sp"`），严禁在 ≤13sp 点阵字体上使用 `textStyle="bold"`。单列列表项主标题与表单主项强制对齐 `nokia_font_body` (12sp)。
+   - 详见 **`docs/spec/typography-and-font-spec.md`**。所有界面文本必须引用 `@dimen/keydroidx_font_*` 6 级语义 Token（`display:16sp`, `title:13sp`, `body:12sp`, `small_title:11sp`, `caption:9sp`, `micro:7sp`）。
+   - 严禁在 XML 中裸写字号数字（如 `android:textSize="14sp"`），严禁在 ≤13sp 点阵字体上使用 `textStyle="bold"`。单列列表项主标题与表单主项强制对齐 `keydroidx_font_body` (12sp)。
 

@@ -23,7 +23,7 @@
 | 9 | **对话框**一律用 SDK 组件：选项菜单 `KeydroidxOptionsDialog`、确认框 `KeydroidxConfirmDialog`、文本输入 `KeydroidxTextInputFragment`。**严禁原生 `AlertDialog` / `PopupWindow`** | 触屏风格残留、首键被吞、窗口 Token 泄漏 | [07](./07-dialogs.md)、[08](./08-text-input.md) |
 | 10 | **软键与标题走声明式 getter**（`getPageTitle` / `getSoftLeftText` / `getSoftCenterText` / `getSoftRightText`），**严禁** `findViewById` 改顶栏与软键栏 | 页面切换后软键栏状态错乱 | [05](./05-page-framework.md) |
 | 11 | **色值全部来自 `KeydroidxTheme`**（`ThemeDef` / `getCurrentTheme()`），**严禁硬编码颜色** | 桌面换肤后本 App 不跟随 | [09](./09-theme-font-icons.md) |
-| 12 | **字号全部引用 `@dimen/nokia_font_*` 6 级 Token**，严禁裸写数字、严禁 ≤13sp 加粗 | 点阵字体糊掉 | [](../spec/typography-and-font-spec.md) |
+| 12 | **字号全部引用 `@dimen/keydroidx_font_*` 6 级 Token**，严禁裸写数字、严禁 ≤13sp 加粗 | 点阵字体糊掉 | [](../spec/typography-and-font-spec.md) |
 | 13 | **图标统一 `KeydroidxIcons`**，`KeydroidxFontManager` 自动整树生效；**严禁新增 PNG / XML 图标** | 多分辨率下留白失真 | [09](./09-theme-font-icons.md) |
 | 14 | **根布局响应式原生 DP**（`match_parent` + `weight`），**禁止**运行时 `setScaleX/Y`、**禁止**根宽写死 240dp | 大屏留白、小屏溢出 | [](../spec/responsive-layout-spec.md) |
 
@@ -33,7 +33,7 @@
 
 1. **禁止高亮**：底部左/中/右软键只是物理键的静态标签，**绝对禁止**加选中背景，**绝对禁止**用左右方向键在软键间切换高亮。
 2. **空软键保留占位**：三栏等宽（`0dp + weight=1`），getter 返回 null/空串时基类只把文字置空、View 仍在（视觉等价 `INVISIBLE`，中栏不偏移）。**严禁对软键 View 用 `View.GONE` 或移除**，否则三栏塌陷、标题偏向一侧。
-3. **长文字自适应**：中键文字过长时基类 `fitCenterTextToWidth` 按实际测量宽度逐步缩号（以 `@dimen/nokia_font_small_title` 为基准向下，最低约 6sp）；顶栏标题与左右软键单行、超长 `ellipsize="end"` 截断。
+3. **长文字自适应**：中键文字过长时基类 `fitCenterTextToWidth` 按实际测量宽度逐步缩号（以 `@dimen/keydroidx_font_small_title` 为基准向下，最低约 6sp）；顶栏标题与左右软键单行、超长 `ellipsize="end"` 截断。
 
 ---
 
@@ -62,7 +62,7 @@
 - [ ] 软键与标题全部走声明式 getter，无 `findViewById` 操作软键栏的代码
 - [ ] 软键栏无背景高亮、无左右方向键切换高亮的代码；空软键未被 `GONE`
 - [ ] 无硬编码颜色，色值与高亮背景均来自 `KeydroidxTheme`
-- [ ] 无裸写字号，全部引用 `@dimen/nokia_font_*`；≤13sp 无 `textStyle="bold"`
+- [ ] 无裸写字号，全部引用 `@dimen/keydroidx_font_*`；≤13sp 无 `textStyle="bold"`
 - [ ] 无新增 PNG / XML 图标，全部走 `KeydroidxIcons`
 - [ ] 业务代码无 keyCode 字面量；骨架之外自行消费按键处走 `KeyResolver` 且 DOWN / UP 成对
 - [ ] 列表首尾循环生效；滚动用 `smoothScrollToVisible`，无 `getTop()` 计算

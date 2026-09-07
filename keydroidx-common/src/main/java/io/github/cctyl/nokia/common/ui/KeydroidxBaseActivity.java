@@ -201,12 +201,12 @@ public abstract class KeydroidxBaseActivity extends AppCompatActivity implements
     }
 
     /**
-     * 骨架布局 ID。默认使用 SDK 内置三段式骨架布局 {@code R.layout.activity_nokia_base}。
+     * 骨架布局 ID。默认使用 SDK 内置三段式骨架布局 {@code R.layout.activity_keydroidx_base}。
      * 子类（如桌面 Launcher 自己的完整窗口）可重写返回 0 或自定义布局。
      */
     @LayoutRes
     protected int getBaseLayoutRes() {
-        return R.layout.activity_nokia_base;
+        return R.layout.activity_keydroidx_base;
     }
 
     /**

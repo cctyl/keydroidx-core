@@ -51,7 +51,7 @@ public abstract class KeydroidxAppPickerFragment extends KeydroidxListPageFragme
 
     @Override
     protected int getLayoutRes() {
-        return R.layout.fragment_nokia_app_picker;
+        return R.layout.fragment_keydroidx_app_picker;
     }
 
     @Override

@@ -69,7 +69,7 @@ public class KeydroidxKeyWizardActivity extends AppCompatActivity {
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_nokia_key_wizard);
+        setContentView(R.layout.activity_keydroidx_key_wizard);
 
         tvStepIndicator = findViewById(R.id.tvStepIndicator);
         tvKeyPrompt = findViewById(R.id.tvKeyPrompt);

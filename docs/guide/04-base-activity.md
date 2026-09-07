@@ -9,7 +9,7 @@
 
 所有生态独立应用页面的统一宿主基类。继承它即可获得：
 
-- **统一复古骨架**：顶栏（标题图标 + 标题 + 信号/电量状态栏）+ 内容区 + 三段式软键栏，布局来自 `activity_nokia_base.xml`——顶栏 `weight=7`、内容区 `weight=85`、底栏 `wrap_content + minHeight 30dp`（不占权重），各页面共用、随主题热切换；
+- **统一复古骨架**：顶栏（标题图标 + 标题 + 信号/电量状态栏）+ 内容区 + 三段式软键栏，布局来自 `activity_keydroidx_base.xml`——顶栏 `weight=7`、内容区 `weight=85`、底栏 `wrap_content + minHeight 30dp`（不占权重），各页面共用、随主题热切换；
 - **全屏沉浸**：onCreate 中自动隐藏系统状态栏（R+ 用 InsetsController，低版本用 FLAG_FULLSCREEN + legacy systemUiVisibility 双保险）；
 - **按键分发**：`dispatchKeyEvent` 统一解析为语义动作并去抖后调 `onAction(int)`；
 - **主题与字体自动应用**：注册 `KeydroidxClient` 监听，桌面换肤/换字体即时生效；
@@ -23,7 +23,7 @@
 @LayoutRes
 protected int getContentLayoutRes()   // 默认返回 0（不 inflate 内容布局）
 ```
-返回**内容区**布局资源。基类在 `setContentView(R.layout.activity_nokia_base)` 之后把它 inflate 进骨架的 `contentContainer`。
+返回**内容区**布局资源。基类在 `setContentView(R.layout.activity_keydroidx_base)` 之后把它 inflate 进骨架的 `contentContainer`。
 > ⚠️ 子类**严禁再调用 `setContentView()`**——会顶掉整个骨架。
 
 ```java

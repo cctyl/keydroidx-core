@@ -43,7 +43,7 @@ public class KeydroidxConfirmDialog extends Dialog {
     private Runnable cancelListener;
 
     public KeydroidxConfirmDialog(@NonNull Context context, @NonNull String title, @NonNull String message) {
-        super(context, R.style.Theme_Nokia_Dialog);
+        super(context, R.style.Theme_Keydroidx_Dialog);
         this.title = title;
         this.message = message;
     }
@@ -64,7 +64,7 @@ public class KeydroidxConfirmDialog extends Dialog {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.dialog_nokia_confirm);
+        setContentView(R.layout.dialog_keydroidx_confirm);
 
         Window window = getWindow();
         if (window != null) {

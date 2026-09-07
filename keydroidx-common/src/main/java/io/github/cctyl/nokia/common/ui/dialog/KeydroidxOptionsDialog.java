@@ -91,7 +91,7 @@ public class KeydroidxOptionsDialog extends Dialog {
     }
 
     public KeydroidxOptionsDialog(@NonNull Context context, @NonNull String title) {
-        super(context, R.style.Theme_Nokia_Dialog);
+        super(context, R.style.Theme_Keydroidx_Dialog);
         this.title = title;
     }
 
@@ -119,7 +119,7 @@ public class KeydroidxOptionsDialog extends Dialog {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
-        setContentView(R.layout.dialog_nokia_options);
+        setContentView(R.layout.dialog_keydroidx_options);
 
         Window window = getWindow();
         if (window != null) {
@@ -198,7 +198,7 @@ public class KeydroidxOptionsDialog extends Dialog {
 
             TextView tv = new TextView(context);
             tv.setText(item.getTitle());
-            tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, context.getResources().getDimension(R.dimen.nokia_dialog_body_text));
+            tv.setTextSize(TypedValue.COMPLEX_UNIT_PX, context.getResources().getDimension(R.dimen.keydroidx_dialog_body_text));
             tv.setTextColor(currentTheme.textColor);
             tv.setLayoutParams(new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1.0f));
             row.addView(tv);

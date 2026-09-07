@@ -531,13 +531,13 @@ Do not bundle or distribute proprietary Nokia fonts unless legally licensed.
 
 ## 11.2 Reference sizes
 
-> 📌 **KeydroidX Implementation Note:** In the KeydroidX ecosystem, typography is standardized via `@dimen/nokia_font_*` tokens defined in `keydroidx-core/docs/spec/typography-and-font-spec.md`. Always use the semantic tokens:
-> - Display: `@dimen/nokia_font_display` (16sp)
-> - Title: `@dimen/nokia_font_title` (13sp)
-> - Body: `@dimen/nokia_font_body` (12sp)
-> - Small Title: `@dimen/nokia_font_small_title` (11sp)
-> - Caption: `@dimen/nokia_font_caption` (9sp)
-> - Micro: `@dimen/nokia_font_micro` (7sp)
+> 📌 **KeydroidX Implementation Note:** In the KeydroidX ecosystem, typography is standardized via `@dimen/keydroidx_font_*` tokens defined in `keydroidx-core/docs/spec/typography-and-font-spec.md`. Always use the semantic tokens:
+> - Display: `@dimen/keydroidx_font_display` (16sp)
+> - Title: `@dimen/keydroidx_font_title` (13sp)
+> - Body: `@dimen/keydroidx_font_body` (12sp)
+> - Small Title: `@dimen/keydroidx_font_small_title` (11sp)
+> - Caption: `@dimen/keydroidx_font_caption` (9sp)
+> - Micro: `@dimen/keydroidx_font_micro` (7sp)
 
 For a 240×320 display:
 

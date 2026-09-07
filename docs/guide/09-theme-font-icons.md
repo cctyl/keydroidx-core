@@ -69,7 +69,7 @@ public static Drawable createSelectionDrawable(Context context, float radiusDp)
 
 ## KeydroidxFontManager — 点阵字体管理
 
-> 📌 **全局排版与字号规范唯一事实源**：详见 **[typography-and-font-spec.md](../spec/typography-and-font-spec.md)**。所有文字尺寸必须引用 `@dimen/nokia_font_*` 6 级语义 Token，禁止硬编码裸数字号与滥用加粗。
+> 📌 **全局排版与字号规范唯一事实源**：详见 **[typography-and-font-spec.md](../spec/typography-and-font-spec.md)**。所有文字尺寸必须引用 `@dimen/keydroidx_font_*` 6 级语义 Token，禁止硬编码裸数字号与滥用加粗。
 
 全局静态管理器：加载 assets 内置字体、缓存 Typeface、整树递归应用 + 缩放。
 

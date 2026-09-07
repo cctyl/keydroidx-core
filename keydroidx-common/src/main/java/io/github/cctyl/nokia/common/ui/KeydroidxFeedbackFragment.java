@@ -75,7 +75,7 @@ public class KeydroidxFeedbackFragment extends KeydroidxPageFragment {
 
     @Override
     protected int getLayoutRes() {
-        return R.layout.fragment_nokia_feedback;
+        return R.layout.fragment_keydroidx_feedback;
     }
 
     @Override

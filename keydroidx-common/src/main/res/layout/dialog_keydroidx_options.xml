@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 标准诺基亚风格确认/提示弹窗布局 -->
+<!-- 标准诺基亚风格底部选项菜单弹窗布局 -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -9,8 +9,8 @@
     <LinearLayout
         android:id="@+id/dialogTitleBar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/nokia_dialog_title_bar_height"
-        android:background="@drawable/bg_nokia_dialog_title"
+        android:layout_height="@dimen/keydroidx_dialog_title_bar_height"
+        android:background="@drawable/bg_keydroidx_dialog_title"
         android:gravity="center_vertical"
         android:paddingStart="10dp"
         android:paddingEnd="10dp">
@@ -19,38 +19,33 @@
             android:id="@+id/dialogTitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="提示"
+            android:text="选项"
             android:textColor="#FFFFFF"
-            android:textSize="@dimen/nokia_dialog_title_text"
+            android:textSize="@dimen/keydroidx_dialog_title_text"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- ========== 内容提示区 ========== -->
-    <LinearLayout
+    <!-- ========== 选项列表容器 ========== -->
+    <ScrollView
         android:id="@+id/dialogBody"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@drawable/bg_nokia_dialog_body_confirm"
-        android:gravity="center"
-        android:minHeight="56dp"
-        android:orientation="vertical"
-        android:padding="16dp">
-
-        <TextView
-            android:id="@+id/dialogMessage"
+        android:maxHeight="200dp"
+        android:scrollbars="none"
+        android:background="@drawable/bg_keydroidx_dialog_body">
+        <LinearLayout
+            android:id="@+id/dialogOptionsList"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:textColor="#FFFFFF"
-            android:textSize="@dimen/nokia_dialog_title_text" />
-    </LinearLayout>
+            android:orientation="vertical" />
+    </ScrollView>
 
     <!-- ========== 底部软键栏 ========== -->
     <LinearLayout
         android:id="@+id/dialogBottomBar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/nokia_dialog_title_bar_height"
-        android:background="@drawable/bg_nokia_dialog_bottom"
+        android:layout_height="@dimen/keydroidx_dialog_title_bar_height"
+        android:background="@drawable/bg_keydroidx_dialog_bottom"
         android:orientation="horizontal"
         android:paddingStart="10dp"
         android:paddingEnd="10dp">
@@ -60,12 +55,10 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center_vertical|start"
-            android:clickable="true"
-            android:focusable="true"
             android:paddingHorizontal="8dp"
-            android:text="确认"
+            android:text="选择"
             android:textColor="#FFFFFF"
-            android:textSize="@dimen/nokia_dialog_body_text" />
+            android:textSize="@dimen/keydroidx_dialog_body_text" />
 
         <View
             android:layout_width="0dp"
@@ -77,11 +70,9 @@
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
             android:gravity="center_vertical|end"
-            android:clickable="true"
-            android:focusable="true"
             android:paddingHorizontal="8dp"
-            android:text="取消"
+            android:text="返回"
             android:textColor="#FFFFFF"
-            android:textSize="@dimen/nokia_dialog_body_text" />
+            android:textSize="@dimen/keydroidx_dialog_body_text" />
     </LinearLayout>
 </LinearLayout>
