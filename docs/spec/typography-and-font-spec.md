@@ -199,6 +199,19 @@ KeydroidxFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源�
   2. **独立容器拦截**：所有未能继承 `KeydroidxBaseActivity` 的原生 Activity（如 `MicroActivity`），必须显式覆写 `attachBaseContext(Context)`，在 Context 附加时同步 `fontScale` 与 `fontId`，并锁定 `Configuration.fontScale = 1.0f`。
   3. **严格禁止魔数字号**：弹窗标题与列表行一律使用 `@dimen/keydroidx_dialog_*` Token 或 `13sp` / `11sp`，严禁在代码中写 `textSize(tv, 10)`。
 
+### 6.6 动态构建 View 裸调 setTextSize 与非标字号二次放大陷阱（排查复盘与教训）
+- **现象**：
+  - “字体设置”、“主题设置”等页面列表项文字巨大、排版失调（如设置了 1.5x 后字号膨胀到 21px）。
+  - 排查多次后依然有遗留页面出现忽大忽小的断层 Bug。
+- **根因分析**：
+  1. **排查维度盲区（静态 vs 动态）**：此前排查主要聚焦在 XML 布局文件与标准 Fragment 基类上，漏掉了 Java/Kotlin 中通过代码动态 `new TextView()`、`addView()` 构造 UI 的设置子页面。
+  2. **裸调 `tv.setTextSize(14)` 的二次叠加灾难**：`setTextSize(float)` 默认单位是 `SP`，当用户开启 1.5 倍字体时，`14sp` 被原生机制二次放大为 $14 \times 1.5 = 21\text{px}$，远超设计基准。
+  3. **非 6 级标准的离散字号残留**：历史遗留代码中散落着 10sp、14sp、15sp 等随意定义的离散字号，导致不同页面之间字号断层，视觉割裂。
+- **硬性防范准则**：
+  1. **严禁在动态代码中裸写 `tv.setTextSize(n)`**：所有动态生成的 TextView 必须强制通过 `KeydroidxFontManager.textSize(tv, standardSp)` 或 `KeydroidxFontManager.setTextSizeResource(tv, R.dimen.keydroidx_font_*)` 赋值。
+  2. **严格收敛到 6 级标准数值**：任何动态代码中传入的字号数字，**仅允许为 `16` (display), `13` (title), `12` (body), `11` (small_title), `9` (caption), `7` (micro)** 六个离散档位之一，严禁传入 10、14、15、8.5 等非标数字。
+  3. **全工程自动化扫描交付**：严禁仅靠人工抽样检查，必须使用全局脚本对所有 layout XML 与动态 Java/Kotlin 代码进行 `android:textSize` 与 `setTextSize` 的全量正则扫描与合规校验。
+
 ---
 
 ## 7. 自查清单
@@ -232,14 +245,17 @@ KeydroidxFontManager.setTextSize(myTextView, 9f);   // 仅当无法引用资源�
 | 关于页/选 App 页裸写数字 | `textSize="8sp"/"8.5sp"/"10sp"`、`setTextSize(tv, 9)` 等 | ✅ 已收口（2026-09-06）：全部改引用 `@dimen/keydroidx_font_*`；真机确认 9sp 观感可接受，**不新增 8sp 档位** |
 | `font_scale` 默认 1.5 | 把"标准"当"过小" | 默认改回 `1.0`，倍率平滑缩放 |
 | Music 死 Token `music_font_*` | 与 `keydroidx_font_*` 重复且无人引用 | 删除，Music XML 迁移到 `keydroidx_font_*` |
+| 动态代码中裸写 `setTextSize(14)` / 离散 10sp、14sp、15sp | 字体设置、主题设置等动态生成 UI 导致二次放大 | ✅ 已全量收口：全生态 34 个 Launcher 文件与 15 个 Music 布局全部统一为 6 级 Token 体系 |
 
-> 已完成：~~Launcher 本地 `KeydroidxFontManager` 与 common 字段不通~~ → 已统一进 common（本地类删除，全部 27+2 处引用改用 `io.github.cctyl.nokia.common.ui.KeydroidxFontManager`，`sFontScale` 为唯一缩放源，`attachBaseContext` 固定 `Configuration.fontScale=1.0`）。
->
-> 关于 8sp：关于页/选 App 页曾是 8sp / 8.5sp。不上新档位，统一收口到 `keydroidx_font_caption` (9sp)，2026-09-06 真机（foucs）确认观感可接受。若将来确有"比 caption 更小、但非角标"的阅读型文字需求，再走**新增档位 + 同步本文件 §2/§9 与 `dimens.xml`** 的流程，不要在 XML 里裸写 8sp。
+> 已完成：
+> 1. ~~Launcher 本地 `KeydroidxFontManager` 与 common 字段不通~~ → 已统一进 common（本地类删除，全部引用改用 `io.github.cctyl.nokia.common.ui.KeydroidxFontManager`，`sFontScale` 为唯一缩放源，`attachBaseContext` 固定 `Configuration.fontScale=1.0`）。
+> 2. ~~J2ME `:midlet` 子进程丢失字体缩放~~ → `EmulatorApplication.onCreate` 与 `MicroActivity.attachBaseContext` 双重兜底同步。
+> 3. ~~全生态 layout XML 与动态 Java 代码字号收敛~~ → 彻底清除所有 `android:textSize="*sp"` 裸写数字与动态 `setTextSize(14)` 裸调，全量对齐 6 级 Token。
 
 ---
 
 ## 9. 版本
 
+- **v2.1** — 增补《动态构建 View 裸调 setTextSize 与非标字号二次放大陷阱》深度复盘；全生态全量自动化脚本扫描收敛完毕，消除所有静态 XML 与动态 Java 中的裸数字号。
 - **v2.0** — 重定为 6 档语义阶梯（display/title/small_title/body/caption/micro = 16/13/11/12/9/7 sp），明确 `font_scale=1.0` 为标准舒适默认，确立 `KeydroidxFontManager.sFontScale` 为唯一缩放源，禁止裸写数字与 `Configuration.fontScale` 改写。
 - v1.0 — 初版（Token 与实际用法不一致，已废弃）。
