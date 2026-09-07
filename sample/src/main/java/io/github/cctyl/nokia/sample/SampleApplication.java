@@ -2,10 +2,10 @@ package io.github.cctyl.nokia.sample;
 
 import android.app.Application;
 
-import io.github.cctyl.nokia.common.feedback.NokiaFeedback;
-import io.github.cctyl.nokia.common.feedback.NokiaFeedbackConfig;
-import io.github.cctyl.nokia.common.feedback.NokiaInstall;
-import io.github.cctyl.nokia.common.log.NokiaLog;
+import io.github.cctyl.nokia.common.feedback.KeydroidxFeedback;
+import io.github.cctyl.nokia.common.feedback.KeydroidxFeedbackConfig;
+import io.github.cctyl.nokia.common.feedback.KeydroidxInstall;
+import io.github.cctyl.nokia.common.log.KeydroidxLog;
 
 /**
  * 示例 Application：演示反馈 + 安装统计的完整初始化链路。
@@ -21,13 +21,13 @@ public class SampleApplication extends Application {
         super.onCreate();
 
         // 1. 初始化日志器（自动读取详细日志开关，安装崩溃捕获）
-        NokiaLog.setTag(TAG);
-        NokiaLog.init(this);
-        NokiaLog.installCrashHandler(this);
+        KeydroidxLog.setTag(TAG);
+        KeydroidxLog.init(this);
+        KeydroidxLog.installCrashHandler(this);
 
         // 2. 初始化反馈 + 安装统计（共用同一份配置）
         //    installUrl 传 null 也会自动从 uploadUrl 推导（/upload -> /install）
-        NokiaFeedback.init(new NokiaFeedbackConfig(
+        KeydroidxFeedback.init(new KeydroidxFeedbackConfig(
                 BuildConfig.FEEDBACK_UPLOAD_URL,
                 BuildConfig.FEEDBACK_INSTALL_URL,
                 BuildConfig.FEEDBACK_SECRET_KEY,
@@ -37,8 +37,8 @@ public class SampleApplication extends Application {
 
         // 3. 首次安装 / 版本升级时自动上报一次设备信息
         //    后台执行、不阻塞、不抛异常；同版本不重复打
-        NokiaInstall.reportOnce(this);
+        KeydroidxInstall.reportOnce(this);
 
-        NokiaLog.i(TAG, "SampleApplication initialized");
+        KeydroidxLog.i(TAG, "SampleApplication initialized");
     }
 }

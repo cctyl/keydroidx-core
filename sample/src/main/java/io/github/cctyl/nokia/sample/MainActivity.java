@@ -10,14 +10,14 @@ import android.widget.Toast;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 
-import io.github.cctyl.nokia.common.feedback.NokiaFeedback;
-import io.github.cctyl.nokia.common.feedback.NokiaFeedbackConfig;
-import io.github.cctyl.nokia.common.feedback.NokiaInstall;
-import io.github.cctyl.nokia.common.log.NokiaLog;
-import io.github.cctyl.nokia.common.update.NokiaUpdateConfig;
-import io.github.cctyl.nokia.common.update.NokiaUpdateDialog;
-import io.github.cctyl.nokia.common.update.NokiaUpdateResult;
-import io.github.cctyl.nokia.common.update.NokiaUpdateChecker;
+import io.github.cctyl.nokia.common.feedback.KeydroidxFeedback;
+import io.github.cctyl.nokia.common.feedback.KeydroidxFeedbackConfig;
+import io.github.cctyl.nokia.common.feedback.KeydroidxInstall;
+import io.github.cctyl.nokia.common.log.KeydroidxLog;
+import io.github.cctyl.nokia.common.update.KeydroidxUpdateConfig;
+import io.github.cctyl.nokia.common.update.KeydroidxUpdateDialog;
+import io.github.cctyl.nokia.common.update.KeydroidxUpdateResult;
+import io.github.cctyl.nokia.common.update.KeydroidxUpdateChecker;
 import io.github.cctyl.nokia.shizuku.MiniShizuku;
 
 /**
@@ -60,8 +60,8 @@ public class MainActivity extends AppCompatActivity {
         btnCheckUpdateDialog.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                tvUpdateResult.setText("检查更新中（弹窗模式），详见 logcat（tag: NokiaUpdateChecker）...");
-                NokiaUpdateDialog.checkAndShow(MainActivity.this, buildUpdateConfig());
+                tvUpdateResult.setText("检查更新中（弹窗模式），详见 logcat（tag: KeydroidxUpdateChecker）...");
+                KeydroidxUpdateDialog.checkAndShow(MainActivity.this, buildUpdateConfig());
             }
         });
 
@@ -70,10 +70,10 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 tvUpdateResult.setText("检查更新中（回调模式）...");
-                NokiaUpdateChecker.check(MainActivity.this, buildUpdateConfig(),
-                        new NokiaUpdateChecker.Callback() {
+                KeydroidxUpdateChecker.check(MainActivity.this, buildUpdateConfig(),
+                        new KeydroidxUpdateChecker.Callback() {
                             @Override
-                            public void onResult(NokiaUpdateResult result) {
+                            public void onResult(KeydroidxUpdateResult result) {
                                 tvUpdateResult.setText(result.toString());
                             }
                         });
@@ -84,11 +84,11 @@ public class MainActivity extends AppCompatActivity {
         btnTestPermission.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                tvPermissionResult.setText("正在通过 NokiaPermissionManager 发起权限申请...");
-                java.util.List<String> perms = io.github.cctyl.nokia.common.permission.NokiaPermissionManager.getRequiredAppListPermissions(MainActivity.this);
+                tvPermissionResult.setText("正在通过 KeydroidxPermissionManager 发起权限申请...");
+                java.util.List<String> perms = io.github.cctyl.nokia.common.permission.KeydroidxPermissionManager.getRequiredAppListPermissions(MainActivity.this);
                 perms.add(com.hjq.permissions.Permission.READ_PHONE_STATE);
 
-                io.github.cctyl.nokia.common.permission.NokiaPermissionManager.requestWithNokiaDialog(
+                io.github.cctyl.nokia.common.permission.KeydroidxPermissionManager.requestWithNokiaDialog(
                         MainActivity.this,
                         "权限申请",
                         "需要获取应用列表与手机状态权限以测试生态能力",
@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity {
                         new com.hjq.permissions.OnPermissionCallback() {
                             @Override
                             public void onGranted(java.util.List<String> permissions, boolean allGranted) {
-                                boolean hasAppList = io.github.cctyl.nokia.common.permission.NokiaPermissionManager.hasAppListPermission(MainActivity.this);
+                                boolean hasAppList = io.github.cctyl.nokia.common.permission.KeydroidxPermissionManager.hasAppListPermission(MainActivity.this);
                                 tvPermissionResult.setText("授权完成！allGranted=" + allGranted
                                         + "\n已授权项: " + permissions
                                         + "\nhasAppListPermission: " + hasAppList);
@@ -109,7 +109,7 @@ public class MainActivity extends AppCompatActivity {
                                         + "\n被拒绝项: " + permissions);
                                 Toast.makeText(MainActivity.this, "权限被拒绝", Toast.LENGTH_SHORT).show();
                                 if (doNotAskAgain) {
-                                    io.github.cctyl.nokia.common.permission.NokiaPermissionManager.showSettingDialog(
+                                    io.github.cctyl.nokia.common.permission.KeydroidxPermissionManager.showSettingDialog(
                                             MainActivity.this,
                                             "权限受限",
                                             "权限被永久拒绝，请前往系统设置手动开启应用列表或读取状态权限。",
@@ -168,9 +168,9 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 tvInstallResult.setText("触发安装上报（幂等，同版本会跳过）...");
-                NokiaInstall.reportOnce(MainActivity.this);
+                KeydroidxInstall.reportOnce(MainActivity.this);
                 // reportOnce 是异步的，给个提示即可
-                tvInstallResult.append("\n已触发，详见 logcat（tag: NokiaInstall / InstallUploader）");
+                tvInstallResult.append("\n已触发，详见 logcat（tag: KeydroidxInstall / InstallUploader）");
             }
         });
 
@@ -180,13 +180,13 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 tvInstallResult.setText("已清除本地记录，重新上报中...");
                 clearInstallRecord(MainActivity.this);
-                NokiaInstall.reportOnce(MainActivity.this);
-                tvInstallResult.append("\n详见 logcat（tag: NokiaInstall / InstallUploader）");
+                KeydroidxInstall.reportOnce(MainActivity.this);
+                tvInstallResult.append("\n详见 logcat（tag: KeydroidxInstall / InstallUploader）");
             }
         });
 
         // 显示当前配置
-        NokiaFeedbackConfig cfg = NokiaFeedback.getConfig();
+        KeydroidxFeedbackConfig cfg = KeydroidxFeedback.getConfig();
         if (cfg != null) {
             tvInstallResult.setText("配置：app=" + cfg.appName
                     + " ver=" + cfg.appVersion
@@ -195,8 +195,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /** 构建检查更新配置（仓库地址由调用者传入，此处用测试仓库） */
-    private static NokiaUpdateConfig buildUpdateConfig() {
-        return new NokiaUpdateConfig(TEST_REPO_URL);
+    private static KeydroidxUpdateConfig buildUpdateConfig() {
+        return new KeydroidxUpdateConfig(TEST_REPO_URL);
     }
 
     /** 清除安装上报的本地幂等记录，使下次 reportOnce 强制重新上报 */
@@ -206,7 +206,7 @@ public class MainActivity extends AppCompatActivity {
                     .getSharedPreferences("nokia_install_report", Context.MODE_PRIVATE)
                     .edit().clear().apply();
         } catch (Throwable t) {
-            NokiaLog.w(TAG, "clearInstallRecord error: " + t.getMessage());
+            KeydroidxLog.w(TAG, "clearInstallRecord error: " + t.getMessage());
         }
     }
 }

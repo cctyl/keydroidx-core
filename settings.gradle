@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "nokia-key-core"
-include ':nokia-common', ':nokia-key-core', ':nokia-mini-shizuku', ':sample'
+rootProject.name = "keydroidx-core"
+include ':keydroidx-common', ':keydroidx-key-core', ':keydroidx-mini-shizuku', ':sample'

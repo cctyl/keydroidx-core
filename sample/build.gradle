@@ -22,7 +22,7 @@ android {
         versionName "1.1"
 
         // 反馈服务配置：由接入方提供，密钥绝不入库（见 .gitignore）
-        buildConfigField "String", "FEEDBACK_UPLOAD_URL", '"' + (localProps.getProperty('FEEDBACK_UPLOAD_URL') ?: 'http://127.0.0.1:9421/upload') + '"'
+        buildConfigField "String", "FEEDBACK_UPLOAD_URL", '"' + (localProps.getProperty('FEEDBACK_UPLOAD_URL') ?: 'http://127.0.0.1/upload') + '"'
         buildConfigField "String", "FEEDBACK_INSTALL_URL", '"' + (localProps.getProperty('FEEDBACK_INSTALL_URL') ?: '') + '"'
         buildConfigField "String", "FEEDBACK_SECRET_KEY", '"' + (localProps.getProperty('FEEDBACK_SECRET_KEY') ?: '') + '"'
     }
@@ -60,7 +60,7 @@ android {
 }
 
 dependencies {
-    implementation project(':nokia-key-core')
-    implementation project(':nokia-mini-shizuku')
+    implementation project(':keydroidx-key-core')
+    implementation project(':keydroidx-mini-shizuku')
     implementation 'androidx.appcompat:appcompat:1.3.1'
 }

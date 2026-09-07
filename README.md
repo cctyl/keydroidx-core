@@ -7,18 +7,20 @@
 
 ## 🌟 核心特性
 
-1. **跨应用按键自动共享**：
-   - 优先通过 `ContentProvider` 静默读取已安装的 **KeydroidX（原键）桌面** 按键配置，用户在桌面配过一次键，所有生态独立 App 自动生效，无需重复配置。
-2. **三级平滑降级机制**：
-   - `Tier 1（生态共享）`：读取 KeydroidX 原键桌面 Provider；
-   - `Tier 2（应用独立）`：未安装桌面时，读取本 App 独立保存的按键配置；
-   - `Tier 3（标准兜底）`：首次打开未配置时，默认提供 Android 标准 DPAD 方向键与通用键映射。
-3. **开箱即用复古向导 (`NokiaKeyWizardActivity`)**：
-   - 全屏响应式自适应布局（自适应 240x320、320x480 及以上分辨率，无黑边）；
+1. **跨应用按键、主题、字体、字号自动共享**：
+   - 优先通过 `ContentProvider` 静默读取已安装的 **KeydroidX（原键）桌面** 按键配置，用户在桌面配过一次按键、主题、字体、字号，
+   所有生态独立 App 自动生效，无需重复配置。
+2. **四级平滑降级机制**：
+   - `Tier 1（生态共享）`：读取 KeydroidX 原键桌面正式版 Provider；
+   - `Tier 2（Debug 桌面）`：读取 Debug 版桌面 Provider（HOME 包名含 `debug` 时优先探测）；
+   - `Tier 3（应用独立）`：未安装桌面时，读取本 App 独立保存的按键配置；
+   - `Tier 4（标准兜底）`：首次打开未配置时，默认提供 Android 标准 DPAD 方向键与通用键映射。
+3. **开箱即用复古向导 (`KeydroidxKeyWizardActivity`)**：
+   - 响应式原生 DP 布局（自适应 240x320、320x480 及以上分辨率，无黑边）；
    - `ACTION_DOWN` 单次即时响应录入；
    - 大按钮触屏跳过项，不与物理软键冲突。
 4. **极简轻量**：
-   - 核心代码 < 500 行，零第三方依赖，全面兼容 Android 4.4 (API 19) ~ Android 14+ (API 34)。
+   - 通用能力沉淀在 `keydroidx-common`（桌面与独立 App 共享一份源码），全面兼容 Android 4.4 (API 19) ~ Android 14+ (API 34)。注意 `keydroidx-common` 以 `api` 暴露 XXPermissions，接入方会传递性引入。
 
 ---
 
@@ -26,7 +28,7 @@
 
 ### 1. 声明 Android 11+ 包可见性
 
-如果应用 `targetSdkVersion >= 30`，需在 `AndroidManifest.xml` 中声明查询权限：
+如果应用 `targetSdkVersion >= 30` 且需要查询桌面 Provider，需声明 `<queries>`。**引入 `keydroidx-key-core` 时其 manifest 已内置以下声明并自动合并，无需手写**；仅引 `keydroidx-common` 时才需自行添加：
 
 ```xml
 <queries>
@@ -35,12 +37,12 @@
 </queries>
 ```
 
-### 2. 方式一：继承 `NokiaBaseActivity`（最简模式）
+### 2. 方式一：继承 `KeydroidxBaseActivity`（最简模式）
 
-继承 `NokiaBaseActivity` 即可自动获得生态统一的复古骨架——**顶栏（标题图标 + 标题 + 信号 / 电量状态栏）与底部三段式软键栏均由基类布局 `activity_nokia_base` 统一提供，各页面共用，子类无需自行绘制**，只负责装配文案与处理按键：
+继承 `KeydroidxBaseActivity` 即可自动获得生态统一的复古骨架——**顶栏（标题图标 + 标题 + 信号 / 电量状态栏）与底部三段式软键栏均由基类布局 `activity_nokia_base` 统一提供，各页面共用，子类无需自行绘制**，只负责装配文案与处理按键：
 
 ```kotlin
-class MyActivity : NokiaBaseActivity() {
+class MyActivity : KeydroidxBaseActivity() {
 
     // ① 返回内容区布局；基类会把它 inflate 进统一骨架的 contentContainer
     //    切勿在子类里再调 setContentView()，否则会顶掉顶栏/软键栏
@@ -49,20 +51,20 @@ class MyActivity : NokiaBaseActivity() {
     override fun onInitViews() {
         // ② 装配顶栏标题 / 图标与软键文案
         setPageTitle("我的应用")
-        setTitleIcon(NokiaIcons.ICON_HOME)
+        setTitleIcon(KeydroidxIcons.ICON_HOME)
         setStatusBarVisible(true)
         // ③ 状态栏电量：调 registerBatteryReceiver() 自动刷新图标与百分比，勿硬编码
         registerBatteryReceiver()
         setSoftKeys("选项", "确定", "返回")
     }
 
-    // ④ 所有物理键统一走 onAction(action: Int)，按 NokiaKeyAction 常量分派
+    // ④ 所有物理键统一走 onAction(action: Int)，按 KeydroidxKeyAction 常量分派
     override fun onAction(action: Int): Boolean {
         return when (action) {
-            NokiaKeyAction.SOFT_LEFT -> { /* 左软键：选项 */ true }
-            NokiaKeyAction.SELECT   -> { /* 确定 */ true }
-            NokiaKeyAction.SOFT_RIGHT -> { finish(); true }
-            else -> super.onAction(action)   // 默认 SOFT_RIGHT=finish，方向键交基类
+            KeydroidxKeyAction.SOFT_LEFT -> { /* 左软键：选项 */ true }
+            KeydroidxKeyAction.SELECT   -> { /* 确定 */ true }
+            KeydroidxKeyAction.SOFT_RIGHT -> { finish(); true }
+            else -> super.onAction(action)   // 默认右软键走 onBack()，方向键交基类
         }
     }
 }
@@ -72,25 +74,21 @@ class MyActivity : NokiaBaseActivity() {
 
 ### 3. 文档目录
 
-详细文档按模块拆分在 [`docs/`](./docs/README.md)，API 细化到每个公开方法，从索引进入：
+详细文档按「接入指南 / 强制规范 / 架构决策」分类在 [`docs/`](./docs/README.md) 子目录中，从索引进入：
 
-| 主题 | 文档 |
+| 分类 | 位置 |
 |------|------|
-| 快速接入 | [01-getting-started](./docs/01-getting-started.md) |
-| 配置同步与三级降级 | [02-client](./docs/02-client.md) |
-| 按键模型 | [03-key-model](./docs/03-key-model.md) |
-| 页面骨架 Activity | [04-base-activity](./docs/04-base-activity.md) |
-| 页面框架 Fragment | [05-page-framework](./docs/05-page-framework.md) |
-| 列表焦点控制 | [06-list-focus](./docs/06-list-focus.md) |
-| 标准弹窗 | [07-dialogs](./docs/07-dialogs.md) |
-| 主题·字体·图标 | [08-theme-font-icons](./docs/08-theme-font-icons.md) |
-| 配键向导 | [09-key-wizard](./docs/09-key-wizard.md) |
+| 接入指南（01~16） | [`docs/guide/`](./docs/README.md#guide--独立-app-接入指南) |
+| 强制规范（字号 / 布局） | [`docs/spec/`](./docs/README.md#spec--强制规范) |
+| 接入红线（开发前必读） | [`docs/guide/00-development-redlines.md`](./docs/guide/00-development-redlines.md) |
+| 架构与决策 | [`docs/architecture/`](./docs/README.md#architecture--架构与决策) |
+| 生态硬性开发规范 | [`docs/NOKIA_DEVELOPMENT_RULES.md`](./docs/NOKIA_DEVELOPMENT_RULES.md) |
 
 ---
 
 ## 📋 物理按键动作对照表
 
-| 动作枚举 (`NokiaKeyAction`) | 动作说明 | 默认系统兜底键 (`KeyCode`) |
+| 动作枚举 (`KeydroidxKeyAction`) | 动作说明 | 默认系统兜底键 (`KeyCode`) |
 | :--- | :--- | :--- |
 | `ACTION_UP` | 方向键-上 | `19 (DPAD_UP)` |
 | `ACTION_DOWN` | 方向键-下 | `20 (DPAD_DOWN)` |
