@@ -108,6 +108,7 @@ SDK 内部代码简洁严谨，自底向上分为四层：
 
 - **构建所有模块**：`./gradlew build`（Windows: `gradlew.bat build`）。
 - **编译发布 AAR**：`./gradlew :keydroidx-key-core:assembleRelease`（输出产物在 `keydroidx-key-core/build/outputs/aar/`）。
+- **Lint（`NewApi` 不允许跳过，改完涉及 API 调用的代码后必跑）**：`./gradlew :keydroidx-common:lintDebug :keydroidx-key-core:lintDebug :keydroidx-mini-shizuku:lintDebug :sample:lintDebug`（Windows: `gradlew.bat ...`）。四个模块的 `lint {}` 均已设 `abortOnError true`。
 - **发布到本地 Maven**：`./gradlew :keydroidx-key-core:publishReleasePublicationToMavenLocal`（坐标 `io.github.cctyl.nokia:keydroidx-key-core:1.0.0`）。
 - **安装并运行示例 App**：`./gradlew :sample:installDebug`（演示如何接入 SDK）。
 - **清理构建产物**：`./gradlew clean`。
@@ -150,4 +151,10 @@ SDK 内部代码简洁严谨，自底向上分为四层：
 6. **多进程与独立 Activity 字体缩放同步**：
    - `KeydroidxFontManager.sFontScale` 是 Java 静态变量，在子进程（`android:process`）启动时不会跨虚拟机内存自动共享。
    - 自定义 `Application.onCreate()` 必须主动读取配置并注入 `KeydroidxFontManager`；未能继承 `KeydroidxBaseActivity` 的独立 Activity 必须在 `attachBaseContext` 中显式同步 `fontScale` 并锁定 `Configuration.fontScale = 1.0f`。
+7. **Lint `NewApi` 红线（强制，全生态不允许跳过）**：
+   - 各模块 `minSdk` 为 19（Android 4.4）：**高于 `minSdk` 的 API 调用只会在旧设备上「运行时」抛 `NoSuchMethodError` / `NoClassDefFoundError`**，编译器按 `compileSdk` 编译永远发现不了，Lint 的 `NewApi` 是唯一的静态防线。本仓库是各 App 共用的 SDK，问题会扩散到全部宿主。
+   - **禁止** `lint { disable 'NewApi' }` 与 `abortOnError false`（本仓库四个模块已全部为 `true`），**禁止**任何构建/打包命令带 `-x lint`。
+   - `assembleDebug` 不触发 Lint，`assembleRelease` 只跑 `lintVital` 的致命项，**都拦不住 `NewApi` error**；改完涉及 API 调用的代码后必须手跑上面的模块 Lint 任务。
+   - 确属误报时**逐处**用 `@SuppressLint("NewApi")` / `@RequiresApi` / `@TargetApi` 豁免并写明理由。常用替代：`Activity#checkSelfPermission`（23+）→ `ContextCompat.checkSelfPermission`；`Context#getColor`（23+）→ `ContextCompat.getColor`；无 flag 的 `Context#registerReceiver` → `ContextCompat.registerReceiver(..., RECEIVER_EXPORTED/NOT_EXPORTED)`。
+   - 守卫版本号必须查该方法/类的「Added in API level」，不能以「能编译过」为准。完整规则见 `docs/NOKIA_DEVELOPMENT_RULES.md` 第 6 条。
 

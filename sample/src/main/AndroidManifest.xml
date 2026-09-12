@@ -1,12 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
     <!-- 反馈上报需要联网（接入 SDK 反馈能力的应用必须声明） -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
-    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" />
-    <uses-permission android:name="com.unisoc.permission.CTA_QUERY_ALL_PACKAGES" />
-    <uses-permission android:name="android.permission.GET_INSTALLED_APPS" />
+    <!-- Android 11+ 软件包可见性：按键机生态必须枚举已安装应用（冻结/启动/按键映射），
+         QUERY_ALL_PACKAGES 为有意声明，按 docs/guide/13-permissions.md §3.2 逐处豁免 Lint。 -->
+    <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES" tools:ignore="QueryAllPackagesPermission" />
+    <uses-permission android:name="com.unisoc.permission.CTA_QUERY_ALL_PACKAGES" tools:ignore="ProtectedPermissions" />
+    <uses-permission android:name="android.permission.GET_INSTALLED_APPS" tools:ignore="ProtectedPermissions" />
 
     <application
         android:name=".SampleApplication"

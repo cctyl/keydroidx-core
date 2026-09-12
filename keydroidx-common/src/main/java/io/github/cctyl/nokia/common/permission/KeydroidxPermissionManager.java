@@ -7,6 +7,7 @@ import android.os.Build;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 
 import com.hjq.permissions.OnPermissionCallback;
 import com.hjq.permissions.Permission;
@@ -287,7 +288,10 @@ public final class KeydroidxPermissionManager {
         activity.getWindow().getDecorView().postDelayed(() -> {
             boolean allGranted = true;
             for (String p : permissions) {
-                if (activity.checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) {
+                // ContextCompat 内部按 API 级别分派：API 23+ 走 checkSelfPermission，
+                // 低于 23（如 Android 4.4）直接返回已授权。禁止直接调用
+                // Activity#checkSelfPermission（API 23+，minSdk=19 上会 NoSuchMethodError）。
+                if (ContextCompat.checkSelfPermission(activity, p) != PackageManager.PERMISSION_GRANTED) {
                     allGranted = false;
                     break;
                 }
