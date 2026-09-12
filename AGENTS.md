@@ -98,6 +98,7 @@ SDK 内部代码简洁严谨，自底向上分为四层：
 - **`FeedbackUploader`**：HTTP POST 上传实现（日志 zip 打包 ≤9MB 超限裁剪、设备信息组装与发送）；失败静默且禁止自动重试。请求签名由 SDK 内部完成。
 - **`KeydroidxInstall` / `InstallUploader`**：安装统计上报（`POST /install`），与反馈上报共用同一份 `KeydroidxFeedbackConfig`，仅路径与请求体不同（Body 为 JSON，非 zip）。`KeydroidxInstall.reportOnce(context)` 用 `SharedPreferences` 记录 `(android_id, version)` 实现客户端幂等：**首装/升级各报一次，同版本跳过**；失败最多重试 1 次。服务端按 `(app, android_id)` 去重，重复上报不重复计安装数但更新版本字段。协议见 `log_upload/docs/CLIENT_API.md` 第 3 节，接入文档见 `docs/guide/12-install-stats.md`。
 - **`DeviceInfoCollector`**：设备信息采集（仅公开 API），反馈与安装上报共用。
+- **`KeydroidxCrashReporter`**：崩溃/错误日志**自动上报**。本进程任意 `KeydroidxLog.e` 或未捕获异常（Error / RuntimeException）都会落「待上传」标记 `<logDir>/pending_report.json`（同步 + fsync，含异常类型/消息/完整堆栈/进程/线程）；`uploadPendingIfAny()` 在下次启动时自动上传日志 zip，**上传成功才重置标记**，失败保留下次再试。带节流（间隔 ≥60 秒、每天最多 10 次）避免触发服务端 `/upload` 的 IP 限流。主进程调用 `install()` + `uploadPendingIfAny()`；`android:process` 子进程只调 `install()`（只标记不上传，避免重复上报）。
 - 详细接入文档见 `docs/guide/11-feedback.md`、`docs/guide/12-install-stats.md`；默认生态日志目录约定为 `Android/data/<包名>/files/log`，可在配置中覆盖。
 - **`KeydroidxLog`**：生态标准零依赖文件日志器（对齐桌面架构），支持按天轮转（保留 7 天）、详细日志开关持久化（`isDetailedLogEnabled` / `setDetailedLogEnabled`）、未捕获崩溃同步瞬时落盘。
 

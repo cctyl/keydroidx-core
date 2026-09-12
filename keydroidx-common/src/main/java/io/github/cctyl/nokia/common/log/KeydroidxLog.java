@@ -48,6 +48,7 @@ public class KeydroidxLog {
     private static WriteHandler sWriteHandler;
     private static volatile int sFileMinLevel = Log.ERROR;
     private static volatile String sDefaultTag = DEFAULT_TAG;
+    private static volatile LogErrorMarker sErrorMarker;
 
     private static final SimpleDateFormat TIME_FORMAT =
             new SimpleDateFormat("MM-dd HH:mm:ss.SSS", Locale.US);
@@ -208,6 +209,37 @@ public class KeydroidxLog {
         });
     }
 
+    /**
+     * 注册「错误标记」回调：记录 ERROR 级日志或未捕获崩溃时被<b>同步</b>回调。
+     *
+     * <p>典型用法（见 {@code KeydroidxCrashReporter}）：把「本进程出现过错误/崩溃」落成标记，
+     * 下次启动时自动上传日志。传 null 取消注册。</p>
+     */
+    public static void setErrorMarker(@Nullable LogErrorMarker marker) {
+        sErrorMarker = marker;
+    }
+
+    /** 获取当前已注册的错误标记回调（未注册返回 null）。 */
+    @Nullable
+    public static LogErrorMarker getErrorMarker() {
+        return sErrorMarker;
+    }
+
+    /**
+     * 同步派发错误标记。刻意吞掉一切异常：标记失败绝不能影响日志与崩溃主流程。
+     */
+    private static void notifyErrorMarker(String category, String detail, @Nullable Throwable tr) {
+        LogErrorMarker marker = sErrorMarker;
+        if (marker == null) {
+            return;
+        }
+        try {
+            marker.onErrorMarked(category, detail, tr);
+        } catch (Throwable ignored) {
+            // 标记实现内部已做兜底，此处再兜一层，确保崩溃链不会被破坏
+        }
+    }
+
     // ==========================================
     // 标准日志分发 API (Logcat + 文件持久化)
     // ==========================================
@@ -260,11 +292,13 @@ public class KeydroidxLog {
     public static void e(String tag, String msg) {
         Log.e(tag, msg);
         logToFile(Log.ERROR, tag, msg, null);
+        notifyErrorMarker(LogErrorMarker.CATEGORY_ERROR, tag + ": " + msg, null);
     }
 
     public static void e(String tag, String msg, Throwable tr) {
         Log.e(tag, msg, tr);
         logToFile(Log.ERROR, tag, msg, tr);
+        notifyErrorMarker(LogErrorMarker.CATEGORY_ERROR, tag + ": " + msg, tr);
     }
 
     /**
@@ -275,6 +309,9 @@ public class KeydroidxLog {
         String msg = "FATAL UNCAUGHT EXCEPTION in thread [" + threadName + "]";
         Log.e("AndroidRuntime", msg, throwable);
         logToFile(Log.ASSERT, "CRASH", msg, throwable);
+        // 先落「待上传」标记（同步 + fsync），日志落盘是异步的、崩溃时可能来不及写完
+        notifyErrorMarker(LogErrorMarker.CATEGORY_UNCAUGHT,
+                "uncaught exception on thread [" + threadName + "]", throwable);
     }
 
     // ==========================================

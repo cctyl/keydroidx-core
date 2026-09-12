@@ -13,6 +13,7 @@
 | `KeydroidxTextInputFragment` | 全屏文本编辑页（反馈页的联系方式/问题描述编辑器，宿主也可复用） |
 | `FeedbackUploader` | 协议实现：设备信息组装、日志 zip 打包、HTTP POST 上传（请求签名在 SDK 内部完成） |
 | `DeviceInfoCollector` | 设备信息采集（extras 默认值） |
+| `KeydroidxCrashReporter` | 崩溃/错误日志自动上报：落「待上传」标记 → 下次启动自动上传 → 成功后重置标记 |
 | `KeydroidxLog` | SDK 内置零依赖文件日志器（对齐桌面架构，支持按天轮转、级别控制与崩溃同步落盘） |
 
 包路径：反馈与安装统计为 `io.github.cctyl.nokia.common.feedback`，日志为 `common.log.KeydroidxLog`（`keycore.feedback` 下同名桥接类已于 2026-09-06 删除；原 `keycore.log` 下的日志桥接类已随 2026-09-06 类名重构删除）；反馈页 `KeydroidxFeedbackActivity` 在 `keycore.ui`（key-core 独有）。
@@ -274,7 +275,63 @@ SDK 不代做脱敏（无法理解业务语义）。
 
 ---
 
-## 四、自动附带的设备信息（extras）
+## 四、崩溃/错误日志自动上报（`KeydroidxCrashReporter`）
+
+用户不点「意见反馈」，崩溃现场就永远拿不到。该组件把「崩溃 → 上传」做成闭环：
+
+```
+本进程任意 KeydroidxLog.e() / 未捕获异常（Error、RuntimeException…）
+        ↓ 同步 + fsync 落标记（进程随时会被杀）
+<logDir>/pending_report.json   ← 异常类型 / 消息 / 完整堆栈 / 进程 / 线程 / 时间
+        ↓ 下次启动
+uploadPendingIfAny(context) → KeydroidxFeedback.submit(附带日志 zip)
+        ↓ HTTP 200
+删除标记（重置）；失败则保留标记，下次启动继续尝试
+```
+
+### 1. 接入（两步）
+
+```java
+// Application 中，KeydroidxFeedback.init(...) 之后
+KeydroidxCrashReporter.install(this);            // 注册标记（只注册，不上传）
+KeydroidxCrashReporter.uploadPendingIfAny(this); // 上传上次遗留的报告 + 重置标记
+```
+
+多进程应用（如 `android:process=":midlet"`）：
+
+```java
+// 主进程：install() + uploadPendingIfAny()
+// 子进程：只 install()（只落标记，上传交给主进程，避免重复上报）
+```
+
+### 2. 设计要点
+
+- **标记先落盘，日志后补**：`fileCrash` 的日志写入是异步的（HandlerThread），崩溃时可能来不及落盘，
+  因此标记里直接带**完整堆栈**（截断到 4000 字符）；标记文件本身也在日志目录中，
+  会随日志 zip 一起上传，现场不会丢。
+- **只在有标记时上传**，正常启动零网络开销；`Contact` 固定填 `自动上报`（服务端要求 1~100 字符），
+  崩溃信息写入 `comment`（≤500 字符）与 `extras`（`crash_category` / `crash_type` / `crash_time` / `crash_process` / `crash_thread` / `crash_detail`）。
+- **节流防封禁**：服务端 `/upload` 按出口 IP 限流（3 次/分、20 次/天，超额封禁 30 分钟，
+  封禁会连带手动反馈一起不可用），故自动上报限制两次尝试间隔 ≥60 秒、每天 ≤10 次；
+  被节流时标记保留，后续启动再传。手动反馈是人工操作，正常不会触到这层节流。
+- **注释按字节控制（重要坑）**：`/upload` 的用户描述走 `X-Meta` **请求头**（body 只有 zip），
+  服务端对 `comment` 的上限是 500 **字节**（Rust `s.len()`，超限判协议违规直接掐断 TCP，
+  客户端表现为 `EOFException`）；而 SDK 的 `buildMetaJson` 是按**字符**截断的，中文 3 字节/字，
+  所以长中文描述（>约 167 汉字）会失败。`KeydroidxCrashReporter` 已自行按 UTF-8 字节压到 480 以内。
+- **开关**：`isAutoUploadEnabled(context)` / `setAutoUploadEnabled(context, boolean)`，默认开启。
+  自动上报是静默的，日志可能含用户数据，接入方需在隐私政策中说明（可用该开关提供用户侧退出）。
+- **失败不做进程内重试**（与 `FeedbackUploader` 的约定一致），只在下次启动重试一次。
+
+### 3. 排查用 API
+
+```java
+boolean pending = KeydroidxCrashReporter.hasPending(context); // 是否有待上传标记
+KeydroidxCrashReporter.clearPending(context);                 // 清除标记（文件 I/O，勿在主线程）
+```
+
+---
+
+## 五、自动附带的设备信息（extras）
 
 | 字段 | 来源 |
 |---|---|
@@ -300,14 +357,15 @@ String 自动截断 200 字符，序列化后 extras 总量 ≤4096 字节）。
 
 ---
 
-## 五、排查问题（客户端视角）
+## 六、排查问题（客户端视角）
 
 - **请求方式**：`POST`，地址即 `KeydroidxFeedbackConfig.resolveUploadUrl()`（`baseUrl + /upload`）；
 - **请求体**：zip 压缩后的字节流（无日志附件时长度为 0）；
 - **请求签名**：由 `FeedbackUploader` 内部完成，宿主无需参与，**协议细节不对外公开**；
 - **失败判定**：非 200 一律视为失败，静默处理；
-- **禁止自动重试**：重试只会加剧失败，SDK 不做自动重试，UI 提示用户手动再试即可；
-- 客户端诊断日志 tag 为 `FeedbackUploader` / `KeydroidxFeedback`。
+- **禁止进程内自动重试**：重试只会加剧失败，SDK 不做进程内自动重试，UI 提示用户手动再试即可
+  （唯一的例外是 `KeydroidxCrashReporter` 的「下次启动重试一次」，且带间隔/每日配额节流）；
+- 客户端诊断日志 tag 为 `FeedbackUploader` / `KeydroidxFeedback` / `KeydroidxCrashReporter`。
 
 > 自建服务端的同学请直接参考 `log_upload/docs/CLIENT_API.md` 与 `log_upload/docs/PROTOCOL.md`。
 
