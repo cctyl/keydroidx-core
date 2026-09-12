@@ -406,7 +406,14 @@ if (decor != null) {
 4. **layer-list 的 `android:width` / `android:height` 是 API 23+ 属性**。Android 4.4 上会被**静默忽略**（不报错），导致所有图层被拉伸成整块叠在一起：信号 4 根竖条合成一整块、电池格子被最后一层盖掉（看起来图标「消失」/「变灰」）。**禁止**在 `<item>` 上用 `android:width/height` 控制图层尺寸（也不要指望 item `gravity` + shape `<size>`——4.4 的 layer bounds 是「layer-list 区域 inset 后的整块」，shape 会填满整块，`<size>` 只影响 intrinsic、不影响绘制尺寸）。**正确做法**：用 `android:left/top/right/bottom` inset 精确控制每个 layer 的绘制区域 = 图层期望大小（如 3×4dp 信号条、2×5dp 电池格），shape 在 inset 后的区域内填充；layer-list 整体大小 = 所有 layer 的 `inset + 图形宽高` 之和的最大值（如信号 15×7dp、电池 18×9dp），ImageView 用固定宽高 + `fitCenter` 缩放。已按此修复：`ic_signal_0..4`、`ic_battery_0/25/50/75/100`、`ic_keydroidx_battery`（这些文件是标准范例，新增多格图标照抄此结构）。
 5. **`Canvas` 的部分 float 重载是 API 21+ 才有，4.4 上运行时调用直接 `NoSuchMethodError` 闪退**。例如 `drawRoundRect(float, float, float, float, float, float, Paint)`（7 参数 float 版）是 API 21 才引入；API 19 只有 `drawRoundRect(RectF, float, float, Paint)`。若在自绘 View 的 `onDraw()` 里调用（页面一打开即执行绘制），会像本次「高级设置 → 电源键拦截开关」一样整个进程闪退——这与「VFY 无害告警」不同，**方法被执行到就会崩**。**正确做法**：自绘时只用 API 1 就有的重载——`drawRoundRect(RectF, rx, ry, Paint)`、`drawRect(RectF, Paint)` / `drawRect(int, int, int, int, Paint)`、`drawCircle(float, float, float, Paint)`（circle 的 float 版 API 1 就有，安全）；需要 float 版本时构造/缓存一个 `RectF`（`onDraw` 里复用字段，不要每帧 `new`）。已按此修复：`KeydroidxAdvancedSettingsFragment$KeydroidxSwitchView`（`drawRoundRect(RectF, ...)` + 缓存 `trackRect`）。新写自绘控件时，先查 Android API 参考确认方法的最低 API 级别。
 
-通用原则：所有 API 22+ 的类/方法引用都要 `SDK_INT` 守卫；Dalvik 验证器对运行时不执行到的高版本类引用只会打 `VFY Could not find class '...'` **无害告警**，不算崩溃；**但运行时会实际执行到的方法/重载必须保证 API 19 可用，否则直接 `NoSuchMethodError`**。低版本设备（尤其 4.4）建议用「修一处→构建→装到 4a24ecf 实测」的迭代方式，以设备真实崩溃为准逐个修，而非盲目猜测。
+6. **必须启用 Lint 的 `NewApi` 规则，禁止用 `-x lint` 跳过 Lint（强制）**。全生态各 App 的 `minSdk` 均为 19 或更低（Android 4.4），**高于 `minSdk` 的 API 调用只会在旧设备上「运行时」抛 `NoSuchMethodError` / `NoClassDefFoundError` 闪退**——编译器按 `compileSdk` 编译，编译期永远发现不了，Lint 的 `NewApi` 是唯一的静态防线。硬性要求：
+   - 各模块 `lint {}` 块**禁止** `disable 'NewApi'`；构建/打包命令（各仓库 `build_release.bat`、CI 脚本、文档示例）**禁止** `-x lint`。
+   - `assembleDebug` 不触发 lint 任务，`assembleRelease` 只跑 `lintVital` 的致命项，**都不能替代**显式的模块 Lint：改完涉及 API 调用的代码后请执行模块 lint 任务（例如 launcher：`.\gradlew.bat :app:lintOpenDebug`）。
+   - 确属误报（兼容层刻意兼容低版本等）时，**逐处**用 `@SuppressLint("NewApi")` / `@RequiresApi` / `@TargetApi` 豁免并写明理由，**禁止**在 `lint {}` 里全局 `disable`。
+   - **守卫版本号必须查该方法/类的「Added in API level」**，不能以「这样写能编译过」为准。真实事故（2026-09-12）：`StatusBarController` 在 `SDK_INT >= 22` 守卫内调用了 **API 24** 才有的 `TelephonyManager.createForSubscriptionId(int)`，三星 SM-G9198（Android 5.1.1 / API 22）启动即 `NoSuchMethodError` 闪退；而同一文件 `probeSubIdsAndListen()` 里同样的调用却写对了 `>= 24` 守卫——**人工守卫必然漏，必须靠 lint 兜底**。
+   - 库模块若配置 `lint { abortOnError false }`，其 `NewApi` 问题不中断构建，新增代码仍需人工按上述守卫规范编写。
+
+通用原则：所有 API 22+ 的类/方法引用都要 `SDK_INT` 守卫；Dalvik 验证器对运行时不执行到的高版本类引用只会打 `VFY Could not find class '...'` **无害告警**，不算崩溃；**但运行时会实际执行到的方法/重载必须保证 API 19 可用，否则直接 `NoSuchMethodError`**。低版本设备（尤其 4.4）建议用「修一处→构建→装到 4a24ecf 实测」的迭代方式，以设备真实崩溃为准逐个修，而非盲目猜测。改完涉及 API 调用的代码，先跑 Lint（第 6 条）再装机。
 
 ## 双分辨率适配规范（重要）
 
