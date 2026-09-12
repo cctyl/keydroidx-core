@@ -76,6 +76,7 @@ public final class InstallUploader {
                 try {
                     Thread.sleep(1_000);
                 } catch (InterruptedException ignored) {
+                    KeydroidxLog.w(TAG, "retry sleep interrupted, abort install upload");
                     Thread.currentThread().interrupt();
                     return false;
                 }
@@ -209,6 +210,7 @@ public final class InstallUploader {
             try {
                 return Integer.parseInt(((String) v).trim());
             } catch (NumberFormatException ignored) {
+                KeydroidxLog.w(TAG, "extras int parse failed, key=" + key + ", value=" + v);
                 return def;
             }
         }

@@ -20,6 +20,8 @@ import javax.microedition.khronos.egl.EGLContext;
 import javax.microedition.khronos.egl.EGLDisplay;
 import javax.microedition.khronos.egl.EGLSurface;
 
+import io.github.cctyl.nokia.common.log.KeydroidxLog;
+
 /**
  * 设备信息采集器：为反馈上报的 extras 字段提供默认的设备信息。
  *
@@ -27,6 +29,8 @@ import javax.microedition.khronos.egl.EGLSurface;
  * ANDROID_ID 为系统公开设备标识（按签名密钥+设备唯一，无额外权限）。</p>
  */
 public final class DeviceInfoCollector {
+
+    private static final String TAG = "DeviceInfoCollector";
 
     private DeviceInfoCollector() {
     }
@@ -101,6 +105,7 @@ public final class DeviceInfoCollector {
                     context.getContentResolver(), Settings.Secure.ANDROID_ID));
         } catch (Throwable ignored) {
             // 设备信息采集失败不应阻断反馈提交
+            KeydroidxLog.w(TAG, "collect device info failed: " + ignored.getMessage());
         }
         return info;
     }
@@ -115,6 +120,7 @@ public final class DeviceInfoCollector {
             info.put("app_version_name", pi.versionName);
             info.put("app_version_code", pi.versionCode);
         } catch (Throwable ignored) {
+            KeydroidxLog.w(TAG, "collect app version failed: " + ignored.getMessage());
         }
         return info;
     }
@@ -138,6 +144,7 @@ public final class DeviceInfoCollector {
             android.util.DisplayMetrics dm = context.getResources().getDisplayMetrics();
             return dm.widthPixels + "x" + dm.heightPixels;
         } catch (Throwable t) {
+            KeydroidxLog.w(TAG, "resolve screen size failed: " + t.getMessage());
             return "";
         }
     }
@@ -150,6 +157,7 @@ public final class DeviceInfoCollector {
         try {
             info.put("cpu_cores", Runtime.getRuntime().availableProcessors());
         } catch (Throwable ignored) {
+            KeydroidxLog.w(TAG, "collect cpu cores failed: " + ignored.getMessage());
         }
         try {
             BufferedReader reader = new BufferedReader(new FileReader("/proc/cpuinfo"));
@@ -178,6 +186,7 @@ public final class DeviceInfoCollector {
                 reader.close();
             }
         } catch (Throwable ignored) {
+            KeydroidxLog.w(TAG, "read /proc/cpuinfo failed: " + ignored.getMessage());
         }
         try {
             String maxFreq = readOneLine("/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq");
@@ -189,6 +198,7 @@ public final class DeviceInfoCollector {
                 info.put("cpu_min_freq_mhz", Integer.parseInt(minFreq.trim()) / 1000);
             }
         } catch (Throwable ignored) {
+            KeydroidxLog.w(TAG, "read cpufreq failed: " + ignored.getMessage());
         }
     }
 
@@ -251,6 +261,7 @@ public final class DeviceInfoCollector {
             info.put("gpu_vendor", GLES20.glGetString(GLES20.GL_VENDOR));
             info.put("gpu_version", GLES20.glGetString(GLES20.GL_VERSION));
         } catch (Throwable ignored) {
+            KeydroidxLog.w(TAG, "collect GPU info failed: " + ignored.getMessage());
         } finally {
             if (egl != null && display != null) {
                 try {
@@ -281,6 +292,7 @@ public final class DeviceInfoCollector {
             reader = new BufferedReader(new FileReader(path));
             return reader.readLine();
         } catch (Throwable t) {
+            KeydroidxLog.w(TAG, "read file failed: " + path + ": " + t.getMessage());
             return null;
         } finally {
             if (reader != null) {

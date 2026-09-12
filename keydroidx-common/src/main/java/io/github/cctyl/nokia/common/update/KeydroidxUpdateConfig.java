@@ -4,6 +4,8 @@ import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 
+import io.github.cctyl.nokia.common.log.KeydroidxLog;
+
 /**
  * 检查更新的配置对象（链式装配，风格对齐 {@code KeydroidxAboutConfig}）。
  *
@@ -16,6 +18,8 @@ import android.content.pm.PackageManager;
  * }</pre>
  */
 public final class KeydroidxUpdateConfig {
+
+    private static final String TAG = "KeydroidxUpdateConfig";
 
     /**
      * 默认备用下载地址（百度网盘）。GitHub 网络不畅、检查失败时引导用户前往。
@@ -110,6 +114,7 @@ public final class KeydroidxUpdateConfig {
                     return normalizeVersion(pi.versionName);
                 }
             } catch (Throwable ignored) {
+                KeydroidxLog.w(TAG, "resolve current version failed, fallback to 0: " + ignored.getMessage());
             }
         }
         return "0";

@@ -24,6 +24,7 @@ import java.util.List;
 
 import io.github.cctyl.nokia.common.R;
 import io.github.cctyl.nokia.common.ecosystem.KeydroidXApps;
+import io.github.cctyl.nokia.common.log.KeydroidxLog;
 import io.github.cctyl.nokia.common.ui.KeydroidxFontManager;
 import io.github.cctyl.nokia.common.ui.dialog.KeydroidxOptionsDialog;
 import io.github.cctyl.nokia.common.ui.page.KeydroidxListPageFragment;
@@ -244,6 +245,7 @@ public class KeydroidxMoreAppsFragment extends KeydroidxListPageFragment {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         } catch (Exception e) {
+            KeydroidxLog.w("KeydroidxMoreAppsFragment", "open url failed: " + url + ": " + e.getMessage());
             Toast.makeText(getContext(), "无法打开链接: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }

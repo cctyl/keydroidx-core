@@ -115,9 +115,11 @@ public final class KeydroidxPermissionManager {
             return XXPermissions.isGranted(context, Permission.GET_INSTALLED_APPS);
         } catch (Throwable t) {
             // 部分未支持的平台上 fallback 为验证是否能实际读出数量
+            KeydroidxLog.w(TAG, "XXPermissions.isGranted failed, fallback to app list detection: " + t.getMessage());
             try {
                 return context.getPackageManager().getInstalledApplications(0).size() > 0;
             } catch (Throwable ignored) {
+                KeydroidxLog.w(TAG, "detect app list failed, assume granted: " + ignored.getMessage());
                 return true;
             }
         }
@@ -153,6 +155,7 @@ public final class KeydroidxPermissionManager {
             PackageManager pm = context.getPackageManager();
             return pm.getPermissionInfo(permissionName, 0) != null;
         } catch (Throwable e) {
+            KeydroidxLog.w(TAG, "getPermissionInfo failed: " + permissionName + ": " + e.getMessage());
             return false;
         }
     }
@@ -168,6 +171,7 @@ public final class KeydroidxPermissionManager {
         try {
             return XXPermissions.isSpecial(perm);
         } catch (Throwable ignored) {
+            KeydroidxLog.w(TAG, "XXPermissions.isSpecial failed: " + perm + ": " + ignored.getMessage());
             return false;
         }
     }

@@ -115,7 +115,9 @@ public class KeydroidxClient implements ThemeProvider {
                     return true;
                 }
             }
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            KeydroidxLog.w(TAG, "resolve home activity failed, use default provider order: " + ignored.getMessage());
+        }
         return false;
     }
 
@@ -204,7 +206,9 @@ public class KeydroidxClient implements ThemeProvider {
                                 try {
                                     this.currentFontScale = Float.parseFloat(v);
                                     KeydroidxFontManager.setFontScale(this.currentFontScale);
-                                } catch (Exception ignored) {}
+                                } catch (Exception ignored) {
+                                    KeydroidxLog.w(TAG, "parse font scale failed, value=" + v + ": " + ignored.getMessage());
+                                }
                             }
                         } while (sCursor.moveToNext());
                     }

@@ -484,6 +484,7 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
             startActivity(intent);
         } catch (Exception e) {
+            KeydroidxLog.w("KeydroidxAboutFragment", "open url failed: " + url + ": " + e.getMessage());
             Toast.makeText(getContext(), "无法打开链接: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
     }

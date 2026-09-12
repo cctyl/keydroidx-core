@@ -15,6 +15,7 @@ import android.widget.TextView;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import io.github.cctyl.nokia.common.log.KeydroidxLog;
 import io.github.cctyl.nokia.common.util.KeydroidxDimens;
 
 /**
@@ -24,6 +25,8 @@ import io.github.cctyl.nokia.common.util.KeydroidxDimens;
 public class KeydroidxIcons {
 
     protected KeydroidxIcons() {}
+
+    private static final String TAG = "KeydroidxIcons";
 
     private static Typeface sTypeface;
 
@@ -265,6 +268,8 @@ public class KeydroidxIcons {
             try {
                 sTypeface = Typeface.createFromAsset(context.getAssets(), "fonts/MaterialIcons-Regular.ttf");
             } catch (Exception e) {
+                // 图标字体缺失会导致全生态的图标渲染退化为默认字体（用户可见的功能损坏），故记 e 并上报
+                KeydroidxLog.e(TAG, "load Material Icons typeface failed, fallback to default", e);
                 sTypeface = Typeface.DEFAULT;
             }
         }

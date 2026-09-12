@@ -246,6 +246,7 @@ public final class FeedbackUploader {
                 try {
                     entryName = relativePath(dir, f);
                 } catch (IOException e) {
+                    KeydroidxLog.w(TAG, "resolve entry path failed, fallback to file name: " + f.getName());
                     entryName = f.getName();
                 }
                 zos.putNextEntry(new ZipEntry(entryName));
@@ -254,6 +255,7 @@ public final class FeedbackUploader {
             }
             zos.close();
         } catch (IOException e) {
+            KeydroidxLog.w(TAG, "zip logs failed, will upload empty archive: " + e.getMessage());
             return new ZipResult(new byte[0], 0, skipped, originalTotal);
         } finally {
             if (zos != null) {

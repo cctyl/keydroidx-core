@@ -275,6 +275,44 @@ SDK 不代做脱敏（无法理解业务语义）。
 
 ---
 
+### `catch` 块必须记一笔（强制）
+
+**任何 `try/catch` 的 `catch` 分支都必须用 `KeydroidxLog.e(...)` 或 `KeydroidxLog.w(...)`（带 `Throwable` 重载）记录异常。**
+
+```java
+try {
+    doSomething();
+} catch (IOException e) {
+    // 网络/IO 失败：外部因素、预期内 → w（仅 logcat；详细日志开启时才落盘，不触发上报）
+    KeydroidxLog.w("Player", "播放失败（网络/IO）: " + path, e);
+} catch (JSONException e) {
+    // 自家配置格式错误：不该发生、需开发者修复 → e（落盘 + 落「待上传」标记，下次启动上报）
+    KeydroidxLog.e("Config", "配置解析失败，回退默认值", e);
+}
+```
+
+- **禁止**：空 `catch`、只 `e.printStackTrace()`、改用 `android.util.Log`（不落盘、不标记）。
+  - ❌ `catch (Exception ignored) {}`
+  - ❌ `catch (Exception e) { e.printStackTrace(); }`
+  - ❌ `catch (IOException e) { return null; }`
+- **为什么强制**：`KeydroidxCrashReporter` 只能感知「未捕获异常」与「走过 `KeydroidxLog.e` 的错误」（详见第四节）。
+  被 `catch` 且不打日志的异常既不落盘也不落标记，**上报链路完全看不到**——这是「用户报障但服务端零日志」最常见的原因。
+- **选级与配额红线（重要）**：`w` 在 Release（未开详细日志）下**只进 logcat、不落盘**；只有 `e` 会**落盘 + 落「待上传」标记**，从而触发下次启动的自动上报。
+  而服务端 `/upload` 限流 **20 次/天、3 次/分，超额封 IP 30 分钟**（封禁会连带手动反馈一起不可用）。因此：
+  **`e` 只用于「程序自身缺陷」**（不该发生的失败：资源缺失、自家数据解析/写入失败、状态机异常、自家逻辑 bug）；
+  **网络异常 / 超时 / 权限不足 / 包未安装 / 系统版本不支持 / 反射调用失败 / 资源清理失败 / 探测失败等一律用 `w`**——
+  这类属于外部环境或预期内情况，UI 侧通常已有兜底提示，不需要开发者介入修复。
+  同时，**常驻 / 高频路径（按键分发、光标逐帧刷新、每次渲染、网络重试、逐项遍历）一律用 `w`**。
+  否则配额会被日常降级异常打满，真实崩溃反而传不出去。
+- **例外（不补日志，或只补 `w`）**：
+  1. `catch` 后**重新抛出**（块内有 `throw ...`）：异常继续向上传播，最终由未捕获处理器与 `KeydroidxCrashReporter` 上报，不算盲区。
+  2. 日志 / 上报链路**自身**的 `catch`（`KeydroidxLog`、`KeydroidxCrashReporter`、`FeedbackUploader`、`InstallUploader`、`DeviceInfoCollector`）：
+     只能 `KeydroidxLog.w` 或保持静默。此处调 `KeydroidxLog.e` 会经 `notifyErrorMarker` 再次落「待上传」标记，存在递归落盘风险。
+  3. 资源清理路径（`close()` / `eglDestroy*` / `deleteQuietly` 等）：用 `w` 或不补，避免刷屏淹没真实崩溃。
+  4. `keydroidx-mini-shizuku`（含 launcher 内 `mini_shizuku` 服务端模块）与 J2ME 移植代码（`javax.*` / `org.microemu.*`）：不强制，前者保持零依赖、允许 `android.util.Log`。
+
+---
+
 ## 四、崩溃/错误日志自动上报（`KeydroidxCrashReporter`）
 
 用户不点「意见反馈」，崩溃现场就永远拿不到。该组件把「崩溃 → 上传」做成闭环：
@@ -321,6 +359,11 @@ KeydroidxCrashReporter.uploadPendingIfAny(this); // 上传上次遗留的报告 
 - **开关**：`isAutoUploadEnabled(context)` / `setAutoUploadEnabled(context, boolean)`，默认开启。
   自动上报是静默的，日志可能含用户数据，接入方需在隐私政策中说明（可用该开关提供用户侧退出）。
 - **失败不做进程内重试**（与 `FeedbackUploader` 的约定一致），只在下次启动重试一次。
+- **已知盲区：被 `catch` 且不打日志的异常**。标记的唯一入口是未捕获异常与 `KeydroidxLog.e(...)`，
+  因此 `catch` 里静默吞掉异常（空 `catch` / 只 `printStackTrace()` / 改用 `android.util.Log`）时，
+  该异常既不落盘也不会生成标记。**规范做法见上文「`catch` 块必须记一笔（强制）」一节：`catch` 分支必须 `KeydroidxLog.e/w` 记一笔**
+  （`e` 会触发自动上报，`w` 只落盘，按「是否意外/是否影响功能」选级）。
+  启动阶段早期崩溃、进程被系统杀死、native 崩溃（NDK SIGSEGV）、ANR 同样抓不到，属机制限制。
 
 ### 3. 排查用 API
 

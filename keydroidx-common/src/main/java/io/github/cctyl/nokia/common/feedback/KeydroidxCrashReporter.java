@@ -171,6 +171,7 @@ public final class KeydroidxCrashReporter {
             File logDir = app != null ? KeydroidxFeedback.resolveLogDir(app) : null;
             return logDir != null && new File(logDir, MARKER_NAME).isFile();
         } catch (Throwable t) {
+            KeydroidxLog.w(TAG, "hasPending failed: " + t.getMessage());
             return false;
         }
     }
@@ -229,7 +230,8 @@ public final class KeydroidxCrashReporter {
                 }
                 markPending(KeydroidxFeedback.resolveLogDir(app), category, detail, tr);
             } catch (Throwable ignored) {
-                // 崩溃路径上任何异常都必须吞掉
+                // 崩溃路径上任何异常都必须吞掉；此处只能用 w——用 e 会再次触发本回调造成递归
+                KeydroidxLog.w(TAG, "mark pending failed: " + ignored.getMessage());
             }
         }
     };
@@ -271,6 +273,7 @@ public final class KeydroidxCrashReporter {
                 }
                 writeAtomic(marker, json.toString());
             } catch (Throwable ignored) {
+                KeydroidxLog.w(TAG, "build pending marker failed: " + ignored.getMessage());
             }
         }
     }
@@ -285,6 +288,7 @@ public final class KeydroidxCrashReporter {
             fos.flush();
             fos.getFD().sync();
         } catch (Throwable ignored) {
+            KeydroidxLog.w(TAG, "atomic write failed: " + target.getName() + ": " + ignored.getMessage());
             deleteQuietly(tmp);
             return;
         } finally {
@@ -452,6 +456,7 @@ public final class KeydroidxCrashReporter {
             }
             return new JSONObject(new String(bos.toByteArray(), StandardCharsets.UTF_8));
         } catch (Throwable t) {
+            KeydroidxLog.w(TAG, "read json failed: " + file + ": " + t.getMessage());
             return null;
         } finally {
             if (in != null) {
@@ -478,6 +483,7 @@ public final class KeydroidxCrashReporter {
             KeydroidxFeedbackConfig cfg = KeydroidxFeedback.getConfig();
             return cfg != null && cfg.appVersion != null ? cfg.appVersion : "";
         } catch (Throwable t) {
+            KeydroidxLog.w(TAG, "resolve app version failed: " + t.getMessage());
             return "";
         }
     }
@@ -496,6 +502,7 @@ public final class KeydroidxCrashReporter {
                 return line;
             }
         } catch (Throwable ignored) {
+            KeydroidxLog.w(TAG, "read /proc/self/cmdline failed: " + ignored.getMessage());
         } finally {
             if (br != null) {
                 try {

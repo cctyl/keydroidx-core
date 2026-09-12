@@ -5,6 +5,7 @@ import android.content.Context;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import io.github.cctyl.nokia.common.log.KeydroidxLog;
 import io.github.cctyl.nokia.common.model.DefaultKeyResolver;
 import io.github.cctyl.nokia.common.model.KeyResolver;
 
@@ -21,6 +22,8 @@ import io.github.cctyl.nokia.common.model.KeyResolver;
  * </ul>
  */
 public final class KeydroidxUi {
+
+    private static final String TAG = "KeydroidxUi";
 
     private KeydroidxUi() {}
 
@@ -46,6 +49,7 @@ public final class KeydroidxUi {
         try {
             return KeydroidxTheme.getCurrentTheme(context);
         } catch (Exception ignored) {
+            KeydroidxLog.w(TAG, "getCurrentTheme failed, fallback to classic blue: " + ignored.getMessage());
             return KeydroidxTheme.getTheme(KeydroidxTheme.THEME_CLASSIC_BLUE);
         }
     }

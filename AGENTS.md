@@ -137,6 +137,12 @@ SDK 内部代码简洁严谨，自底向上分为四层：
    - `KeydroidxLog` 是生态标准日志器（按天轮转、落盘到 `Android/data/<包名>/files/log/yyyyMMdd.log`、未捕获崩溃同步落盘、详细日志开关持久化），直接用 `android.util.Log` 会绕过落盘机制，导致反馈上报「附带运行日志」抓不到现场、崩溃堆栈丢失。
    - 含堆栈的日志用带 `Throwable` 的重载：`KeydroidxLog.w(tag, msg, throwable)` / `KeydroidxLog.e(tag, msg, throwable)`，**不要**回退到 `android.util.Log.w(tag, msg, t)`。
    - 标签命名：按模块/组件取简短稳定 tag（如 `KeydroidxInstall`、`EmulatorApp`），不要用类名全限定。
+   - **`catch` 块必须记一笔（强制）**：任何 `try/catch` 的 `catch` 分支都必须用 `KeydroidxLog.e(...)` 或 `KeydroidxLog.w(...)`（带 `Throwable` 重载）记录异常，**禁止空 `catch`、禁止只写 `e.printStackTrace()`、禁止改用 `android.util.Log`**。选级准则：意外 / 不可恢复 / 影响功能 → `KeydroidxLog.e(tag, msg, tr)`（会同步落「待上传」标记，下次启动自动上报）；预期内 / 可忽略 / 降级继续 → `KeydroidxLog.w(tag, msg, tr)`。**注意：`e` 只用于「程序自身缺陷」（不该发生的失败：资源缺失、自家数据解析/写入失败、状态机异常、自家逻辑 bug）；网络异常/超时、权限不足、包未安装、系统版本不支持、反射调用失败、资源清理失败、探测失败等一律 `w`。另注意 `w` 在 Release（未开详细日志）下只进 logcat、不落盘，`e` 才落盘并触发上报；`e` 计入服务端 `/upload` 每日 20 次配额（超额封 IP 30 分钟），故常驻 / 高频路径（按键分发、光标逐帧刷新、每次渲染、逐项遍历、网络重试）必须用 `w`，否则配额会被日常降级异常打满，真实崩溃反而传不出去。**原因：`KeydroidxCrashReporter` 只能捕获「未捕获异常」与「走过 `KeydroidxLog.e` 的错误」，被 `catch` 且不打日志的异常**既不上报也不落盘**，属于自动上报的已知盲区，用户反馈时现场全丢。不合格写法示例：`catch (Exception ignored) {}`、`catch (Exception e) { e.printStackTrace(); }`、`catch (IOException e) { return null; }`。
+   - **上述强制要求的例外（不补日志，或只补 `w`）**：
+     1. `catch` 后**重新抛出**（块内有 `throw ...`）——异常继续向上传播，最终由未捕获处理器与 `KeydroidxCrashReporter` 上报，不算盲区。
+     2. 日志 / 上报链路**自身**的 `catch`（`KeydroidxLog`、`KeydroidxCrashReporter`、`FeedbackUploader`、`InstallUploader`、`DeviceInfoCollector`）——只能 `KeydroidxLog.w` 或保持静默：此处调 `KeydroidxLog.e` 会经 `notifyErrorMarker` 再次落「待上传」标记，存在递归落盘风险。
+     3. 资源清理路径（`close()` / `eglDestroy*` / `deleteQuietly` 等）——用 `w` 或不补，避免刷屏淹没真实崩溃。
+     4. `keydroidx-mini-shizuku`（含 launcher 内 `mini_shizuku` 服务端模块）与 J2ME 移植代码（`javax.*` / `org.microemu.*`）——不强制。
    - **例外**：`keydroidx-mini-shizuku` 模块刻意保持「纯 IPC 客户端，零依赖」，仅为它引入 `keydroidx-common` 用 `KeydroidxLog` 会破坏其零依赖定位，因此该模块内允许使用 `android.util.Log`。其他模块一律走 `KeydroidxLog`。
 5. **统一字号与排版规范（6 级标准 Token）**：
    - 详见 **`docs/spec/typography-and-font-spec.md`**。所有界面文本必须引用 `@dimen/keydroidx_font_*` 6 级语义 Token（`display:16sp`, `title:13sp`, `body:12sp`, `small_title:11sp`, `caption:9sp`, `micro:7sp`）。

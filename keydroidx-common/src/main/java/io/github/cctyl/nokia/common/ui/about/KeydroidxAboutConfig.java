@@ -9,6 +9,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 import io.github.cctyl.nokia.common.ecosystem.KeydroidXApps;
+import io.github.cctyl.nokia.common.log.KeydroidxLog;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,6 +21,8 @@ import java.util.List;
  * 支持通过链式 Builder 自由装配应用信息、开源地址、开发者、致谢清单与自定义操作项。
  */
 public class KeydroidxAboutConfig implements Serializable {
+
+    private static final String TAG = "KeydroidxAboutConfig";
 
     private String appName;
     private String versionName;
@@ -68,12 +71,15 @@ public class KeydroidxAboutConfig implements Serializable {
             ApplicationInfo appInfo = pm.getApplicationInfo(context.getPackageName(), 0);
             config.appName = pm.getApplicationLabel(appInfo).toString();
             config.appIconRes = appInfo.icon;
-        } catch (Exception ignored) {}
+        } catch (Exception ignored) {
+            KeydroidxLog.w(TAG, "read app info failed: " + ignored.getMessage());
+        }
 
         try {
             PackageInfo pkgInfo = pm.getPackageInfo(context.getPackageName(), 0);
             config.versionName = "v" + pkgInfo.versionName;
         } catch (Exception e) {
+            KeydroidxLog.w(TAG, "read package version failed, fallback to v1.0.0: " + e.getMessage());
             config.versionName = "v1.0.0";
         }
         // 默认展示「除自己外」的全部生态应用
