@@ -3,6 +3,8 @@ package io.github.cctyl.nokia.common.ui;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.res.Configuration;
+import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -10,6 +12,7 @@ import android.text.Spanned;
 import android.text.TextWatcher;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -222,8 +225,9 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
         updateCounter();
         applyTheme();
 
-        // 初始即聚焦，物理键盘可直接输入
-        editInput.requestFocus();
+        // 初始即聚焦，物理键盘可直接输入；物理键盘外露时从源头抑制
+        // 聚焦自动弹软键盘，但保留点屏唤起能力
+        requestFocusForHardwareKeyboardTyping();
     }
 
     @Override
@@ -231,8 +235,23 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
         super.onResume();
         applyTheme();
         if (editInput != null) {
-            editInput.requestFocus();
+            requestFocusForHardwareKeyboardTyping();
         }
+    }
+
+    @Override
+    public void onPause() {
+        super.onPause();
+        // 离开本页（含系统直接 finish 宿主、压入子页等）时收起软键盘。
+        // 此时窗口仍存活、windowToken 有效，比 onDestroyView 兜底更可靠
+        hideSoftInput();
+    }
+
+    @Override
+    public void onDestroyView() {
+        // 最后兜底：确保软键盘收起，防止遗留覆盖在桌面 / 上一页上
+        hideSoftInput();
+        super.onDestroyView();
     }
 
     private void updateCounter() {
@@ -525,10 +544,71 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
 
     /** 退出本页：优先弹出返回栈，否则关闭宿主 Activity */
     private void exit() {
+        // 先收起软键盘，避免退出后 IME 窗口残留在下一页 / 桌面上
+        hideSoftInput();
         if (getActivity() instanceof io.github.cctyl.nokia.common.ui.page.KeydroidxPageHost) {
             ((io.github.cctyl.nokia.common.ui.page.KeydroidxPageHost) getActivity()).exitCurrent();
         } else if (getActivity() != null) {
             getActivity().finish();
+        }
+    }
+
+    // ---------- 软键盘管理 ----------
+
+    /**
+     * 为物理键盘输入请求输入框焦点，并从源头抑制「聚焦自动弹软键盘」。
+     *
+     * <p>物理键盘外露时，用户靠物理键直接输入，{@link EditText#requestFocus()}
+     * 带来的 IME 自动 show 属非预期弹窗。API21+ 用
+     * {@link EditText#setShowSoftInputOnFocus} 在聚焦前关掉自动 show
+     * （确定性抑制，不与 OEM IME 的延迟 show 抢节奏），下一帧再开回来，
+     * 保证用户主动点屏仍能唤起软键盘（点屏走 showSoftInput 路径，
+     * 不受 setShowSoftInputOnFocus 影响）。API19-20 无此 API，退化为 post 一帧
+     * hideSoftInput 作为 best-effort。纯触摸设备（无物理键盘）不抑制，照常自动弹。</p>
+     */
+    private void requestFocusForHardwareKeyboardTyping() {
+        if (editInput == null) return;
+        boolean hwKb = hasUsableHardwareKeyboard();
+        if (hwKb && Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            // 聚焦前关掉自动弹，下一帧再开回来，避免点屏唤不回
+            editInput.setShowSoftInputOnFocus(false);
+        }
+        editInput.requestFocus();
+        if (hwKb) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+                editInput.post(() -> {
+                    if (editInput != null) editInput.setShowSoftInputOnFocus(true);
+                });
+            } else {
+                // API19-20 退化方案
+                editInput.post(this::hideSoftInput);
+            }
+        }
+    }
+
+    /** 设备是否具备可用的物理键盘（键盘类型非无且当前外露）。 */
+    private boolean hasUsableHardwareKeyboard() {
+        Configuration c = getResources().getConfiguration();
+        return c.keyboard != Configuration.KEYBOARD_NOKEYS
+                && c.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
+    }
+
+    /** 主动隐藏软键盘（若已显示）。退出本页 / 物理键盘模式下抑制自动弹出时调用。 */
+    private void hideSoftInput() {
+        if (editInput == null) return;
+        InputMethodManager imm = (InputMethodManager) requireContext()
+                .getSystemService(Context.INPUT_METHOD_SERVICE);
+        if (imm == null) return;
+        // windowToken 可能为空（视图未附加），此时从根视图取，实在没有则跳过
+        android.os.IBinder token = editInput.getWindowToken();
+        if (token == null && getView() != null) {
+            token = getView().getWindowToken();
+        }
+        if (token == null && getActivity() != null && getActivity().getWindow() != null) {
+            token = getActivity().getWindow().getDecorView().getWindowToken();
+        }
+        if (token != null) {
+            imm.hideSoftInputFromWindow(token, 0);
         }
     }
 }
