@@ -17,7 +17,8 @@ import io.github.cctyl.nokia.common.ui.KeydroidxTextInputFragment;
  *         .putExtra(KeydroidxTextInputActivity.EXTRA_TITLE, "问题描述")
  *         .putExtra(KeydroidxTextInputActivity.EXTRA_HINT, "描述问题与复现步骤")
  *         .putExtra(KeydroidxTextInputActivity.EXTRA_TEXT, currentText)
- *         .putExtra(KeydroidxTextInputActivity.EXTRA_MAX_CHARS, 500)
+ *         .putExtra(KeydroidxTextInputActivity.EXTRA_MAX_CHARS, 0)
+ *         .putExtra(KeydroidxTextInputActivity.EXTRA_MAX_BYTES, 500)
  *         .putExtra(KeydroidxTextInputActivity.EXTRA_MULTILINE, true);
  * startActivityForResult(it, REQUEST_CODE);
  * </pre>
@@ -37,6 +38,8 @@ public class KeydroidxTextInputActivity extends KeydroidxBaseActivity {
     public static final String EXTRA_HINT = "hint";
     public static final String EXTRA_TEXT = "text";
     public static final String EXTRA_MAX_CHARS = "maxChars";
+    /** 按 UTF-8 字节数限制（0 表示不限制）。用于服务端按字节计长的字段，如反馈 comment ≤500 字节。 */
+    public static final String EXTRA_MAX_BYTES = "maxBytes";
     /** 是否多行输入。历史版本固定为多行页，故默认 true。 */
     public static final String EXTRA_MULTILINE = "multiline";
 
@@ -58,10 +61,11 @@ public class KeydroidxTextInputActivity extends KeydroidxBaseActivity {
             String hint = it.getStringExtra(EXTRA_HINT);
             String text = it.getStringExtra(EXTRA_TEXT);
             int maxChars = it.getIntExtra(EXTRA_MAX_CHARS, 500);
+            int maxBytes = it.getIntExtra(EXTRA_MAX_BYTES, 0);
             boolean multiline = it.getBooleanExtra(EXTRA_MULTILINE, true);
 
             KeydroidxTextInputFragment page = KeydroidxTextInputFragment.newInstance(
-                    title == null ? "输入" : title, text, hint, multiline, maxChars);
+                    title == null ? "输入" : title, text, hint, multiline, maxChars, maxBytes);
             page.setOnConfirmListener(result -> {
                 confirmed = true;
                 setResult(RESULT_OK, new Intent().putExtra(RESULT_TEXT, result));

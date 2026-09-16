@@ -205,10 +205,13 @@ public class KeydroidxFeedbackFragment extends KeydroidxPageFragment {
                 openTypeMenu();
                 break;
             case ROW_CONTACT:
-                startTextInput("联系方式", contact, "QQ / 邮箱 / 手机号", false, 100);
+                // contact 协议上限 100 字符（用户多为 ASCII，按字符计即可）
+                startTextInput("联系方式", contact, "QQ / 邮箱 / 手机号", false, 100, 0);
                 break;
             case ROW_COMMENT:
-                startTextInput("问题描述", comment, "描述问题与复现步骤", true, 500);
+                // 服务端 comment 协议上限 500 UTF-8 字节（中文 3 字节/字），
+                // 按字节而非字符限制，避免输入在客户端通过、到服务端被拒
+                startTextInput("问题描述", comment, "描述问题与复现步骤", true, 0, 500);
                 break;
             case ROW_LOG:
                 Toast.makeText(requireContext(), "日志将随反馈一并提交", Toast.LENGTH_SHORT).show();
@@ -236,9 +239,10 @@ public class KeydroidxFeedbackFragment extends KeydroidxPageFragment {
      *
      * <p>编辑页压入返回栈，确定后回调写回字段并出栈恢复本页焦点。</p>
      */
-    private void startTextInput(String title, String current, String hint, boolean multiline, int maxChars) {
+    private void startTextInput(String title, String current, String hint, boolean multiline,
+                                int maxChars, int maxBytes) {
         KeydroidxTextInputFragment page = KeydroidxTextInputFragment.newInstance(
-                title, current, hint, multiline, maxChars);
+                title, current, hint, multiline, maxChars, maxBytes);
         page.setOnConfirmListener(text -> {
             if (title.equals("联系方式")) {
                 contact = text;

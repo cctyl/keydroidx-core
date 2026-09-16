@@ -66,4 +66,33 @@ public class FeedbackUploaderTest {
         assertTrue(json.contains("\"api_level\":28"));
         assertTrue(json.contains("\"is_root\":false"));
     }
+
+    /**
+     * 服务端 comment 硬限 500 UTF-8 字节，中文 3 字节/字。客户端必须按字节裁剪，
+     * 否则 500 个中文字符（1500 字节）会被服务端拒绝。
+     */
+    @Test
+    public void buildMetaJson_commentTruncatedByUtf8Bytes() throws Exception {
+        // 200 个中文字 = 600 UTF-8 字节，超过 500 字节上限
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 200; i++) {
+            sb.append('测');
+        }
+        String longComment = sb.toString();
+
+        String json = FeedbackUploader.buildMetaJson(
+                "demoApp", "1.0.0", "user@example.com", longComment, null);
+
+        // 提取 comment 值并验证其 UTF-8 字节数 ≤ 500
+        org.json.JSONObject obj = new org.json.JSONObject(json);
+        String comment = obj.getString("comment");
+        int bytes = comment.getBytes(StandardCharsets.UTF_8).length;
+        assertTrue("comment UTF-8 bytes = " + bytes + " must be <= 500", bytes <= 500);
+        // 200 字 * 3 = 600 字节 -> 至少裁掉 100 字节（约 33 个中文字）
+        assertTrue("comment must be truncated", comment.length() < longComment.length());
+        // 不得出现半个字符（解码后乱码）；这里只断言为完整中文字符
+        for (char c : comment.toCharArray()) {
+            assertTrue("truncated comment contains non-trimmed char", c == '测');
+        }
+    }
 }

@@ -159,7 +159,8 @@ public final class FeedbackUploader {
         json.put("os_version", truncate(android.os.Build.VERSION.RELEASE, 32));
         json.put("contact", truncate(contact, 100));
         if (comment != null && comment.trim().length() > 0) {
-            json.put("comment", truncate(comment, 500));
+            // 服务端 comment 硬限 500 UTF-8 字节，按字节裁剪防止中文等 3 字节字符超限被拒
+            json.put("comment", truncateUtf8(comment, 500));
         }
         if (extras != null && !extras.isEmpty()) {
             JSONObject ex = new JSONObject();
@@ -333,6 +334,27 @@ public final class FeedbackUploader {
             return "";
         }
         return s.length() > max ? s.substring(0, max) : s;
+    }
+
+    /**
+     * 按 UTF-8 字节数裁剪，确保不在多字节字符中间截断产生乱码。
+     * 与 {@link #truncate} 按字符数不同，本方法对齐服务端按字节计长的硬限
+     * （如 comment ≤500 字节，中文 3 字节/字）。
+     */
+    private static String truncateUtf8(String s, int maxBytes) {
+        if (s == null || s.isEmpty() || maxBytes <= 0) {
+            return s == null ? "" : s;
+        }
+        byte[] bytes = s.getBytes(StandardCharsets.UTF_8);
+        if (bytes.length <= maxBytes) {
+            return s;
+        }
+        // 退回到上一处多字节首字节（UTF-8 续字节形如 10xxxxxx）
+        int end = maxBytes;
+        while (end > 0 && (bytes[end] & 0xC0) == 0x80) {
+            end--;
+        }
+        return new String(bytes, 0, end, StandardCharsets.UTF_8);
     }
 
     static String bytesToHex(byte[] bytes) {

@@ -6,6 +6,7 @@ import android.content.Context;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputFilter;
+import android.text.Spanned;
 import android.text.TextWatcher;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
@@ -37,7 +38,7 @@ import io.github.cctyl.nokia.common.ui.page.KeydroidxPageFragment;
  * <h3>用法（宿主 push 到 midPanel）</h3>
  * <pre>
  * KeydroidxTextInputFragment page = KeydroidxTextInputFragment.newInstance(
- *         "问题描述", comment, "描述问题与复现步骤", true, 500);
+ *         "问题描述", comment, "描述问题与复现步骤", true, 0, 500);
  * page.setOnConfirmListener(text -&gt; { comment = text; });
  * getSupportFragmentManager().beginTransaction()
  *         .replace(R.id.midPanel, page)
@@ -62,6 +63,8 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
     private static final String ARG_HINT = "hint";
     private static final String ARG_MULTILINE = "multiline";
     private static final String ARG_MAX_CHARS = "maxChars";
+    /** 按 UTF-8 字节数限制（用于服务端按字节计长的字段，如反馈 comment ≤500 字节）。 */
+    private static final String ARG_MAX_BYTES = "maxBytes";
 
     /** 结果回调：用户按 LSK 确定时触发 */
     public interface OnConfirmListener {
@@ -76,6 +79,7 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
     private String hint = "";
     private boolean multiline = false;
     private int maxChars = 0;
+    private int maxBytes = 0;
     private boolean required = true;
     /** 上一次刷新软键栏时的「是否有内容」状态，用于只在状态翻转时刷新底栏 */
     private boolean lastHasText = false;
@@ -97,6 +101,20 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
      */
     public static KeydroidxTextInputFragment newInstance(@NonNull String title, @Nullable String text,
                                                      @Nullable String hint, boolean multiline, int maxChars) {
+        return newInstance(title, text, hint, multiline, maxChars, 0);
+    }
+
+    /**
+     * 创建全屏编辑页（可同时按字符数与 UTF-8 字节数限制）。
+     *
+     * @param maxChars  最大字符数，0 表示不限制
+     * @param maxBytes  最大 UTF-8 字节数，0 表示不限制。用于服务端按字节计长的字段
+     *                  （如反馈 {@code comment} 协议上限 500 字节，中文 3 字节/字），
+     *                  避免输入在客户端通过、到服务端被拒
+     */
+    public static KeydroidxTextInputFragment newInstance(@NonNull String title, @Nullable String text,
+                                                     @Nullable String hint, boolean multiline,
+                                                     int maxChars, int maxBytes) {
         KeydroidxTextInputFragment f = new KeydroidxTextInputFragment();
         Bundle args = new Bundle();
         args.putString(ARG_TITLE, title);
@@ -104,12 +122,19 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
         args.putString(ARG_HINT, hint != null ? hint : "");
         args.putBoolean(ARG_MULTILINE, multiline);
         args.putInt(ARG_MAX_CHARS, maxChars);
+        args.putInt(ARG_MAX_BYTES, maxBytes);
         f.setArguments(args);
         return f;
     }
 
     public KeydroidxTextInputFragment setOnConfirmListener(@Nullable OnConfirmListener listener) {
         this.confirmListener = listener;
+        return this;
+    }
+
+    /** 设置按 UTF-8 字节数限制（0 表示不限制）。 */
+    public KeydroidxTextInputFragment setMaxBytes(int maxBytes) {
+        this.maxBytes = maxBytes;
         return this;
     }
 
@@ -133,6 +158,7 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
             hint = args.getString(ARG_HINT, "");
             multiline = args.getBoolean(ARG_MULTILINE, false);
             maxChars = args.getInt(ARG_MAX_CHARS, 0);
+            maxBytes = args.getInt(ARG_MAX_BYTES, 0);
         }
     }
 
@@ -165,9 +191,7 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
             editInput.setImeOptions(EditorInfo.IME_ACTION_NONE);
         }
 
-        if (maxChars > 0) {
-            editInput.setFilters(new InputFilter[]{new InputFilter.LengthFilter(maxChars)});
-        }
+        editInput.setFilters(buildFilters(maxChars, maxBytes));
 
         editInput.addTextChangedListener(new TextWatcher() {
             @Override
@@ -213,8 +237,17 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
 
     private void updateCounter() {
         if (tvCounter == null) return;
-        int len = editInput != null ? editInput.getText().length() : 0;
-        tvCounter.setText(maxChars > 0 ? len + "/" + maxChars : String.valueOf(len));
+        if (maxBytes > 0) {
+            // 字节计长优先：对齐服务端按 UTF-8 字节的硬限
+            int bytes = editInput != null ? utf8Length(editInput.getText()) : 0;
+            tvCounter.setText(bytes + "/" + maxBytes);
+        } else if (maxChars > 0) {
+            int len = editInput != null ? editInput.getText().length() : 0;
+            tvCounter.setText(len + "/" + maxChars);
+        } else {
+            int len = editInput != null ? editInput.getText().length() : 0;
+            tvCounter.setText(String.valueOf(len));
+        }
     }
 
     /** 输入框当前是否有内容（用于决定右键是「清除」还是「返回」）。 */
@@ -255,6 +288,100 @@ public class KeydroidxTextInputFragment extends KeydroidxPageFragment {
         }
         if (tvHint != null) tvHint.setTextColor(theme.subTextColor);
         if (tvCounter != null) tvCounter.setTextColor(theme.subTextColor);
+    }
+
+    // ---------- 输入限制 ----------
+
+    /**
+     * 组装输入过滤器：字符数与 UTF-8 字节数两道闸，仅配置非 0 的生效。
+     */
+    private static InputFilter[] buildFilters(int maxChars, int maxBytes) {
+        java.util.List<InputFilter> filters = new java.util.ArrayList<>(2);
+        if (maxChars > 0) {
+            filters.add(new InputFilter.LengthFilter(maxChars));
+        }
+        if (maxBytes > 0) {
+            filters.add(new Utf8ByteLengthFilter(maxBytes));
+        }
+        return filters.isEmpty() ? new InputFilter[0]
+                : filters.toArray(new InputFilter[0]);
+    }
+
+    /**
+     * 按服务端 UTF-8 字节硬限裁剪输入，防止中文等 3 字节字符超过字段上限
+     * （例如反馈 {@code comment} ≤500 字节，中文约 166 字即打满）。
+     *
+     * <p>语义对齐 {@link InputFilter.LengthFilter}：返回 {@code null} 表示保留原始插入文本，
+     * 返回裁剪后的子序列替换插入文本，超限且无余量时返回空串拒绝。</p>
+     */
+    private static final class Utf8ByteLengthFilter implements InputFilter {
+        private final int maxBytes;
+
+        Utf8ByteLengthFilter(int maxBytes) {
+            this.maxBytes = maxBytes;
+        }
+
+        @Override
+        public CharSequence filter(CharSequence source, int start, int end,
+                                   Spanned dest, int dstart, int dend) {
+            String destStr = dest.toString();
+            String before = destStr.substring(0, dstart);
+            String after = destStr.substring(dend);
+            int baseBytes = utf8Length(before) + utf8Length(after);
+            CharSequence insert = source.subSequence(start, end);
+            if (baseBytes + utf8Length(insert) <= maxBytes) {
+                return null; // 余量充足，放行
+            }
+            int allowed = maxBytes - baseBytes;
+            if (allowed <= 0) {
+                return ""; // 已满，拒绝插入
+            }
+            // 逐字符累加直到余量耗尽，裁剪到合法字符边界（不在代理对中间截断）
+            StringBuilder sb = new StringBuilder();
+            int used = 0;
+            int i = start;
+            while (i < end) {
+                char c = source.charAt(i);
+                int b;
+                if (Character.isHighSurrogate(c) && i + 1 < end
+                        && Character.isLowSurrogate(source.charAt(i + 1))) {
+                    b = 4;
+                    if (used + b > allowed) break;
+                    sb.append(c).append(source.charAt(i + 1));
+                    used += b;
+                    i += 2;
+                } else {
+                    b = (c <= 0x7F) ? 1 : (c <= 0x7FF) ? 2 : 3;
+                    if (used + b > allowed) break;
+                    sb.append(c);
+                    used += b;
+                    i++;
+                }
+            }
+            return sb;
+        }
+    }
+
+    /** 计算 {@link CharSequence} 编码为 UTF-8 后的字节数（正确处理代理对）。 */
+    private static int utf8Length(CharSequence s) {
+        if (s == null) return 0;
+        int n = 0;
+        int len = s.length();
+        for (int i = 0; i < len; i++) {
+            char c = s.charAt(i);
+            if (c <= 0x7F) {
+                n += 1;
+            } else if (c <= 0x7FF) {
+                n += 2;
+            } else if (Character.isHighSurrogate(c) && i + 1 < len
+                    && Character.isLowSurrogate(s.charAt(i + 1))) {
+                n += 4;
+                i++;
+            } else {
+                n += 3;
+            }
+        }
+        return n;
     }
 
     // ---------- KeydroidxPage 契约 ----------
