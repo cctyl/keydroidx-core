@@ -36,8 +36,19 @@ public final class MiniShizukuClient {
     /** 进程级缓存：解析到的 launcher 包名（authority 前缀）。 */
     private static String sLauncherPackage;
     /** 进程级缓存：从 provider 拿到的 K（同签名才有值）。null 表示未取过或被拒。 */
-    private static String sKey;
+    private static volatile String sKey;
     private static Context sAppContext;
+
+    /**
+     * 服务端因 K 失效而拒绝（launcher 重启/重装会换新 K，旧缓存必须丢弃重拉）。
+     * 与 server 端 {@code MsgProcess} / {@code ServerEnv.verify} 的应答一致。
+     */
+    private static final String ERR_UNAUTHORIZED = "ERR:unauthorized";
+
+    // execAcked 单次执行结果
+    private static final int ACK_OK = 0;
+    private static final int ACK_FAIL = 1;
+    private static final int ACK_UNAUTHORIZED = 2;
 
     private MiniShizukuClient() {
     }
@@ -88,10 +99,20 @@ public final class MiniShizukuClient {
     /**
      * 执行并读取服务端一行 ack（{@code OK:..} / {@code ERR:..}）。
      * 用于拦截器等需要确认是否真正生效的命令。鉴权失败、超时、ERR 均返回 false。
+     * <p>
+     * 服务端回 {@code ERR:unauthorized}（launcher 重启/重装换了 K）时会丢弃缓存的 K
+     * 重拉一次再试，成功则本次仍返回 true。
      */
     public static boolean execAcked(String command) {
-        String k = getKey();
-        if (k == null) return false;
+        int r = execAckedOnce(command, getKey());
+        if (r == ACK_UNAUTHORIZED) {
+            r = execAckedOnce(command, refreshKey());
+        }
+        return r == ACK_OK;
+    }
+
+    private static int execAckedOnce(String command, String k) {
+        if (k == null) return ACK_FAIL;
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(MiniShizukuConst.HOST, MiniShizukuConst.PORT),
@@ -104,13 +125,15 @@ public final class MiniShizukuClient {
                     new InputStreamReader(socket.getInputStream(), UTF8));
             try {
                 String line = reader.readLine();
-                return line != null && !line.startsWith("ERR:");
+                if (line == null) return ACK_FAIL;
+                if (ERR_UNAUTHORIZED.equals(line.trim())) return ACK_UNAUTHORIZED;
+                return line.startsWith("ERR:") ? ACK_FAIL : ACK_OK;
             } catch (java.net.SocketTimeoutException e) {
                 // 老服务端不回 ack：写入成功即视为成功
-                return true;
+                return ACK_OK;
             }
         } catch (IOException e) {
-            return false;
+            return ACK_FAIL;
         } finally {
             closeQuietly(socket);
         }
@@ -119,10 +142,20 @@ public final class MiniShizukuClient {
     /**
      * 执行并回读输出，直到 {@code EXIT:<code>}。
      * 鉴权失败或 IO 异常返回 null。
+     * <p>
+     * 服务端回 {@code ERR:unauthorized}（launcher 重启/重装换了 K）时会丢弃缓存的 K
+     * 重拉一次再试。
      */
     public static String execWithOutput(String command) {
-        String k = getKey();
-        if (k == null) return null;
+        Reply r = execWithOutputOnce(command, getKey());
+        if (r.unauthorized) {
+            r = execWithOutputOnce(command, refreshKey());
+        }
+        return r.body;
+    }
+
+    private static Reply execWithOutputOnce(String command, String k) {
+        if (k == null) return new Reply(null, false);
         Socket socket = new Socket();
         try {
             socket.connect(new InetSocketAddress(MiniShizukuConst.HOST, MiniShizukuConst.PORT),
@@ -135,12 +168,13 @@ public final class MiniShizukuClient {
                     new InputStreamReader(socket.getInputStream(), UTF8));
             String first = reader.readLine();
             if (first != null && first.startsWith("ERR:")) {
-                return null; // 鉴权失败
+                // 鉴权失败（K 失效时标记 unauthorized，由调用方丢弃缓存重拉重试）
+                return new Reply(null, ERR_UNAUTHORIZED.equals(first.trim()));
             }
             StringBuilder sb = new StringBuilder();
             if (first != null) {
                 if (first.startsWith(MiniShizukuConst.EXIT_PREFIX)) {
-                    return ""; // 无输出，直接结束
+                    return new Reply("", false); // 无输出，直接结束
                 }
                 // execWithOutput 的输出第一行若为 OK:（拦截器走 execAcked，不会到这），
                 // 此处仅处理普通命令输出
@@ -153,11 +187,22 @@ public final class MiniShizukuClient {
                 }
                 sb.append(line).append('\n');
             }
-            return sb.toString();
+            return new Reply(sb.toString(), false);
         } catch (IOException e) {
-            return null;
+            return new Reply(null, false);
         } finally {
             closeQuietly(socket);
+        }
+    }
+
+    /** 单次 execWithOutput 的结果：{@code unauthorized} 表示服务端因 K 失效拒绝。 */
+    private static final class Reply {
+        final String body;
+        final boolean unauthorized;
+
+        Reply(String body, boolean unauthorized) {
+            this.body = body;
+            this.unauthorized = unauthorized;
         }
     }
 
@@ -166,7 +211,8 @@ public final class MiniShizukuClient {
      * 鉴权被拒（异签名）返回 null，后续 exec 直接失败。
      */
     private static String getKey() {
-        if (sKey != null) return sKey;
+        String cached = sKey;
+        if (cached != null) return cached;
         Context ctx = sAppContext;
         if (ctx == null) {
             Log.w(TAG, "getKey: 未 init(context)，无法调用 provider");
@@ -184,6 +230,29 @@ public final class MiniShizukuClient {
             Log.w(TAG, "getKey failed: " + e.getMessage());
         }
         return sKey;
+    }
+
+    /**
+     * 丢弃缓存的 K（与 launcher 包名缓存）并立即重新向 provider 拉取。
+     * <p>
+     * launcher 被卸载重装、或其进程重启都会换一把新 K（{@code KeydroidxShizukuKeyHolder}
+     * 是进程级随机值），此时旧缓存会被服务端回 {@code ERR:unauthorized}——表现为
+     * 「桌面重装后本应用一直提示签名不匹配」，必须丢弃重拉才能恢复。
+     * <p>
+     * 兜底：{@link #execAcked} / {@link #execWithOutput} 收到 unauthorized 时会自行调用本
+     * 方法并重试一次；调用方也可主动调用（如状态诊断前强制刷新）以避免误报。
+     *
+     * @return 重拉后的 K；launcher 缺失或异签名时为 {@code null}
+     */
+    public static String refreshKey() {
+        invalidateKey();
+        return getKey();
+    }
+
+    /** 仅丢弃进程内缓存（K + launcher 包名），下次执行时才重拉。 */
+    public static void invalidateKey() {
+        sKey = null;
+        sLauncherPackage = null;
     }
 
     /**

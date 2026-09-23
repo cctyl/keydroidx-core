@@ -39,4 +39,17 @@ public final class MiniShizuku {
     public static String execWithOutput(String command) {
         return MiniShizukuClient.execWithOutput(command);
     }
+
+    /**
+     * 丢弃进程内缓存的 K 并重新向 launcher provider 拉取。
+     * <p>
+     * launcher 被卸载重装或其进程重启会换新 K，旧缓存会导致服务端回
+     * {@code ERR:unauthorized}（表现为「签名不匹配」）；调用本方法可立即恢复鉴权，
+     * 无需重启本应用。
+     *
+     * @return 重拉后的 K；launcher 缺失或异签名时为 {@code null}
+     */
+    public static String refreshKey() {
+        return MiniShizukuClient.refreshKey();
+    }
 }
