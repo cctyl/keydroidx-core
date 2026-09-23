@@ -136,7 +136,8 @@ public class KeydroidxKeyWizardActivity extends AppCompatActivity {
 
     private void finishWizard() {
         draftBinding.save(this);
-        KeydroidxClient.get(this).reload();
+        // 主线程不能同步重载（跨进程 query 会阻塞），走异步重载
+        KeydroidxClient.get(this).reloadAsync();
         Toast.makeText(this, "按键向导配置已保存！", Toast.LENGTH_SHORT).show();
         finish();
     }

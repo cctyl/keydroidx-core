@@ -7,16 +7,21 @@
 ```
 KeydroidxClient.get(context)
         │
-        ├─ reload() 四级降级：
+        ├─ 主线程：loadLocalPrefs() + 本地键位兜底 → 立即可用（零跨进程等待）
+        │
+        ├─ reloadAsync() 后台线程四级降级：
         │   ① content://io.github.cctyl.nokia.keyprovider/...     (Release 桌面)
         │   ② content://io.github.cctyl.nokia.debug.keyprovider/...(Debug 桌面)
         │   ③ 本地 SharedPreferences（本应用独立配键）
         │   ④ Android 标准键值兜底
+        │   → 查询结果 post 回主线程生效并回调监听者
         │
-        └─ ContentObserver：桌面配置变更 → 自动 reload → 回调所有监听者
+        └─ ContentObserver：桌面配置变更 → 自动 reloadAsync → 回调所有监听者
 ```
 
 > **①② 的探测顺序不是固定的**：当 HOME 应用包名包含 `debug`（开发者设备装的是 Debug 版桌面）时，顺序反转为先探 Debug、再探 Release，保证调试时改动即时可见。
+
+> ⚠ **Provider 查询必须异步（主线程禁止同步重载）**：`content://` 查询是 Binder 同步阻塞调用，桌面进程未启动时本地端要等 AMS 冷启动桌面（低端机可达数秒）。若放在主线程，首次启动会出现窗口迟迟不出、`Input dispatching timed out`（ANR）甚至进程被杀。因此**单例创建与 ContentObserver 回调一律走 `reloadAsync()`**；后台线程只产出快照，配置写入与回调统一收敛到主线程。
 
 ## KeydroidxClient
 
@@ -34,7 +39,7 @@ KeydroidxClient.get(context)
 ```java
 public static synchronized KeydroidxClient get(@NonNull Context context)
 ```
-双检锁单例；内部持有 applicationContext，首次创建时加载本地偏好并执行一次 `reload()`。**全 SDK 所有组件（基类、弹窗、主题）都通过它取配置，业务侧一般不需要自己 new。**
+双检锁单例；内部持有 applicationContext。首次创建时，主线程仅读取本地偏好（`loadLocalPrefs` + 本地键位兜底）立即建立可用状态，随后在后台线程执行一次 `reloadAsync()` 同步桌面配置，**不阻塞首帧**。**全 SDK 所有组件（基类、弹窗、主题）都通过它取配置，业务侧一般不需要自己 new。**
 
 > `KeydroidxClient` 同时实现了 common 的 `ThemeProvider` 接口并在 `get()` 时自注入 `KeydroidxTheme.setThemeProvider(this)`——独立 App 无需手动注入主题提供者；桌面（launcher）则注入自己的本地实现。机制见 [architecture/module-layering](../architecture/module-layering.md) §五。
 
@@ -63,9 +68,10 @@ public float getCurrentFontScale()           // 当前字体缩放系数
 ### 主动重载与本地设置
 
 ```java
-public synchronized void reload()
+public synchronized void reload()   // ⚠ 会跨进程阻塞，主线程禁止调用
+public void reloadAsync()           // 主线程安全：查询在后台线程，结果回主线程生效
 ```
-按四级降级顺序重新拉取全部配置（按键 + settings 表中的 theme_id/font_id/font_scale），成功后向所有监听者派发变更并写入本地偏好。**桌面端改了配置但 Observer 未注册成功时，可手动调它兜底。**
+按四级降级顺序重新拉取全部配置（按键 + settings 表中的 theme_id/font_id/font_scale），成功后向所有监听者派发变更并写入本地偏好。**桌面端改了配置但 Observer 未注册成功时，可手动调它兜底——业务侧请用 `reloadAsync()`。**
 
 ```java
 public void setThemeId(String themeId)  // 写本地偏好 + 派发 onThemeChanged

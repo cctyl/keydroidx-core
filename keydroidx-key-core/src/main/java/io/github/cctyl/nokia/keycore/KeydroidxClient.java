@@ -13,7 +13,12 @@ import io.github.cctyl.nokia.common.log.KeydroidxLog;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 
 import io.github.cctyl.nokia.common.contract.KeydroidxProviderContract;
 import io.github.cctyl.nokia.common.ui.KeydroidxTheme;
@@ -64,13 +69,42 @@ public class KeydroidxClient implements ThemeProvider {
     private float currentFontScale = 1.0f;
     private ContentObserver contentObserver;
 
+    /**
+     * 桌面 Provider 同步专用后台线程。
+     * <p>跨进程 {@code ContentResolver.query} 是 Binder 同步阻塞调用：桌面进程未启动时
+     * 本地端要等 AMS 把桌面进程冷启动起来，低端机上可达数秒；放在主线程会使首次启动
+     * 窗口迟迟不出（Input dispatching timed out ANR）。因此所有 Provider 探测一律在此线程执行。
+     */
+    private final ExecutorService providerExecutor = Executors.newSingleThreadExecutor(new ThreadFactory() {
+        @Override
+        public Thread newThread(Runnable r) {
+            Thread t = new Thread(r, "keydroidx-desktop-sync");
+            t.setDaemon(true);
+            return t;
+        }
+    });
+
     private KeydroidxClient(@NonNull Context context) {
         this.context = context.getApplicationContext();
         this.keyBinding = new KeydroidxKeyBinding();
         this.mainHandler = new Handler(Looper.getMainLooper());
         KeydroidxTheme.setThemeProvider(this);
         loadLocalPrefs();
-        reload();
+        // 主线程只用本地缓存建立可用状态（零跨进程等待），保证首帧立即可渲染
+        applyLocalConfig();
+        // 桌面 Provider 同步（可能冷启动桌面进程）放后台线程，查完回主线程热更新
+        reloadAsync();
+    }
+
+    /** 应用第 3/4 级降级结果：本地独立配置 → 标准默认键码。仅在主线程调用。 */
+    private void applyLocalConfig() {
+        if (keyBinding.loadFromLocal(context)) {
+            configSource = ConfigSource.LOCAL_CUSTOM;
+        } else {
+            keyBinding.initDefaults();
+            configSource = ConfigSource.FALLBACK_DEFAULT;
+        }
+        dispatchConfigChanged();
     }
 
     public static KeydroidxClient get(@NonNull Context context) {
@@ -121,47 +155,74 @@ public class KeydroidxClient implements ThemeProvider {
         return false;
     }
 
+    /**
+     * 同步执行四级降级重载。
+     * <p><b>⚠ 主线程禁止调用</b>：内部会跨进程查询桌面 Provider（Binder 阻塞调用，桌面进程
+     * 未启动时需等 AMS 冷启动桌面，低端机可达数秒）。主线程请改用 {@link #reloadAsync()}。
+     */
     public synchronized void reload() {
-        boolean preferDebug = isDebugLauncherPreferred();
-        if (preferDebug) {
-            if (tryQueryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG)) {
-                KeydroidxLog.i(TAG, "reload: from debug desktop, theme=" + currentThemeId + " source=" + configSource);
-                saveLocalPrefs();
-                return;
-            }
-            if (tryQueryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE)) {
-                KeydroidxLog.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
-                saveLocalPrefs();
-                return;
-            }
-        } else {
-            if (tryQueryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE)) {
-                KeydroidxLog.i(TAG, "reload: from release desktop, theme=" + currentThemeId + " source=" + configSource);
-                saveLocalPrefs();
-                return;
-            }
-            if (tryQueryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG)) {
-                KeydroidxLog.i(TAG, "reload: from debug desktop, theme=" + currentThemeId + " source=" + configSource);
-                saveLocalPrefs();
-                return;
-            }
-        }
-        // 3. 降级：本地独立配置
-        if (keyBinding.loadFromLocal(context)) {
-            configSource = ConfigSource.LOCAL_CUSTOM;
-            dispatchConfigChanged();
-            return;
-        }
-        // 4. 降级：标准默认配置
-        keyBinding.initDefaults();
-        configSource = ConfigSource.FALLBACK_DEFAULT;
-        dispatchConfigChanged();
-        KeydroidxLog.i(TAG, "reload: final theme=" + currentThemeId + " source=" + configSource);
+        reloadInternal();
     }
 
-    private boolean tryQueryProvider(String authority, ConfigSource source) {
-        boolean keysLoaded = false;
+    /** 异步执行四级降级重载：Provider 查询与解析在后台线程完成，结果回主线程生效。主线程调用安全。 */
+    public void reloadAsync() {
+        providerExecutor.execute(new Runnable() {
+            @Override
+            public void run() {
+                reload();
+            }
+        });
+    }
+
+    private void reloadInternal() {
+        boolean preferDebug = isDebugLauncherPreferred();
+        ProviderSnapshot snapshot;
+        if (preferDebug) {
+            snapshot = queryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG);
+            if (snapshot == null) {
+                snapshot = queryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE);
+            }
+        } else {
+            snapshot = queryProvider(RELEASE_AUTHORITY, ConfigSource.DESKTOP_RELEASE);
+            if (snapshot == null) {
+                snapshot = queryProvider(DEBUG_AUTHORITY, ConfigSource.DESKTOP_DEBUG);
+            }
+        }
+
+        if (snapshot != null) {
+            final ProviderSnapshot result = snapshot;
+            KeydroidxLog.i(TAG, "reload: 命中桌面 Provider " + result.authority + " source=" + result.source);
+            mainHandler.post(new Runnable() {
+                @Override
+                public void run() {
+                    applySnapshot(result);
+                }
+            });
+            return;
+        }
+
+        // 3. 降级：本地独立配置；4. 降级：标准默认配置
+        mainHandler.post(new Runnable() {
+            @Override
+            public void run() {
+                applyLocalConfig();
+                KeydroidxLog.i(TAG, "reload: 未命中桌面 Provider，降级本地配置 source=" + configSource
+                        + " theme=" + currentThemeId);
+            }
+        });
+    }
+
+    /**
+     * 纯查询：只读桌面 Provider 并产出不可变快照，<b>不触碰任何成员状态</b>，可安全在后台线程执行。
+     *
+     * @return 命中并读到按键表时返回快照；未安装/无权限/无数据时返回 null（触发下一级降级）
+     */
+    @Nullable
+    private ProviderSnapshot queryProvider(@NonNull String authority, @NonNull ConfigSource source) {
         try {
+            ProviderSnapshot snapshot = new ProviderSnapshot(authority, source);
+            boolean keysLoaded = false;
+
             // 查询按键: content://{authority}/keys
             Uri keysUri = KeydroidxProviderContract.getKeysUri(authority);
             Cursor cursor = context.getContentResolver().query(keysUri, null, null, null, null);
@@ -170,13 +231,12 @@ public class KeydroidxClient implements ThemeProvider {
                     int actionIdx = cursor.getColumnIndex(KeydroidxProviderContract.COL_ACTION);
                     int keyCodeIdx = cursor.getColumnIndex(KeydroidxProviderContract.COL_KEY_CODE);
                     if (cursor.moveToFirst()) {
-                        keyBinding.clear();
                         do {
                             String actionStr = (actionIdx >= 0) ? cursor.getString(actionIdx) : null;
                             int keyCode = (keyCodeIdx >= 0) ? cursor.getInt(keyCodeIdx) : -1;
                             int action = KeydroidxKeyAction.parseActionKey(actionStr);
                             if (action >= 0 && keyCode > 0) {
-                                keyBinding.bind(action, keyCode);
+                                snapshot.bindings.add(new int[]{action, keyCode});
                             }
                         } while (cursor.moveToNext());
                         keysLoaded = true;
@@ -198,14 +258,12 @@ public class KeydroidxClient implements ThemeProvider {
                             String k = (keyIdx >= 0) ? sCursor.getString(keyIdx) : null;
                             String v = (valIdx >= 0) ? sCursor.getString(valIdx) : null;
                             if (KeydroidxProviderContract.SETTING_THEME_ID.equals(k) && v != null) {
-                                this.currentThemeId = v;
+                                snapshot.themeId = v;
                             } else if (KeydroidxProviderContract.SETTING_FONT_ID.equals(k) && v != null) {
-                                this.currentFontId = v;
-                                KeydroidxFontManager.setCurrentFontId(v);
+                                snapshot.fontId = v;
                             } else if (KeydroidxProviderContract.SETTING_FONT_SCALE.equals(k) && v != null) {
                                 try {
-                                    this.currentFontScale = Float.parseFloat(v);
-                                    KeydroidxFontManager.setFontScale(this.currentFontScale);
+                                    snapshot.fontScale = Float.parseFloat(v);
                                 } catch (Exception ignored) {
                                     KeydroidxLog.w(TAG, "parse font scale failed, value=" + v + ": " + ignored.getMessage());
                                 }
@@ -218,18 +276,55 @@ public class KeydroidxClient implements ThemeProvider {
             }
 
             if (keysLoaded) {
-                configSource = source;
-                registerObserver(keysUri);
-                registerObserver(settingsUri);
-                dispatchConfigChanged();
-                return true;
+                return snapshot;
             }
         } catch (SecurityException e) {
             KeydroidxLog.w(TAG, "Package visibility 或权限受限无法查询: " + authority, e);
         } catch (Exception e) {
             KeydroidxLog.e(TAG, "查询 Provider 异常: " + authority, e);
         }
-        return false;
+        return null;
+    }
+
+    /** 把后台线程查到的桌面快照应用为当前生效配置（含观察者注册与全局回调）。仅在主线程调用。 */
+    private void applySnapshot(@NonNull ProviderSnapshot snapshot) {
+        keyBinding.clear();
+        for (int[] pair : snapshot.bindings) {
+            keyBinding.bind(pair[0], pair[1]);
+        }
+        if (snapshot.themeId != null) {
+            this.currentThemeId = snapshot.themeId;
+        }
+        if (snapshot.fontId != null) {
+            this.currentFontId = snapshot.fontId;
+            KeydroidxFontManager.setCurrentFontId(snapshot.fontId);
+        }
+        if (snapshot.fontScale != null) {
+            this.currentFontScale = snapshot.fontScale;
+            KeydroidxFontManager.setFontScale(snapshot.fontScale);
+        }
+        configSource = snapshot.source;
+        saveLocalPrefs();
+
+        Uri keysUri = KeydroidxProviderContract.getKeysUri(snapshot.authority);
+        registerObserver(keysUri);
+        registerObserver(KeydroidxProviderContract.getSettingsUri(snapshot.authority));
+        dispatchConfigChanged();
+    }
+
+    /** 桌面前后台数据传递载体：后台线程只写它，主线程读它，避免跨线程直接改共享状态。 */
+    private static final class ProviderSnapshot {
+        final String authority;
+        final ConfigSource source;
+        final List<int[]> bindings = new ArrayList<>();
+        String themeId;
+        String fontId;
+        Float fontScale;
+
+        ProviderSnapshot(@NonNull String authority, @NonNull ConfigSource source) {
+            this.authority = authority;
+            this.source = source;
+        }
     }
 
     private void registerObserver(Uri uri) {
@@ -238,7 +333,8 @@ public class KeydroidxClient implements ThemeProvider {
                 @Override
                 public void onChange(boolean selfChange, Uri uri) {
                     KeydroidxLog.i(TAG, "收到桌面配置变更通知，自动重新加载");
-                    reload();
+                    // 主线程回调，必须走异步重载（同步 query 会阻塞主线程）
+                    reloadAsync();
                 }
             };
             try {
