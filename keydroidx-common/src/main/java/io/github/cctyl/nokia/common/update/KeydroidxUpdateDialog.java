@@ -96,7 +96,8 @@ public final class KeydroidxUpdateDialog {
             msg.append("\n\n更新内容：\n").append(truncate(info.changelog, MAX_CHANGELOG));
         }
 
-        new KeydroidxConfirmDialog(context, "发现新版本", msg.toString())
+        // 紧凑版提醒弹窗（内容区可滚动），与自动检查的提醒保持一致的视觉与按键语义
+        new KeydroidxUpdateReminderDialog(context, "发现新版本", msg.toString())
                 .setPositiveButton("更新", () -> openUrl(context, info.resolveDownloadUrl()))
                 .setNegativeButton("取消", null)
                 .show();

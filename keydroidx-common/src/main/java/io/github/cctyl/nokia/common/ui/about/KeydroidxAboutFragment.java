@@ -34,8 +34,10 @@ import io.github.cctyl.nokia.common.ui.KeydroidxTheme;
 import io.github.cctyl.nokia.common.ui.dialog.KeydroidxOptionsDialog;
 import io.github.cctyl.nokia.common.ui.page.KeydroidxPageHost;
 import io.github.cctyl.nokia.common.ui.page.KeydroidxScrollPageFragment;
+import io.github.cctyl.nokia.common.update.KeydroidxAutoUpdateChecker;
 import io.github.cctyl.nokia.common.update.KeydroidxUpdateConfig;
 import io.github.cctyl.nokia.common.update.KeydroidxUpdateDialog;
+import io.github.cctyl.nokia.common.update.KeydroidxUpdatePrefs;
 
 /**
  * KeydroidX 生态标准复古关于页面。
@@ -50,7 +52,7 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
     private int focusedIndex = 0;
 
     private static class InteractiveItem {
-        enum Type { URL, LOG_TOGGLE, CUSTOM, CHECK_UPDATE, MORE_APPS }
+        enum Type { URL, LOG_TOGGLE, AUTO_UPDATE_TOGGLE, CUSTOM, CHECK_UPDATE, MORE_APPS }
         final Type type;
         final String title;
         final String subtitle;
@@ -92,7 +94,8 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
     public CharSequence getSoftLeftText() {
         if (!interactiveItems.isEmpty() && focusedIndex >= 0 && focusedIndex < interactiveItems.size()) {
             InteractiveItem item = interactiveItems.get(focusedIndex);
-            if (item.type == InteractiveItem.Type.LOG_TOGGLE) {
+            if (item.type == InteractiveItem.Type.LOG_TOGGLE
+                    || item.type == InteractiveItem.Type.AUTO_UPDATE_TOGGLE) {
                 return "切换";
             } else if (item.type == InteractiveItem.Type.CHECK_UPDATE) {
                 return "检查";
@@ -106,7 +109,8 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
     public CharSequence getSoftCenterText() {
         if (!interactiveItems.isEmpty() && focusedIndex >= 0 && focusedIndex < interactiveItems.size()) {
             InteractiveItem item = interactiveItems.get(focusedIndex);
-            if (item.type == InteractiveItem.Type.LOG_TOGGLE) {
+            if (item.type == InteractiveItem.Type.LOG_TOGGLE
+                    || item.type == InteractiveItem.Type.AUTO_UPDATE_TOGGLE) {
                 return "切换";
             } else if (item.type == InteractiveItem.Type.URL) {
                 return "打开";
@@ -184,6 +188,8 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
         // 3.1 检查更新（复用 repoUrl，置于链接区首位作为主操作）
         if (config.isShowUpdateCheck() && !TextUtils.isEmpty(config.getRepoUrl())) {
             addCheckUpdateCard(llLinks);
+            // 3.1.1 自动检查更新开关（每日一次 + 系统通知 + 可忽略版本）
+            addAutoUpdateToggleCard(llLinks);
         }
 
         // 3.2 更多应用（common 内置生态清单，默认除自己外）
@@ -339,6 +345,76 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
             updateConfig.setCurrentVersion(config.getUpdateCurrentVersion());
         }
         KeydroidxUpdateDialog.checkAndShow(getActivity(), updateConfig);
+    }
+
+    private void addAutoUpdateToggleCard(LinearLayout container) {
+        if (getContext() == null) return;
+        Context ctx = getContext();
+
+        LinearLayout card = new LinearLayout(ctx);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(8), dp(6), dp(8), dp(6));
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        lp.bottomMargin = dp(6);
+        card.setLayoutParams(lp);
+        card.setClickable(true);
+
+        TextView tvTitle = new TextView(ctx);
+        tvTitle.setText("自动检查更新");
+        tvTitle.setTextColor(Color.WHITE);
+        tvTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_body));
+
+        TextView tvSub = new TextView(ctx);
+        applyAutoUpdateSubtitle(tvSub);
+        tvSub.setTextSize(TypedValue.COMPLEX_UNIT_PX, ctx.getResources().getDimension(R.dimen.keydroidx_font_caption));
+        tvSub.setPadding(0, dp(2), 0, 0);
+
+        card.addView(tvTitle);
+        card.addView(tvSub);
+
+        final int idx = interactiveItems.size();
+        card.setOnClickListener(v -> {
+            focusedIndex = idx;
+            updateFocusHighlight();
+            toggleAutoUpdate();
+        });
+
+        interactiveItems.add(new InteractiveItem(InteractiveItem.Type.AUTO_UPDATE_TOGGLE,
+                "自动检查更新", null, null, card, tvSub));
+        container.addView(card);
+    }
+
+    private void applyAutoUpdateSubtitle(TextView tvSub) {
+        Context ctx = getContext();
+        if (ctx == null || tvSub == null) return;
+        boolean enabled = KeydroidxUpdatePrefs.isAutoCheckEnabled(ctx);
+        String ignored = KeydroidxUpdatePrefs.getIgnoredVersion(ctx);
+        String text = enabled
+                ? "每日检查一次，进入应用时提醒" : "已关闭（仅可手动检查）";
+        if (enabled && !TextUtils.isEmpty(ignored)) {
+            text += "；已忽略 v" + ignored;
+        }
+        tvSub.setText(text);
+        tvSub.setTextColor(enabled
+                ? Color.parseColor("#81C784") : Color.parseColor("#B0BEC5"));
+    }
+
+    private void toggleAutoUpdate() {
+        if (getContext() == null) return;
+        Context ctx = getContext();
+        boolean newState = !KeydroidxUpdatePrefs.isAutoCheckEnabled(ctx);
+        KeydroidxUpdatePrefs.setAutoCheckEnabled(ctx, newState);
+        for (InteractiveItem item : interactiveItems) {
+            if (item.type == InteractiveItem.Type.AUTO_UPDATE_TOGGLE
+                    && item.subtitleView != null) {
+                applyAutoUpdateSubtitle(item.subtitleView);
+                break;
+            }
+        }
+        Toast.makeText(ctx, newState ? "已开启自动检查更新" : "已关闭自动检查更新",
+                Toast.LENGTH_SHORT).show();
+        KeydroidxLog.i("KeydroidxAboutFragment", "auto update check -> " + newState);
     }
 
     private void addMoreAppsCard(LinearLayout container) {
@@ -524,6 +600,8 @@ public class KeydroidxAboutFragment extends KeydroidxScrollPageFragment {
             InteractiveItem item = interactiveItems.get(focusedIndex);
             if (item.type == InteractiveItem.Type.LOG_TOGGLE) {
                 toggleDetailedLog();
+            } else if (item.type == InteractiveItem.Type.AUTO_UPDATE_TOGGLE) {
+                toggleAutoUpdate();
             } else if (item.type == InteractiveItem.Type.URL) {
                 showUrlOptions(item);
             } else if (item.type == InteractiveItem.Type.CHECK_UPDATE) {
