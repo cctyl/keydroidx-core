@@ -41,6 +41,15 @@ public final class MiniShizuku {
     }
 
     /**
+     * 拉取「最近任务」快照（服务端反射取系统快照，JPEG base64 回传）。
+     *
+     * @return JPEG 的 base64；离线 / 鉴权拒绝 / 无快照返回 {@code null}
+     */
+    public static String fetchSnapshot(int taskId) {
+        return MiniShizukuClient.fetchSnapshot(taskId);
+    }
+
+    /**
      * 丢弃进程内缓存的 K 并重新向 launcher provider 拉取。
      * <p>
      * launcher 被卸载重装或其进程重启会换新 K，旧缓存会导致服务端回

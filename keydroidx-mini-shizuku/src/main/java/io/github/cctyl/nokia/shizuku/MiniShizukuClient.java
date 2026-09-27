@@ -195,6 +195,43 @@ public final class MiniShizukuClient {
         }
     }
 
+    /**
+     * 拉取「最近任务」快照：发送 {@code SNAP|<taskId>}，服务端反射取系统快照后
+     * 以 {@code OK:BASE64:<jpeg>} 单行回传。
+     *
+     * @return JPEG 的 base64（不含前缀）；离线 / 鉴权拒绝 / 无快照返回 null
+     */
+    public static String fetchSnapshot(int taskId) {
+        String line = fetchSnapshotOnce(taskId, getKey());
+        if (line != null && ERR_UNAUTHORIZED.equals(line)) {
+            line = fetchSnapshotOnce(taskId, refreshKey());
+        }
+        if (line == null || !line.startsWith("OK:BASE64:")) return null;
+        return line.substring("OK:BASE64:".length());
+    }
+
+    private static String fetchSnapshotOnce(int taskId, String k) {
+        if (k == null) return null;
+        Socket socket = new Socket();
+        try {
+            socket.connect(new InetSocketAddress(MiniShizukuConst.HOST, MiniShizukuConst.PORT),
+                    MiniShizukuConst.CONNECT_TIMEOUT);
+            OutputStream out = socket.getOutputStream();
+            out.write((k + "|SNAP|" + taskId + "\n").getBytes(UTF8));
+            out.flush();
+            // 快照抓取 + JPEG 编码在服务端执行，读超时放宽到 15s
+            socket.setSoTimeout(Math.max(MiniShizukuConst.READ_TIMEOUT, 15000));
+            BufferedReader reader = new BufferedReader(
+                    new InputStreamReader(socket.getInputStream(), UTF8));
+            String line = reader.readLine();
+            return line == null ? null : line.trim();
+        } catch (IOException e) {
+            return null;
+        } finally {
+            closeQuietly(socket);
+        }
+    }
+
     /** 单次 execWithOutput 的结果：{@code unauthorized} 表示服务端因 K 失效拒绝。 */
     private static final class Reply {
         final String body;
