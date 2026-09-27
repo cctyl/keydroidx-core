@@ -144,7 +144,89 @@ KeydroidxUpdateChecker.check(context, config, result -> {
 - 响应体上限 **256KB**，超限视为异常响应；
 - 版本比较：`KeydroidxUpdateChecker.compareVersion(a, b)`（支持预发布后缀），也可独立使用。
 
-## 四、测试
+## 四、自动检查更新（每日一次 + 进入应用弹窗提醒）
+
+> 2026-09 新增：在手动检查之上提供「每日一次后台检查 + 进入应用后弹窗提醒」的完整方案。
+> 不发系统通知（功能机场景下弹窗体验更好），弹窗复用符合 FEATURE_PHONE_UI_SPEC 的紧凑组件。
+
+### 1. 涉及类
+
+| 类 | 职责 |
+|---|---|
+| `KeydroidxAutoUpdateChecker` | 门面：每日节流检查 + 落「待提醒」记录 + 弹窗展示 |
+| `KeydroidxUpdatePrefs` | 持久化（SP 文件 `nokia_update_prefs`）：开关、忽略版本、按天节流、待提醒记录 |
+
+### 2. 行为规则（全部自动生效，宿主无需关心）
+
+| 层级 | 规则 |
+|---|---|
+| 检查开关 | `auto_check_enabled` **默认开启**，用户可关（关于页开关卡片 / 宿主自建设置项） |
+| 检查节流 | 一天最多成功检查一次（本地时区按天记）；失败不记当天，下次进程启动重试 |
+| 提醒记录 | 发现新版本且未被忽略 → 存 `pending_update`（含 version / changelog / APK 直链，changelog 截断 400 字符） |
+| 弹窗节流 | **一天最多弹一次**——弹出即记当天，无论用户选更新/忽略还是 BACK 关闭 |
+| 忽略版本 | 「忽略此版本」= 该版本永不再提醒，直到出现更新的 Release（`compareVersion` 判定） |
+| 过期清理 | 待提醒版本 ≤ 宿主当前版本时自动清掉（宿主升级后不留垃圾数据） |
+
+### 3. 接入（宿主两行代码）
+
+```java
+// ① Application.attachBaseContext 主进程块（建议延迟数百毫秒以上避开冷启动）：
+KeydroidxAutoUpdateChecker.checkOncePerDay(this,
+        new KeydroidxUpdateConfig("https://github.com/<owner>/<repo>"), 8000);
+
+// ② 主界面 Activity.onCreate（首帧就绪后延迟约 1.5s，避免与启动期权限弹窗抢焦点）：
+KeydroidxAutoUpdateChecker.showPendingUpdateDialog(this, updateConfig);
+```
+
+**关于 ② 的两次尝试**：① 的检查在后台延迟 8s + 网络耗时，普遍晚于首帧。
+推荐像 launcher 一样 postDelayed 两次（1.5s 处理「上次检查遗留的待提醒」、
+15s 处理「本次启动刚完成的检查」），并用「本次会话已弹过」标志防止重弹——
+不过弹窗本身已有 `last_remind_day` 按天节流兜底，即使每次 onCreate 都调用也不会骚扰用户。
+
+### 4. 弹窗交互（`KeydroidxUpdateReminderDialog`）
+
+与 `KeydroidxOptionsDialog` 同级高度（标题栏 26dp + 固定 96dp 可滚动内容区 + 软键栏 26dp），
+更新说明长时在内容区内滚动，不会把软键栏挤出屏幕：
+
+| 按键 | 行为 |
+|---|---|
+| LSK / CENTER | 「更新」→ 浏览器打开 APK 直链（无直链回退 Release 页 / 百度网盘） |
+| RSK | 「忽略此版本」→ 该版本永不再提醒 |
+| UP / DOWN | 滚动更新说明（触屏滑动同样可滚） |
+| BACK | 仅关闭（当天不再弹，次日再提醒） |
+
+changelog 展示前会做清洗：去 markdown 标题井号/加粗星号、去空行、超长截断加省略号。
+
+### 5. 宿主设置项（可选）
+
+- **关于页（零成本）**：宿主使用标准 `KeydroidxAboutFragment` 且 `setShowUpdateCheck(true)` 时，
+  「自动检查更新」开关卡片自动出现在「检查更新」下方，读写的就是 `KeydroidxUpdatePrefs`；
+- **自建设置项**：直接读写 `KeydroidxUpdatePrefs.isAutoCheckEnabled/setAutoCheckEnabled`。
+
+### 6. 宿主注意事项（红线）
+
+1. **`attachBaseContext` 阶段 `getApplicationContext()` 返回 null**（Application 尚未回填），
+   common 已在内部兼容（回退用传入 context）；宿主不要在该阶段自行调用 `getApplicationContext()`；
+2. **flavor 渠道后缀必须剥离**：`1.3.2-open` 之类的 versionName 会被 semver 当成 pre-release 修饰段，
+   与 GitHub 裸 tag（`1.3.2`）比较时判为「更小」→ 每天误报更新。接入方式：
+   ```java
+   config.setCurrentVersion(versionName.replaceFirst("-" + Pattern.quote(BuildConfig.FLAVOR) + "(-\\d+)?$", ""));
+   ```
+   无 flavor 的应用可跳过（不调 `setCurrentVersion`，默认读 PackageInfo）；
+3. 宿主需声明 `android.permission.INTERNET`；弹窗不依赖任何通知权限。
+
+### 7. 测试技巧（不污染用户数据）
+
+debug 包可用 `run-as` 直接改 SP，无需 `pm clear`、无需压低版本号联网等待：
+
+```bash
+# 构造待提醒记录（pending_update 为 JSON：version/changelog/download_url）
+adb shell run-as <pkg> cp /data/local/tmp/prefs.xml shared_prefs/nokia_update_prefs.xml
+```
+
+触发链路日志 tag：`KeydroidxAutoUpdate`（`adb logcat -d -s KeydroidxAutoUpdate:*`）。
+
+## 五、测试
 
 - 单元测试：`keydroidx-common/src/test/.../update/KeydroidxUpdateCheckerTest.java`
   覆盖仓库地址解析、版本号比较（含预发布/空值）、Release JSON 解析。
