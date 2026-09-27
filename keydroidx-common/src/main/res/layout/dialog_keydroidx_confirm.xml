@@ -9,7 +9,8 @@
     <LinearLayout
         android:id="@+id/dialogTitleBar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/keydroidx_dialog_title_bar_height"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/keydroidx_dialog_title_bar_height"
         android:background="@drawable/bg_keydroidx_dialog_title"
         android:gravity="center_vertical"
         android:paddingStart="10dp"
@@ -49,8 +50,10 @@
     <LinearLayout
         android:id="@+id/dialogBottomBar"
         android:layout_width="match_parent"
-        android:layout_height="@dimen/keydroidx_dialog_title_bar_height"
+        android:layout_height="wrap_content"
+        android:minHeight="@dimen/keydroidx_dialog_title_bar_height"
         android:background="@drawable/bg_keydroidx_dialog_bottom"
+        android:gravity="center_vertical"
         android:orientation="horizontal"
         android:paddingStart="10dp"
         android:paddingEnd="10dp">
@@ -58,7 +61,7 @@
         <TextView
             android:id="@+id/softLeft"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:gravity="center_vertical|start"
             android:clickable="true"
             android:focusable="true"
@@ -69,13 +72,13 @@
 
         <View
             android:layout_width="0dp"
-            android:layout_height="match_parent"
+            android:layout_height="1dp"
             android:layout_weight="1" />
 
         <TextView
             android:id="@+id/softRight"
             android:layout_width="wrap_content"
-            android:layout_height="match_parent"
+            android:layout_height="wrap_content"
             android:gravity="center_vertical|end"
             android:clickable="true"
             android:focusable="true"
