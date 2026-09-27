@@ -108,6 +108,8 @@ public static void applyToViewTree(View root)
 public static void invalidate()   // 清空 Typeface 缓存（assets 热替换后用）
 ```
 
+> ⚠️ **字体缩放对布局的连带要求**：经 `KeydroidxFontManager` 设置的字号会随 `sFontScale`（用户在桌面调的「字体大小」）放大，且点阵字体行盒约 1.375em 偏高。因此**承载文字的容器（列表行、弹窗选项行等）高度必须 `WRAP_CONTENT` + `setMinimumHeight(设计值)`，禁止写死固定 dp**，否则大字号档位下文字下半截会被裁掉。详见 [NOKIA_DEVELOPMENT_RULES.md](../NOKIA_DEVELOPMENT_RULES.md)「动态构建的文本列表行禁止写死固定行高」。
+
 ## KeydroidxIcons — MaterialIcons 矢量图标
 
 基于内置 `fonts/MaterialIcons-Regular.ttf` 的字符图标方案（2500+ 图标可用）。**项目禁止新增 PNG/XML 图标。**

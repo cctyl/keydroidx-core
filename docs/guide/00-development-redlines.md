@@ -26,6 +26,7 @@
 | 12 | **字号全部引用 `@dimen/keydroidx_font_*` 6 级 Token**，严禁裸写数字、严禁 ≤13sp 加粗 | 点阵字体糊掉 | [](../spec/typography-and-font-spec.md) |
 | 13 | **图标统一 `KeydroidxIcons`**，`KeydroidxFontManager` 自动整树生效；**严禁新增 PNG / XML 图标** | 多分辨率下留白失真 | [09](./09-theme-font-icons.md) |
 | 14 | **根布局响应式原生 DP**（`match_parent` + `weight`），**禁止**运行时 `setScaleX/Y`、**禁止**根宽写死 240dp | 大屏留白、小屏溢出 | [](../spec/responsive-layout-spec.md) |
+| 15 | **含 TextView 的动态构建列表行 / 弹窗选项行，高度一律 `WRAP_CONTENT` + `setMinimumHeight(设计值)`，禁止写死固定 dp** | 大字号（sFontScale 放大）下行高不跟随，文字被裁掉半截 | [](../NOKIA_DEVELOPMENT_RULES.md)、[](../spec/typography-and-font-spec.md) |
 
 ---
 
@@ -69,6 +70,7 @@
 - [ ] 条目声明 `focusableInTouchMode="true"`，外层 `ScrollView` 禁焦，进页面第 1 次按方向键立即响应
 - [ ] 无原生 `AlertDialog` / `PopupWindow`；选项/确认/输入分别用 SDK 三个组件
 - [ ] 根布局响应式原生 DP，无 `setScaleX/Y`、无写死 240dp
+- [ ] 含 TextView 的动态列表行 / 弹窗选项行高度为 `WRAP_CONTENT` + `setMinimumHeight`，无写死固定行高（grep `MATCH_PARENT, KeydroidxDimens.dp` 自查）
 
 ---
 

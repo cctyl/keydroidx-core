@@ -603,6 +603,35 @@ KeydroidxDimens.dp(getResources(), 36)
 
 已修复的案例：`fragment_keydroidx_desktop.xml`、`fragment_keydroidx_key_bind.xml`、`fragment_keydroidx_key_bind_wizard.xml`。
 
+#### 动态构建的文本列表行禁止写死固定行高（重要，2026-09）
+
+**凡是用 Java 动态构建、包含 TextView 的列表行 / 弹窗选项行，行高一律用 `WRAP_CONTENT + setMinimumHeight(设计值)`，禁止写死 `LayoutParams(MATCH_PARENT, KeydroidxDimens.dp(..., N))`。**
+
+背景与原因（2026-09 实测 bug：320×480 设备把字体调到「极巨 (2.0x)」后，「外观与显示」等设置页每行标题下半截被裁掉；通知中心行也同类）：
+
+1. **字号随 `KeydroidxFontManager` 的 `sFontScale` 缩放（实际字号 = 设计字号 × sFontScale），而行高写死 dp 后不随之放大**，两条曲线必然在某个大字号档位交叉——文字行盒超过固定行高，超出部分被行容器裁掉（只显示半截字）。
+2. **点阵字体（ArkPixel/FusionPixel 12px）行盒约 1.375em 且 descent 空白大**，同等字号下比 Roboto 需要更高的行盒，进一步提前触发裁切。
+3. 该类代码有 11+ 处（各设置 Fragment、Shizuku 页、`KeydroidxOptionsDialog` 选项行、通知中心行），都是复制粘贴扩散出来的同一模式，**一处踩坑 = 全生态同模式全部踩坑**。
+
+正确做法：
+
+```java
+// 正确：WRAP_CONTENT + minHeight 兜底（默认字号下视觉与原固定高度完全一致）
+row.setLayoutParams(new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT));
+row.setMinimumHeight(KeydroidxDimens.dp(getResources(), 36));
+
+// 禁止：行高写死，大字号下文字被裁
+row.setLayoutParams(new LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT, KeydroidxDimens.dp(getResources(), 36)));
+```
+
+补充说明：
+- `minHeight` 取原设计值即可，保证标准字号下外观零变化；超大字号下行自动撑高，一页行数变少靠 `ScrollView` 滚动查看，这是预期行为不是回归。
+- **横向**仍按需 `singleLine + ellipsize=END`（长文本「…」截断是预期行为）；本规则只管**纵向裁切**。
+- 图标 / 分隔线等**不含文字**的固定尺寸 View 不受此规则约束（如 1dp 分隔线照旧写死）。
+- 新增列表页时自查：grep `MATCH_PARENT, KeydroidxDimens.dp` 确认没有把含 TextView 的行写死高度。
+
 ### 点线（虚线分隔线）标准实现
 
 项目使用 `KeydroidxDashedLineDrawable` 绘制横向点线分隔线（如桌面快捷栏上下方），**禁止使用 XML shape dash 虚线或 DashPathEffect**：

@@ -91,6 +91,8 @@
 | **软键栏 (Softkey Bar)** | `height="22dp"` | `keydroidx_font_small_title` (11sp) | — | 中间标题按可用**宽度实测**自适应缩小（`fitCenterTextToWidth`：逐步 -0.5dp，下限 6dp），基准 11sp |
 | **大数字时钟 (Clock)** | — | `keydroidx_font_display` (16sp) | — | 整屏仅一处 |
 
+> ⚠️ **表中「minHeight」是硬性语义，不是装饰**：凡含 TextView 的动态构建列表行 / 弹窗选项行，实际高度**必须** `WRAP_CONTENT` + `setMinimumHeight(推荐值)`，**禁止**把推荐值写死成 `layout_height`。字号会随 `sFontScale` 放大（见 §4），行高不随之放大就会在大字号档位把文字裁掉半截。详见 [NOKIA_DEVELOPMENT_RULES.md](../NOKIA_DEVELOPMENT_RULES.md)「动态构建的文本列表行禁止写死固定行高」。不含文字的 View（分隔线、图标等）不受此约束。
+
 ---
 
 ## 4. 全局自动字体与字号缩放机制
